@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Base Model Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #EF6C00;
+            margin: 0;
+            font-size: 24px;
+        }
+        .location-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .location-section .logged-in-text {
+            font-weight: bold;
+        }
+        .location-section .working-on {
+            display: flex;
+            align-items: center;
+            visibility: visible;
+        }
+        .location-section .working-on label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .location-section select {
+            padding: 5px;
+            border: 1px solid #E0E0E0;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .navbar {
+            background-color: #424242;
+            padding: 10px 20px; /* Added padding for better spacing */
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between; /* Space between tabs and logout button */
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .navbar .tabs {
+            display: flex;
+            gap: 20px;
+        }
+        .navbar button {
+            color: #FFD60A;
+            background: none;
+            border: none;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .navbar button:hover {
+            background-color: #EF6C00;
+            color: #FFFFFF;
+        }
+        .navbar .logout-button {
+            background-color: #FF5252; /* Red color for logout to distinguish it */
+            color: #FFFFFF;
+        }
+        .navbar .logout-button:hover {
+            background-color: #D32F2F;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #424242;
+            color: #FFD60A;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .section-header h2 {
+            margin: 0;
+        }
+        .add-task-container {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .add-task-container label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .add-task-container select {
+            padding: 5px;
+            border: 1px solid #E0E0E0;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .add-button {
+            background-color: #1E88E5;
+            color: #FFFFFF;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .add-button:hover {
+            background-color: #1565C0;
+        }
+        .list-container {
+            background-color: #EDEDED;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .item {
+            background-color: #FFFFFF;
+            padding: 10px;
+            margin-bottom: 5px;
+            border: 1px solid #1E88E5;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .item.dragging {
+            opacity: 0.5;
+        }
+        .item-text {
+            flex: 1;
+        }
+        .item-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .edit-button, .delete-button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .edit-button {
+            background-color: #4CAF50;
+            color: #FFFFFF;
+        }
+        .edit-button:hover {
+            background-color: #388E3C;
+        }
+        .delete-button {
+            background-color: #FF5252;
+            color: #FFFFFF;
+        }
+        .delete-button:hover {
+            background-color: #D32F2F;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            background-color: #FFFFFF;
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 {
+            margin-top: 0;
+        }
+        .modal-content input, .modal-content textarea, .modal-content select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #E0E0E0;
+            border-radius: 5px;
+        }
+        .modal-content textarea {
+            height: 100px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        .modal-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .save-button {
+            background-color: #1E88E5;
+            color: #FFFFFF;
+        }
+        .save-button:hover {
+            background-color: #1565C0;
+        }
+        .cancel-button {
+            background-color: #B0BEC5;
+            color: #FFFFFF;
+        }
+        .cancel-button:hover {
+            background-color: #90A4AE;
+        }
+        .read-only {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+        }
+        .dynamic-field {
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            color: #888;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>JoJo's Shave Ice Management App</h1>
+        <div class="location-section">
+            <span class="logged-in-text" id="logged-in-location">Location: Loading...</span>
+            <div class="working-on">
+                <label for="location-switcher">Editing Location:</label>
+                <select id="location-switcher" onchange="switchLocation(this.value)">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <div class="tabs">
+            <button onclick="openModal('tasks-modal')">Tasks</button>
+            <button onclick="openModal('prep-list-modal')">Prep List</button>
+            <button onclick="openModal('playlists-modal')">Playlists</button>
+            <button onclick="openModal('employees-modal')">Employees</button>
+            <button onclick="openModal('locations-modal')">Locations</button>
+        </div>
+        <button class="logout-button" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Base Model Tasks Section (Default View) -->
+    <div id="base-tasks-section" class="section">
+        <div class="loading" id="loading-message">Loading tasks...</div>
+        <div class="section-header">
+            <h2>Base Model Tasks</h2>
+        </div>
+        <div class="add-task-container">
+            <label for="task-category-select">Select List:</label>
+            <select id="task-category-select">
+                <option value="Opening">Opening</option>
+                <option value="Mid">Mid</option>
+                <option value="Closing">Closing</option>
+            </select>
+            <button class="add-button" onclick="openTaskModal('base')">Add Base Task</button>
+        </div>
+        <div class="section">
+            <div class="section-header">
+                <h2>Opening Tasks</h2>
+            </div>
+            <div id="base-opening-task-list" class="list-container"></div>
+        </div>
+        <div class="section">
+            <div class="section-header">
+                <h2>Mid Tasks</h2>
+            </div>
+            <div id="base-mid-task-list" class="list-container"></div>
+        </div>
+        <div class="section">
+            <div class="section-header">
+                <h2>Closing Tasks</h2>
+            </div>
+            <div id="base-closing-task-list" class="list-container"></div>
+        </div>
+    </div>
+
+    <!-- Location-Specific Tasks Section (Hidden by Default) -->
+    <div id="location-tasks-section" class="section" style="display: none;">
+        <div class="section-header">
+            <h2>Location-Specific Tasks</h2>
+        </div>
+        <div class="add-task-container">
+            <label for="location-task-category-select">Select List:</label>
+            <select id="location-task-category-select">
+                <option value="Opening">Opening</option>
+                <option value="Mid">Mid</option>
+                <option value="Closing">Closing</option>
+            </select>
+            <button class="add-button" onclick="openTaskModal('location')">Add Location Task</button>
+        </div>
+        <div class="section">
+            <div class="section-header">
+                <h2>Base Model Tasks (Read-Only)</h2>
+            </div>
+            <div id="location-base-opening-task-list" class="list-container"></div>
+            <div id="location-base-mid-task-list" class="list-container"></div>
+            <div id="location-base-closing-task-list" class="list-container"></div>
+        </div>
+        <div class="section">
+            <div class="section-header">
+                <h2>Location-Specific Opening Tasks</h2>
+            </div>
+            <div id="location-opening-task-list" class="list-container"></div>
+        </div>
+        <div class="section">
+            <div class="section-header">
+                <h2>Location-Specific Mid Tasks</h2>
+            </div>
+            <div id="location-mid-task-list" class="list-container"></div>
+        </div>
+        <div class="section">
+            <div class="section-header">
+                <h2>Location-Specific Closing Tasks</h2>
+            </div>
+            <div id="location-closing-task-list" class="list-container"></div>
+        </div>
+    </div>
+
+    <!-- Modals for Navigation Tabs -->
+    <!-- Tasks Modal -->
+    <div id="tasks-modal" class="modal">
+        <div class="modal-content">
+            <h3>Task Lists</h3>
+            <div id="tasks-modal-section" class="section">
+                <div class="loading" id="tasks-modal-loading-message">Loading tasks...</div>
+                <div class="section increasing">
+                    <div class="section-header">
+                        <h2>Tasks</h2>
+                    </div>
+                    <div class="add-task-container">
+                        <label for="tasks-modal-task-category-select">Select List:</label>
+                        <select id="tasks-modal-task-category-select">
+                            <option value="Opening">Opening</option>
+                            <option value="Mid">Mid</option>
+                            <option value="Closing">Closing</option>
+                        </select>
+                        <button class="add-button" onclick="openTasksModalTaskModal('location')">Add Task</button>
+                    </div>
+                </div>
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Opening Tasks</h2>
+                    </div>
+                    <div id="tasks-modal-opening-task-list" class="list-container"></div>
+                </div>
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Mid Tasks</h2>
+                    </div>
+                    <div id="tasks-modal-mid-task-list" class="list-container"></div>
+                </div>
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Closing Tasks</h2>
+                    </div>
+                    <div id="tasks-modal-closing-task-list" class="list-container"></div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button cancel-button" onclick="closeModal('tasks-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal inside Tasks Modal -->
+    <div id="tasks-modal-task-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="tasks-modal-task-modal-title">Add Task</h3>
+            <input type="text" id="tasks-modal-task-name" placeholder="Task Name">
+            <select id="tasks-modal-task-type" onchange="updateTasksModalTaskModalFields()">
+                <option value="CheckDone">Check Done or Not</option>
+                <option value="ShortText">Short Text</option>
+                <option value="LongText">Long Text</option>
+                <option value="VolumeRecording">Volume Recording (Numerical)</option>
+                <option value="MultipleChoice">Multiple Choice</option>
+                <option value="DateTimePicker">Date/Time Picker</option>
+                <option value="DropdownList">Dropdown List</option>
+                <option value="YesNo">Yes/No</option>
+                <option value="RatingScale">Rating Scale</option>
+            </select>
+            <textarea id="tasks-modal-task-description" placeholder="Description"></textarea>
+            <input type="text" id="tasks-modal-task-category" placeholder="Category (e.g., Opening)" readonly>
+            <input type="text" id="tasks-modal-task-section" placeholder="Section (e.g., Setup & Prep)">
+            <div id="tasks-modal-options-field" class="dynamic-field">
+                <label for="tasks-modal-task-options">Options (comma-separated, e.g., Morning,Afternoon,Evening):</label>
+                <input type="text" id="tasks-modal-task-options" placeholder="Enter options">
+            </div>
+            <div id="tasks-modal-constraints-field" class="dynamic-field">
+                <label for="tasks-modal-task-constraints-min">Min Value (for Volume Recording, Rating Scale):</label>
+                <input type="number" id="tasks-modal-task-constraints-min" placeholder="Min">
+                <label for="tasks-modal-task-constraints-max">Max Value:</label>
+                <input type="number" id="tasks-modal-task-constraints-max" placeholder="Max">
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button save-button" onclick="saveTasksModalTask()">Save</button>
+                <button class="modal-button cancel-button" onclick="closeModal('tasks-modal-task-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prep List Modal -->
+    <div id="prep-list-modal" class="modal">
+        <div class="modal-content">
+            <h3>Prep List</h3>
+            <div id="prep-list-modal-section" class="section">
+                <div class="loading" id="prep-list-modal-loading-message">Loading prep list...</div>
+                <div class="section-header">
+                    <h2>Prep List</h2>
+                </div>
+                <div id="prep-list-content">
+                    <p>Prep list items will be added here.</p>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button cancel-button" onclick="closeModal('prep-list-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Playlists Modal -->
+    <div id="playlists-modal" class="modal">
+        <div class="modal-content">
+            <h3>Playlists</h3>
+            <div id="playlists-modal-section" class="section">
+                <div class="loading" id="playlists-modal-loading-message">Loading playlists...</div>
+                <div class="section-header">
+                    <h2>Playlists</h2>
+                </div>
+                <div id="playlists-content">
+                    <p>Playlists will be added here.</p>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button cancel-button" onclick="closeModal('playlists-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employees Modal -->
+    <div id="employees-modal" class="modal">
+        <div class="modal-content">
+            <h3>Employees</h3>
+            <p>Employees content will be added here.</p>
+            <div class="modal-buttons">
+                <button class="modal-button cancel-button" onclick="closeModal('employees-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Locations Modal -->
+    <div id="locations-modal" class="modal">
+        <div class="modal-content">
+            <h3>Locations</h3>
+            <p>Locations content will be added here.</p>
+            <div class="modal-buttons">
+                <button class="modal-button cancel-button" onclick="closeModal('locations-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal (for adding/editing tasks in the main view) -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="task-modal-title">Add Task</h3>
+            <input type="text" id="task-name" placeholder="Task Name">
+            <select id="task-type" onchange="updateTaskModalFields()">
+                <option value="CheckDone">Check Done or Not</option>
+                <option value="SubmitImage">Submit Image</option>
+                <option value="ShortText">Short Text</option>
+                <option value="LongText">Long Text</option>
+                <option value="AudioRecording">Audio Recording</option>
+                <option value="VolumeRecording">Volume Recording (Numerical)</option>
+                <option value="MultipleChoice">Multiple Choice</option>
+                <option value="DateTimePicker">Date/Time Picker</option>
+                <option value="DropdownList">Dropdown List</option>
+                <option value="FileUpload">File Upload</option>
+                <option value="YesNo">Yes/No</option>
+                <option value="Signature">Signature</option>
+                <option value="RatingScale">Rating Scale</option>
+            </select>
+            <textarea id="task-description" placeholder="Description"></textarea>
+            <input type="text" id="task-category" placeholder="Category (e.g., Opening)" readonly>
+            <input type="text" id="task-section" placeholder="Section (e.g., Setup & Prep)">
+            <div id="options-field" class="dynamic-field">
+                <label for="task-options">Options (comma-separated, e.g., Morning,Afternoon,Evening):</label>
+                <input type="text" id="task-options" placeholder="Enter options">
+            </div>
+            <div id="constraints-field" class="dynamic-field">
+                <label for="task-constraints-min">Min Value (for Volume Recording, Rating Scale):</label>
+                <input type="number" id="task-constraints-min" placeholder="Min">
+                <label for="task-constraints-max">Max Value:</label>
+                <input type="number" id="task-constraints-max" placeholder="Max">
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button save-button" onclick="saveTask()">Save</button>
+                <button class="modal-button cancel-button" onclick="closeModal('task-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js"></script>
+    <script src="fractionalIndex.js"></script>
+    <script src="offlineSync.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBpkq5DgX3elAU1aBLAYbyUZJ6gF8_pcvE",
+            authDomain: "jojo-s-management-app.firebaseapp.com",
+            projectId: "jojo-s-management-app",
+            storageBucket: "jojo-s-management-app.firebasestorage.app",
+            messagingSenderId: "1057424025658",
+            appId: "1:1057424025658:web:954b5ad6109119b4136d03"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let locationCode = localStorage.getItem('locationCode') || null;
+        let editingTaskId = null;
+        let editingTaskType = 'base'; // 'base' or 'location'
+        let baseTasksByCategory = { Opening: [], Mid: [], Closing: [] };
+        let locationTasksByCategory = { Opening: [], Mid: [], Closing: [] };
+        let currentLocationDocId = 'base-model';
+        let viewingLocationCode = locationCode || 'BASE001'; // Default to logged-in location
+        let allLocations = [];
+
+        // Variables for Tasks Modal
+        let tasksModalEditingTaskId = null;
+        let tasksModalEditingTaskType = 'location'; // 'base' or 'location'
+        let tasksModalAllTasksByCategory = { Opening: [], Mid: [], Closing: [] };
+
+        // Check if logged in
+        if (!locationCode) {
+            window.location.href = 'login.html';
+        } else {
+            initApp();
+        }
+
+        // Initialize the app with offline sync
+        async function initApp() {
+            try {
+                // Fetch locations first
+                await loadLocations();
+                // Set the logged-in location text
+                const loggedInLocation = allLocations.find(loc => loc.code === locationCode);
+                const loggedInText = loggedInLocation 
+                    ? `Location: ${loggedInLocation.name} (${loggedInLocation.code})`
+                    : `Location: Unknown (${locationCode})`;
+                document.getElementById('logged-in-location').textContent = loggedInText;
+
+                // Fetch tasks for the main view
+                const data = await OfflineSync.initOfflineSync(db, currentLocationDocId);
+                baseTasksByCategory = groupTasksByCategory(data.baseTasks);
+                locationTasksByCategory = groupTasksByCategory(data.locationTasks);
+
+                // Hide loading message and render tasks
+                document.getElementById('loading-message').style.display = 'none';
+                await loadTasks();
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('locationCode');
+            window.location.href = 'login.html';
+        }
+
+        // Group tasks by category
+        function groupTasksByCategory(tasks) {
+            const tasksByCategory = { Opening: [], Mid: [], Closing: [] };
+            tasks.forEach(task => {
+                if (tasksByCategory[task.category]) {
+                    tasksByCategory[task.category].push(task);
+                }
+            });
+            return tasksByCategory;
+        }
+
+        // Modal handling functions
+        function openModal(modalId) {
+            closeAllModals();
+            document.getElementById(modalId).style.display = 'flex';
+            if (modalId === 'tasks-modal') {
+                initTasksModal();
+            } else if (modalId === 'prep-list-modal') {
+                initPrepListModal();
+            } else if (modalId === 'playlists-modal') {
+                initPlaylistsModal();
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function closeAllModals() {
+            const modals = ['tasks-modal', 'prep-list-modal', 'playlists-modal', 'employees-modal', 'locations-modal', 'task-modal', 'tasks-modal-task-modal'];
+            modals.forEach(modalId => {
+                document.getElementById(modalId).style.display = 'none';
+            });
+        }
+
+        // Load all locations for the switcher
+        async function loadLocations() {
+            try {
+                if (navigator.onLine) {
+                    const locationsRef = db.collection('locations');
+                    const snapshot = await locationsRef.get();
+                    allLocations = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const locCode = data.code || doc.id;
+                        const name = data.name || doc.id;
+                        allLocations.push({ id: doc.id, code: locCode, name });
+                    });
+                    // Store locations in local storage for offline use
+                    localStorage.setItem('locations', JSON.stringify(allLocations));
+                } else {
+                    // Load from local storage if offline
+                    allLocations = JSON.parse(localStorage.getItem('locations') || '[]');
+                    if (!allLocations || allLocations.length === 0) {
+                        console.warn('No locations available offline. Please go online to load locations.');
+                        return;
+                    }
+                }
+
+                console.log('Locations loaded:', allLocations);
+
+                // Populate the location switcher dropdown
+                const switcher = document.getElementById('location-switcher');
+                switcher.innerHTML = '';
+                allLocations.forEach(loc => {
+                    const option = document.createElement('option');
+                    option.value = loc.code;
+                    option.textContent = `${loc.name} (${loc.code})`;
+                    if (loc.code === viewingLocationCode) {
+                        option.selected = true;
+                    }
+                    switcher.appendChild(option);
+                });
+
+                console.log('Dropdown populated with options:', switcher.innerHTML);
+            } catch (error) {
+                console.error('Error loading locations:', error);
+            }
+        }
+
+        // Switch Location
+        async function switchLocation(newLocationCode) {
+            try {
+                viewingLocationCode = newLocationCode;
+                if (newLocationCode === 'BASE001') {
+                    currentLocationDocId = 'base-model';
+                    document.getElementById('base-tasks-section').style.display = 'block';
+                    document.getElementById('location-tasks-section').style.display = 'none';
+                } else {
+                    const selectedLocation = allLocations.find(loc => loc.code === newLocationCode);
+                    if (!selectedLocation) {
+                        console.error(`Location with code ${newLocationCode} not found.`);
+                        return;
+                    }
+                    currentLocationDocId = selectedLocation.id;
+                    document.getElementById('base-tasks-section').style.display = 'none';
+                    document.getElementById('location-tasks-section').style.display = 'block';
+                }
+                console.log(`Switched to location: ${newLocationCode}, docId: ${currentLocationDocId}`);
+                await loadTasks();
+                // Refresh tasks in the Tasks modal if it's open
+                if (document.getElementById('tasks-modal').style.display === 'flex') {
+                    initTasksModal();
+                }
+            } catch (error) {
+                console.error('Error switching location:', error);
+            }
+        }
+
+        // Load Tasks (Main View)
+        async function loadTasks() {
+            try {
+                let data;
+                if (navigator.onLine) {
+                    data = await OfflineSync.initOfflineSync(db, currentLocationDocId);
+                } else {
+                    data = await OfflineSync.loadLocalData();
+                }
+
+                const { baseTasks, overrides, locationTasks } = data;
+
+                // Apply overrides to base tasks
+                const overrideMap = {};
+                overrides.forEach(override => {
+                    overrideMap[override.id] = override;
+                });
+
+                const customizedBaseTasks = baseTasks.map(task => {
+                    const override = overrideMap[task.id] || {};
+                    return {
+                        ...task,
+                        description: override.customDescription || task.defaultDescription,
+                        order: override.customOrder || task.defaultOrder,
+                        response: override.response || {}
+                    };
+                });
+
+                // Update baseTasksByCategory
+                baseTasksByCategory = groupTasksByCategory(customizedBaseTasks);
+
+                // Group location-specific tasks by category
+                locationTasksByCategory = groupTasksByCategory(locationTasks);
+
+                // Render base model tasks
+                renderTaskList('Opening', document.getElementById('base-opening-task-list'), baseTasksByCategory, true);
+                renderTaskList('Mid', document.getElementById('base-mid-task-list'), baseTasksByCategory, true);
+                renderTaskList('Closing', document.getElementById('base-closing-task-list'), baseTasksByCategory, true);
+
+                // If viewing a specific location, render its tasks
+                if (viewingLocationCode !== 'BASE001') {
+                    renderTaskList('Opening', document.getElementById('location-base-opening-task-list'), baseTasksByCategory, false, true);
+                    renderTaskList('Mid', document.getElementById('location-base-mid-task-list'), baseTasksByCategory, false, true);
+                    renderTaskList('Closing', document.getElementById('location-base-closing-task-list'), baseTasksByCategory, false, true);
+
+                    renderTaskList('Opening', document.getElementById('location-opening-task-list'), locationTasksByCategory, false);
+                    renderTaskList('Mid', document.getElementById('location-mid-task-list'), locationTasksByCategory, false);
+                    renderTaskList('Closing', document.getElementById('location-closing-task-list'), locationTasksByCategory, false);
+                }
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                document.getElementById('base-opening-task-list').innerHTML = '<p>Error loading tasks.</p>';
+                document.getElementById('base-mid-task-list').innerHTML = '<p>Error loading tasks.</p>';
+                document.getElementById('base-closing-task-list').innerHTML = '<p>Error loading tasks.</p>';
+            }
+        }
+
+        // Render Task List for a Category (Main View)
+        function renderTaskList(category, taskListElement, tasksByCategory, isBaseList, readOnly = false) {
+            taskListElement.innerHTML = '';
+            const tasks = tasksByCategory[category];
+            if (!tasks || tasks.length === 0) {
+                taskListElement.innerHTML = '<p>No tasks found for this category.</p>';
+                return;
+            }
+
+            // Sort tasks by order (fractional indexing)
+            const sortedTasks = tasks.sort((a, b) => (a.order || a.defaultOrder || '').localeCompare(b.order || b.defaultOrder || ''));
+
+            sortedTasks.forEach(task => {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = `item ${readOnly ? 'read-only' : ''}`;
+                taskDiv.id = `task-${task.id}`;
+                taskDiv.innerHTML = `
+                    <span class="item-text">${task.name} (${task.section}) [${task.type}]</span>
+                    <div class="item-actions">
+                        ${readOnly ? '' : `<button class="edit-button" onclick="editTask('${task.id}', ${isBaseList})">Edit</button>`}
+                        ${readOnly ? '' : `<button class="delete-button" onclick="deleteTask('${task.id}', ${isBaseList})">Delete</button>`}
+                    </div>
+                `;
+                taskListElement.appendChild(taskDiv);
+            });
+
+            // Enable drag-and-drop if not read-only
+            if (!readOnly) {
+                dragula([taskListElement], {
+                    moves: (el, container, handle) => !handle.classList.contains('item-actions') && !handle.classList.contains('edit-button') && !handle.classList.contains('delete-button')
+                }).on('drop', async (el, target, source, sibling) => {
+                    const taskId = el.id.replace('task-', '');
+                    const tasks = Array.from(taskListElement.children).map(item => item.id.replace('task-', ''));
+                    const taskIndex = tasks.indexOf(taskId);
+
+                    // Find the previous and next tasks' order values
+                    const prevTaskId = taskIndex > 0 ? tasks[taskIndex - 1] : null;
+                    const nextTaskId = taskIndex < tasks.length - 1 ? tasks[taskIndex + 1] : null;
+
+                    const prevTask = prevTaskId ? sortedTasks.find(task => task.id === prevTaskId) : null;
+                    const nextTask = nextTaskId ? sortedTasks.find(task => task.id === nextTaskId) : null;
+
+                    const prevOrder = prevTask ? (isBaseList ? prevTask.defaultOrder : prevTask.order) : null;
+                    const nextOrder = nextTask ? (isBaseList ? nextTask.defaultOrder : nextTask.order) : null;
+
+                    // Generate a new fractional index for the moved task
+                    const newOrder = FractionalIndex.generateMidpoint(prevOrder, nextOrder);
+
+                    // Update the moved task's order
+                    const tasksRef = isBaseList ? db.collection('baseTasks') : db.collection('locations').doc(currentLocationDocId).collection('tasks');
+                    if (navigator.onLine) {
+                        await tasksRef.doc(taskId).update({
+                            [isBaseList ? 'defaultOrder' : 'order']: newOrder
+                        });
+                    } else {
+                        // Queue the operation for offline sync
+                        await OfflineSync.queueOperation({
+                            action: 'updateTask',
+                            taskId: taskId,
+                            data: { [isBaseList ? 'defaultOrder' : 'order']: newOrder }
+                        });
+                        // Update local data
+                        const localTasks = await OfflineSync.loadLocalData();
+                        const updatedTasks = localTasks.locationTasks.map(task => {
+                            if (task.id === taskId) {
+                                return { ...task, order: newOrder };
+                            }
+                            return task;
+                        });
+                        await OfflineSync.storeData('tasks', updatedTasks);
+                    }
+
+                    // Reload tasks
+                    await loadTasks();
+                });
+            }
+        }
+
+        // Update Task Modal Fields Based on Task Type (Main View)
+        function updateTaskModalFields() {
+            const taskType = document.getElementById('task-type').value;
+            const optionsField = document.getElementById('options-field');
+            const constraintsField = document.getElementById('constraints-field');
+
+            // Reset visibility
+            optionsField.style.display = 'none';
+            constraintsField.style.display = 'none';
+
+            // Show fields based on task type
+            if (['MultipleChoice', 'DropdownList'].includes(taskType)) {
+                optionsField.style.display = 'block';
+            }
+            if (taskType === 'VolumeRecording' || taskType === 'RatingScale') {
+                constraintsField.style.display = 'block';
+            }
+        }
+
+        // Open Task Modal (Main View)
+        function openTaskModal(taskType, taskId = null) {
+            editingTaskType = taskType;
+            editingTaskId = taskId;
+            const modal = document.getElementById('task-modal');
+            const title = document.getElementById('task-modal-title');
+            const nameInput = document.getElementById('task-name');
+            const typeSelect = document.getElementById('task-type');
+            const descriptionInput = document.getElementById('task-description');
+            const categoryInput = document.getElementById('task-category');
+            const sectionInput = document.getElementById('task-section');
+            const optionsInput = document.getElementById('task-options');
+            const constraintsMinInput = document.getElementById('task-constraints-min');
+            const constraintsMaxInput = document.getElementById('task-constraints-max');
+
+            const selectedCategory = taskType === 'base' ? document.getElementById('task-category-select').value : document.getElementById('location-task-category-select').value;
+
+            if (taskId) {
+                title.textContent = 'Edit Task';
+                const tasksRef = taskType === 'base' ? db.collection('baseTasks') : db.collection('locations').doc(currentLocationDocId).collection('tasks');
+                tasksRef.doc(taskId).get().then(doc => {
+                    const task = doc.data();
+                    nameInput.value = task.name;
+                    typeSelect.value = task.type;
+                    descriptionInput.value = task.description || task.defaultDescription;
+                    categoryInput.value = task.category;
+                    sectionInput.value = task.section;
+                    optionsInput.value = task.options ? task.options.join(',') : '';
+                    if (task.constraints) {
+                        constraintsMinInput.value = task.constraints.min || '';
+                        constraintsMaxInput.value = task.constraints.max || '';
+                    } else {
+                        constraintsMinInput.value = '';
+                        constraintsMaxInput.value = '';
+                    }
+                    updateTaskModalFields();
+                });
+            } else {
+                title.textContent = 'Add Task';
+                editingTaskId = null;
+                nameInput.value = '';
+                typeSelect.value = 'CheckDone';
+                descriptionInput.value = '';
+                categoryInput.value = selectedCategory;
+                sectionInput.value = '';
+                optionsInput.value = '';
+                constraintsMinInput.value = '';
+                constraintsMaxInput.value = '';
+                updateTaskModalFields();
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        // Save Task (Main View)
+        async function saveTask() {
+            const name = document.getElementById('task-name').value.trim();
+            const type = document.getElementById('task-type').value;
+            const description = document.getElementById('task-description').value.trim();
+            const category = document.getElementById('task-category').value.trim();
+            const section = document.getElementById('task-section').value.trim();
+            const optionsInput = document.getElementById('task-options').value.trim();
+            const constraintsMin = document.getElementById('task-constraints-min').value.trim();
+            const constraintsMax = document.getElementById('task-constraints-max').value.trim();
+
+            if (!name || !type || !category || !section) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            const taskData = {
+                name,
+                type,
+                category,
+                section,
+                [editingTaskType === 'base' ? 'defaultDescription' : 'description']: description,
+                [editingTaskType === 'base' ? 'defaultOrder' : 'order']: 'a',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                response: {}
+            };
+
+            // Add options if applicable
+            if (['MultipleChoice', 'DropdownList'].includes(type) && optionsInput) {
+                taskData.options = optionsInput.split(',').map(item => item.trim());
+            }
+
+            // Add constraints if applicable
+            if (type === 'VolumeRecording' || type === 'RatingScale') {
+                taskData.constraints = {};
+                if (constraintsMin) taskData.constraints.min = parseFloat(constraintsMin);
+                if (constraintsMax) taskData.constraints.max = parseFloat(constraintsMax);
+            }
+
+            const tasksRef = editingTaskType === 'base' ? db.collection('baseTasks') : db.collection('locations').doc(currentLocationDocId).collection('tasks');
+            try {
+                if (navigator.onLine) {
+                    if (editingTaskId) {
+                        await tasksRef.doc(editingTaskId).update(taskData);
+                    } else {
+                        await tasksRef.add(taskData);
+                    }
+                } else {
+                    if (editingTaskId) {
+                        await OfflineSync.queueOperation({
+                            action: 'updateTask',
+                            taskId: editingTaskId,
+                            data: taskData
+                        });
+                        // Update local data
+                        const localTasks = await OfflineSync.loadLocalData();
+                        const updatedTasks = localTasks.locationTasks.map(task => {
+                            if (task.id === editingTaskId) {
+                                return { ...task, ...taskData };
+                            }
+                            return task;
+                        });
+                        await OfflineSync.storeData('tasks', updatedTasks);
+                    } else {
+                        const newTaskId = Date.now().toString();
+                        taskData.id = newTaskId;
+                        await OfflineSync.queueOperation({
+                            action: 'createTask',
+                            task: taskData
+                        });
+                        // Add to local data
+                        const localTasks = await OfflineSync.loadLocalData();
+                        localTasks.locationTasks.push(taskData);
+                        await OfflineSync.storeData('tasks', localTasks.locationTasks);
+                    }
+                }
+
+                closeModal('task-modal');
+                await loadTasks();
+            } catch (error) {
+                console.error('Error saving task:', error);
+                alert('Error saving task. Please try again.');
+            }
+        }
+
+        // Edit Task (Main View)
+        function editTask(taskId, isBaseList) {
+            openTaskModal(isBaseList ? 'base' : 'location', taskId);
+        }
+
+        // Delete Task (Main View)
+        async function deleteTask(taskId, isBaseList) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                const tasksRef = isBaseList ? db.collection('baseTasks') : db.collection('locations').doc(currentLocationDocId).collection('tasks');
+                try {
+                    if (navigator.onLine) {
+                        await tasksRef.doc(taskId).delete();
+                    } else {
+                        await OfflineSync.queueOperation({
+                            action: 'deleteTask',
+                            taskId: taskId
+                        });
+                        // Remove from local data
+                        const localTasks = await OfflineSync.loadLocalData();
+                        const updatedTasks = localTasks.locationTasks.filter(task => task.id !== taskId);
+                        await OfflineSync.storeData('tasks', updatedTasks);
+                    }
+                    await loadTasks();
+                } catch (error) {
+                    console.error('Error deleting task:', error);
+                    alert('Error deleting task. Please try again.');
+                }
+            }
+        }
+
+        // Tasks Modal Logic
+        async function initTasksModal() {
+            try {
+                document.getElementById('tasks-modal-loading-message').style.display = 'block';
+                await loadTasksModalTasks();
+            } catch (error) {
+                console.error('Error initializing tasks modal:', error);
+                document.getElementById('tasks-modal-loading-message').textContent = 'Error loading tasks. Please try again.';
+            }
+        }
+
+        async function loadTasksModalTasks() {
+            console.log('Loading tasks for Tasks modal...');
+            if (!currentLocationDocId) {
+                document.getElementById('tasks-modal-opening-task-list').innerHTML = '<p>Please set a location code.</p>';
+                document.getElementById('tasks-modal-mid-task-list').innerHTML = '<p>Please set a location code.</p>';
+                document.getElementById('tasks-modal-closing-task-list').innerHTML = '<p>Please set a location code.</p>';
+                return;
+            }
+
+            try {
+                let data;
+                if (navigator.onLine) {
+                    console.log('Fetching data online for Tasks modal...');
+                    data = await OfflineSync.initOfflineSync(db, currentLocationDocId);
+                } else {
+                    console.log('Fetching data offline for Tasks modal...');
+                    data = await OfflineSync.loadLocalData();
+                }
+
+                tasksModalAllTasksByCategory = groupTasksModalTasksByCategory(data.baseTasks, data.overrides, data.locationTasks);
+                document.getElementById('tasks-modal-loading-message').style.display = 'none';
+                renderTasksModalTasks();
+            } catch (error) {
+                console.error('Error loading tasks for Tasks modal:', error);
+                document.getElementById('tasks-modal-loading-message').textContent = 'Error loading tasks. Please try again.';
+            }
+        }
+
+        function groupTasksModalTasksByCategory(baseTasks, overrides, locationTasks) {
+            console.log('Grouping tasks for Tasks modal...');
+            console.log('Base tasks:', baseTasks.length);
+            console.log('Overrides:', overrides.length);
+            console.log('Location tasks:', locationTasks.length);
+
+            const overrideMap = {};
+            overrides.forEach(override => {
+                overrideMap[override.id] = override;
+            });
+
+            const customizedBaseTasks = baseTasks.map(task => {
+                const override = overrideMap[task.id] || {};
+                return {
+                    ...task,
+                    description: override.customDescription || task.defaultDescription,
+                    order: override.customOrder || task.defaultOrder,
+                    response: override.response || {}
+                };
+            });
+
+            const allTasks = [...customizedBaseTasks, ...locationTasks];
+            const tasksByCategory = { Opening: [], Mid: [], Closing: [] };
+            allTasks.forEach(task => {
+                if (tasksByCategory[task.category]) {
+                    tasksByCategory[task.category].push(task);
+                }
+            });
+
+            console.log('Tasks grouped by category for Tasks modal:', tasksByCategory);
+            return tasksByCategory;
+        }
+
+        function renderTasksModalTasks() {
+            console.log('Rendering tasks for Tasks modal...');
+            renderTasksModalTaskList('Opening', document.getElementById('tasks-modal-opening-task-list'));
+            renderTasksModalTaskList('Mid', document.getElementById('tasks-modal-mid-task-list'));
+            renderTasksModalTaskList('Closing', document.getElementById('tasks-modal-closing-task-list'));
+            console.log('Tasks rendered for Tasks modal.');
+        }
+
+        function renderTasksModalTaskList(category, taskListElement) {
+            console.log(`Rendering ${category} tasks for Tasks modal...`);
+            taskListElement.innerHTML = '';
+            const tasks = tasksModalAllTasksByCategory[category];
+            if (!tasks || tasks.length === 0) {
+                taskListElement.innerHTML = '<p>No tasks found for this category.</p>';
+                return;
+            }
+
+            // Sort tasks by order (fractional indexing)
+            const sortedTasks = tasks.sort((a, b) => (a.order || a.defaultOrder || '').localeCompare(b.order || b.defaultOrder || ''));
+            console.log(`Sorted ${category} tasks for Tasks modal:`, sortedTasks);
+
+            sortedTasks.forEach(task => {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = `item ${task.isBase ? 'read-only' : ''}`;
+                taskDiv.id = `tasks-modal-task-${task.id}`;
+                taskDiv.innerHTML = `
+                    <span class="item-text">${task.name} (${task.section}) [${task.type}]</span>
+                    <div class="item-actions">
+                        ${task.isBase ? '' : `<button class="edit-button" onclick="editTasksModalTask('${task.id}', ${task.isBase})">Edit</button>`}
+                        ${task.isBase ? '' : `<button class="delete-button" onclick="deleteTasksModalTask('${task.id}')">Delete</button>`}
+                    </div>
+                `;
+                taskListElement.appendChild(taskDiv);
+            });
+
+            // Enable drag-and-drop for non-base tasks
+            dragula([taskListElement], {
+                moves: (el, container, handle) => !el.classList.contains('read-only') && !handle.classList.contains('item-actions') && !handle.classList.contains('edit-button') && !handle.classList.contains('delete-button')
+            }).on('drop', async (el, target, source, sibling) => {
+                const taskId = el.id.replace('tasks-modal-task-', '');
+                const tasks = Array.from(taskListElement.children).map(item => item.id.replace('tasks-modal-task-', ''));
+                const taskIndex = tasks.indexOf(taskId);
+
+                // Find the previous and next tasks' order values
+                const prevTaskId = taskIndex > 0 ? tasks[taskIndex - 1] : null;
+                const nextTaskId = taskIndex < tasks.length - 1 ? tasks[taskIndex + 1] : null;
+
+                const prevTask = prevTaskId ? sortedTasks.find(task => task.id === prevTaskId) : null;
+                const nextTask = nextTaskId ? sortedTasks.find(task => task.id === nextTaskId) : null;
+
+                const prevOrder = prevTask ? (prevTask.isBase ? prevTask.order || prevTask.defaultOrder : prevTask.order) : null;
+                const nextOrder = nextTask ? (nextTask.isBase ? nextTask.order || nextTask.defaultOrder : nextTask.order) : null;
+
+                // Generate a new fractional index for the moved task
+                const newOrder = FractionalIndex.generateMidpoint(prevOrder, nextOrder);
+
+                // Update the moved task's order
+                const tasksRef = db.collection('locations').doc(currentLocationDocId).collection('tasks');
+                if (navigator.onLine) {
+                    await tasksRef.doc(taskId).update({
+                        order: newOrder
+                    });
+                } else {
+                    // Queue the operation for offline sync
+                    await OfflineSync.queueOperation({
+                        action: 'updateTask',
+                        taskId: taskId,
+                        data: { order: newOrder }
+                    });
+                    // Update local data
+                    const localTasks = await OfflineSync.loadLocalData();
+                    const updatedTasks = localTasks.locationTasks.map(task => {
+                        if (task.id === taskId) {
+                            return { ...task, order: newOrder };
+                        }
+                        return task;
+                    });
+                    await OfflineSync.storeData('tasks', updatedTasks);
+                }
+
+                // Reload tasks in the modal
+                await loadTasksModalTasks();
+            });
+        }
+
+        // Update Task Modal Fields Based on Task Type (Tasks Modal)
+        function updateTasksModalTaskModalFields() {
+            const taskType = document.getElementById('tasks-modal-task-type').value;
+            const optionsField = document.getElementById('tasks-modal-options-field');
+            const constraintsField = document.getElementById('tasks-modal-constraints-field');
+
+            // Reset visibility
+            optionsField.style.display = 'none';
+            constraintsField.style.display = 'none';
+
+            // Show fields based on task type
+            if (['MultipleChoice', 'DropdownList'].includes(taskType)) {
+                optionsField.style.display = 'block';
+            }
+            if (taskType === 'VolumeRecording' || taskType === 'RatingScale') {
+                constraintsField.style.display = 'block';
+            }
+        }
+
+        // Open Task Modal (Tasks Modal)
+        function openTasksModalTaskModal(taskType, taskId = null) {
+            tasksModalEditingTaskType = taskType;
+            tasksModalEditingTaskId = taskId;
+            const modal = document.getElementById('tasks-modal-task-modal');
+            const title = document.getElementById('tasks-modal-task-modal-title');
+            const nameInput = document.getElementById('tasks-modal-task-name');
+            const typeSelect = document.getElementById('tasks-modal-task-type');
+            const descriptionInput = document.getElementById('tasks-modal-task-description');
+            const categoryInput = document.getElementById('tasks-modal-task-category');
+            const sectionInput = document.getElementById('tasks-modal-task-section');
+            const optionsInput = document.getElementById('tasks-modal-task-options');
+            const constraintsMinInput = document.getElementById('tasks-modal-task-constraints-min');
+            const constraintsMaxInput = document.getElementById('tasks-modal-task-constraints-max');
+
+            const selectedCategory = document.getElementById('tasks-modal-task-category-select').value;
+
+            if (taskId) {
+                title.textContent = 'Edit Task';
+                const tasksRef = db.collection('locations').doc(currentLocationDocId).collection('tasks');
+                tasksRef.doc(taskId).get().then(doc => {
+                    const task = doc.data();
+                    nameInput.value = task.name;
+                    typeSelect.value = task.type;
+                    descriptionInput.value = task.description;
+                    categoryInput.value = task.category;
+                    sectionInput.value = task.section;
+                    optionsInput.value = task.options ? task.options.join(',') : '';
+                    if (task.constraints) {
+                        constraintsMinInput.value = task.constraints.min || '';
+                        constraintsMaxInput.value = task.constraints.max || '';
+                    } else {
+                        constraintsMinInput.value = '';
+                        constraintsMaxInput.value = '';
+                    }
+                    updateTasksModalTaskModalFields();
+                });
+            } else {
+                title.textContent = 'Add Task';
+                tasksModalEditingTaskId = null;
+                nameInput.value = '';
+                typeSelect.value = 'CheckDone';
+                descriptionInput.value = '';
+                categoryInput.value = selectedCategory;
+                sectionInput.value = '';
+                optionsInput.value = '';
+                constraintsMinInput.value = '';
+                constraintsMaxInput.value = '';
+                updateTasksModalTaskModalFields();
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        // Save Task (Tasks Modal)
+        async function saveTasksModalTask() {
+            const name = document.getElementById('tasks-modal-task-name').value.trim();
+            const type = document.getElementById('tasks-modal-task-type').value;
+            const description = document.getElementById('tasks-modal-task-description').value.trim();
+            const category = document.getElementById('tasks-modal-task-category').value.trim();
+            const section = document.getElementById('tasks-modal-task-section').value.trim();
+            const optionsInput = document.getElementById('tasks-modal-task-options').value.trim();
+            const constraintsMin = document.getElementById('tasks-modal-task-constraints-min').value.trim();
+            const constraintsMax = document.getElementById('tasks-modal-task-constraints-max').value.trim();
+
+            if (!name || !type || !category || !section) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            const taskData = {
+                name,
+                type,
+                description,
+                category,
+                section,
+                order: 'a', // Initial order, will be adjusted on first load
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                response: {},
+                locationId: currentLocationDocId
+            };
+
+            // Add options if applicable
+            if (['MultipleChoice', 'DropdownList'].includes(type) && optionsInput) {
+                taskData.options = optionsInput.split(',').map(item => item.trim());
+            }
+
+            // Add constraints if applicable
+            if (type === 'VolumeRecording' || type === 'RatingScale') {
+                taskData.constraints = {};
+                if (constraintsMin) taskData.constraints.min = parseFloat(constraintsMin);
+                if (constraintsMax) taskData.constraints.max = parseFloat(constraintsMax);
+            }
+
+            const tasksRef = db.collection('locations').doc(currentLocationDocId).collection('tasks');
+            try {
+                if (navigator.onLine) {
+                    if (tasksModalEditingTaskId) {
+                        await tasksRef.doc(tasksModalEditingTaskId).update(taskData);
+                    } else {
+                        await tasksRef.add(taskData);
+                    }
+                } else {
+                    if (tasksModalEditingTaskId) {
+                        await OfflineSync.queueOperation({
+                            action: 'updateTask',
+                            taskId: tasksModalEditingTaskId,
+                            data: taskData
+                        });
+                        // Update local data
+                        const localTasks = await OfflineSync.loadLocalData();
+                        const updatedTasks = localTasks.locationTasks.map(task => {
+                            if (task.id === tasksModalEditingTaskId) {
+                                return { ...task, ...taskData };
+                            }
+                            return task;
+                        });
+                        await OfflineSync.storeData('tasks', updatedTasks);
+                    } else {
+                        const newTaskId = Date.now().toString();
+                        taskData.id = newTaskId;
+                        await OfflineSync.queueOperation({
+                            action: 'createTask',
+                            task: taskData
+                        });
+                        // Add to local data
+                        const localTasks = await OfflineSync.loadLocalData();
+                        localTasks.locationTasks.push(taskData);
+                        await OfflineSync.storeData('tasks', localTasks.locationTasks);
+                    }
+                }
+
+                closeModal('tasks-modal-task-modal');
+                await loadTasksModalTasks();
+            } catch (error) {
+                console.error('Error saving task:', error);
+                alert('Error saving task. Please try again.');
+            }
+        }
+
+        // Edit Task (Tasks Modal)
+        function editTasksModalTask(taskId, isBase) {
+            if (isBase) {
+                alert('Base tasks cannot be edited here. Use the Base Model section.');
+                return;
+            }
+            openTasksModalTaskModal('location', taskId);
+        }
+
+        // Delete Task (Tasks Modal)
+        async function deleteTasksModalTask(taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                const tasksRef = db.collection('locations').doc(currentLocationDocId).collection('tasks');
+                try {
+                    if (navigator.onLine) {
+                        await tasksRef.doc(taskId).delete();
+                    } else {
+                        await OfflineSync.queueOperation({
+                            action: 'deleteTask',
+                            taskId: taskId
+                        });
+                        // Remove from local data
+                        const localTasks = await OfflineSync.loadLocalData();
+                        const updatedTasks = localTasks.locationTasks.filter(task => task.id !== taskId);
+                        await OfflineSync.storeData('tasks', updatedTasks);
+                    }
+                    await loadTasksModalTasks();
+                } catch (error) {
+                    console.error('Error deleting task:', error);
+                    alert('Error deleting task. Please try again.');
+                }
+            }
+        }
+
+        // Prep List Modal Logic
+        function initPrepListModal() {
+            // For now, just hide the loading message since there's only placeholder content
+            document.getElementById('prep-list-modal-loading-message').style.display = 'none';
+            // Placeholder for future functionality to load prep list items
+            console.log('Prep List modal initialized.');
+        }
+
+        // Playlists Modal Logic
+        function initPlaylistsModal() {
+            // For now, just hide the loading message since there's only placeholder content
+            document.getElementById('playlists-modal-loading-message').style.display = 'none';
+            // Placeholder for future functionality to load playlists
+            console.log('Playlists modal initialized.');
+        }
+    </script>
+</body>
+</html>

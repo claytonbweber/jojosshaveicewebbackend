@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background-color: #FFFFFF;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #EF6C00;
+        }
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .login-form label {
+            font-weight: bold;
+            color: #424242;
+        }
+        .login-form input {
+            padding: 8px;
+            border: 1px solid #E0E0E0;
+            border-radius: 5px;
+        }
+        .login-form button {
+            background-color: #1E88E5;
+            color: #FFFFFF;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .login-form button:hover {
+            background-color: #1565C0;
+        }
+        .error-message {
+            color: #FF5252;
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>JoJo's Shave Ice - Login</h1>
+        <div class="login-form">
+            <label for="admin-code">Admin Code:</label>
+            <input type="password" id="admin-code" placeholder="Enter Admin Code">
+            <label for="location-code">Location Code:</label>
+            <input type="text" id="location-code" placeholder="Enter Location Code (e.g., LOC001)">
+            <button onclick="login()">Login</button>
+        </div>
+        <p id="error-message" class="error-message">Invalid admin code or location code.</p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBpkq5DgX3elAU1aBLAYbyUZJ6gF8_pcvE",
+            authDomain: "jojo-s-management-app.firebaseapp.com",
+            projectId: "jojo-s-management-app",
+            storageBucket: "jojo-s-management-app.firebasestorage.app",
+            messagingSenderId: "1057424025658",
+            appId: "1:1057424025658:web:954b5ad6109119b4136d03"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function login() {
+            const adminCode = document.getElementById('admin-code').value;
+            const inputLocationCode = document.getElementById('location-code').value.trim();
+            const errorMessage = document.getElementById('error-message');
+
+            console.log("Login attempt with adminCode:", adminCode, "and locationCode:", inputLocationCode);
+
+            // Hardcoded admin code for now
+            const validAdminCode = 'admin123';
+
+            if (adminCode !== validAdminCode || !inputLocationCode) {
+                console.log("Admin code or location code invalid. AdminCode:", adminCode, "Expected:", validAdminCode);
+                errorMessage.textContent = 'Invalid admin code or location code.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                console.log("Querying Firestore for code:", inputLocationCode);
+                // Check if the input matches a code in Firestore
+                const locationsRef = db.collection('locations');
+                const querySnapshot = await locationsRef.where('code', '==', inputLocationCode).get();
+                if (querySnapshot.empty) {
+                    console.log("No matching location found for code:", inputLocationCode);
+                    errorMessage.textContent = 'Location code does not exist.';
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+
+                console.log("Location found for code:", inputLocationCode, "Setting locationCode in localStorage and redirecting...");
+                // Store locationCode in localStorage
+                localStorage.setItem('locationCode', inputLocationCode);
+                // Redirect to base-portal.html if BASE001, otherwise tasks.html
+                if (inputLocationCode === 'BASE001') {
+                    window.location.href = 'base-portal.html';
+                } else {
+                    window.location.href = 'tasks.html';
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                errorMessage.textContent = 'Error verifying location code. Please try again.';
+                errorMessage.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
