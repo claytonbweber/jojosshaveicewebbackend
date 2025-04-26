@@ -4,7 +4,7 @@ Web-based management portal for JoJo's Shave Ice locations.
 
 ## Deployment Status
 
-[![Deploy to Firebase Hosting on merge](https://github.com/YOUR_USERNAME/jojosshaveicewebbackend/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/YOUR_USERNAME/jojosshaveicewebbackend/actions/workflows/firebase-hosting-merge.yml)
+[![Deploy to Firebase Hosting on merge](https://github.com/claytonbweber/jojosshaveicewebbackend/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/claytonbweber/jojosshaveicewebbackend/actions/workflows/firebase-hosting-merge.yml)
 
 ## Features
 
@@ -15,7 +15,10 @@ Web-based management portal for JoJo's Shave Ice locations.
 
 ## Development
 
-1. Clone the repository
+1. Clone the repository:
+```bash
+git clone https://github.com/claytonbweber/jojosshaveicewebbackend.git
+```
 2. Install dependencies: `npm install`
 3. Run locally: `firebase serve`
 
