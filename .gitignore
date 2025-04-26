@@ -3,6 +3,7 @@
 firebase-debug.log
 .firebaserc
 ui-debug.log
+src/config/firebase.config.js
 
 # Dependencies
 node_modules/
