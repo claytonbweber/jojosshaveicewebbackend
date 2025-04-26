@@ -140,9 +140,59 @@
             40% { content: ".."; }
             60%, 100% { content: "..."; }
         }
+        .version-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+            animation: fadeInOut 3s ease-in-out;
+            z-index: 1000;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .nav-dropdown {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        .nav-dropdown select {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #E0E0E0;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+        }
+        .nav-dropdown select:focus {
+            outline: none;
+            border-color: #EF6C00;
+        }
     </style>
 </head>
 <body>
+    <div class="version-alert" id="versionAlert">
+        Version updated: v1.0.0 (2024-03-20)
+    </div>
+
+    <div class="nav-dropdown">
+        <select id="pageNavigator" onchange="navigateToPage(this.value)">
+            <option value="">Select Page</option>
+            <option value="init-data.html">Initialize Data</option>
+            <option value="base-portal.html">Base Portal</option>
+            <option value="location-portal.html">Location Portal</option>
+            <option value="staff-portal.html">Staff Portal</option>
+        </select>
+    </div>
+
     <div class="login-container">
         <div class="header">
             <h1>JoJo's Shave Ice</h1>
@@ -223,6 +273,40 @@
             document.getElementById('successMessage').style.display = 'none';
             document.getElementById('loadingMessage').style.display = 'none';
         }
+
+        // Version alert functionality
+        const VERSION = '1.0.0';
+        const BUILD_DATE = '2024-03-20';
+
+        function showVersionAlert() {
+            const storedVersion = localStorage.getItem('appVersion');
+            if (storedVersion !== VERSION) {
+                const alert = document.getElementById('versionAlert');
+                alert.textContent = `Version updated: v${VERSION} (${BUILD_DATE})`;
+                alert.style.display = 'block';
+                localStorage.setItem('appVersion', VERSION);
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Navigation functionality
+        function navigateToPage(page) {
+            if (page) {
+                // Check if user is logged in
+                const userData = sessionStorage.getItem('userData');
+                if (userData) {
+                    window.location.href = page;
+                } else {
+                    showError('Please log in first to access other pages');
+                    document.getElementById('pageNavigator').value = '';
+                }
+            }
+        }
+
+        // Call version check on page load
+        window.addEventListener('load', showVersionAlert);
     </script>
 
     <script type="module">
