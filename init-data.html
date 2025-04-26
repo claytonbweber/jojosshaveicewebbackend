@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Initialize Data</title>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDvqG1YZgXZVHEVqwTR-4XewZg3l7Wg_vc",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.appspot.com",
+            messagingSenderId: "1098974997843",
+            appId: "1:1098974997843:web:a0a2c9e7c9f4d9c7c7d9d9",
+            measurementId: "G-VXVQE1TLFK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        async function clearCollection(collectionName) {
+            const querySnapshot = await getDocs(collection(db, collectionName));
+            const deletePromises = [];
+            querySnapshot.forEach((doc) => {
+                deletePromises.push(deleteDoc(doc.ref));
+            });
+            await Promise.all(deletePromises);
+            console.log(`Cleared ${collectionName} collection`);
+        }
+
+        async function createAuthUser(email, password) {
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                console.log(`Created auth user for ${email}`);
+            } catch (error) {
+                if (error.code !== 'auth/email-already-in-use') {
+                    throw error;
+                }
+                console.log(`Auth user ${email} already exists`);
+            }
+        }
+
+        async function initializeData() {
+            try {
+                document.getElementById('status').textContent = 'Clearing existing data...';
+                await clearCollection('employees');
+                await clearCollection('locations');
+                
+                document.getElementById('status').textContent = 'Creating employees...';
+                
+                // Create employees
+                const employees = [
+                    {
+                        email: 'admin@jojos.com',
+                        password: 'admin1234',
+                        role: 'Admin',
+                        passcode: '1234',
+                        name: 'John Admin',
+                        assignedLocations: ['Waimea', 'CMP', 'Hanalei'],
+                        primaryLocation: 'Waimea',
+                        permissions: ['all']
+                    },
+                    {
+                        email: 'waimea.manager@jojos.com',
+                        password: 'manager1234',
+                        role: 'Manager',
+                        passcode: '5678',
+                        name: 'Sarah Manager',
+                        assignedLocations: ['Waimea'],
+                        primaryLocation: 'Waimea',
+                        permissions: ['manage_location']
+                    },
+                    {
+                        email: 'hanalei.staff@jojos.com',
+                        password: 'staff1234',
+                        role: 'Staff',
+                        passcode: '9012',
+                        name: 'Mike Staff',
+                        assignedLocations: ['Hanalei'],
+                        primaryLocation: 'Hanalei',
+                        permissions: ['basic']
+                    }
+                ];
+
+                for (const employee of employees) {
+                    await createAuthUser(employee.email, employee.password);
+                    const { password, ...employeeData } = employee;
+                    await setDoc(doc(db, 'employees', employee.email), employeeData);
+                }
+
+                document.getElementById('status').textContent = 'Creating locations...';
+                
+                // Create locations
+                const locations = [
+                    {
+                        name: 'Waimea',
+                        address: '9400 Kaumualii Hwy, Waimea, HI 96796',
+                        phone: '808-338-1751',
+                        operatingHours: {
+                            monday: { open: '10:00', close: '18:00' },
+                            tuesday: { open: '10:00', close: '18:00' },
+                            wednesday: { open: '10:00', close: '18:00' },
+                            thursday: { open: '10:00', close: '18:00' },
+                            friday: { open: '10:00', close: '18:00' },
+                            saturday: { open: '10:00', close: '18:00' },
+                            sunday: { open: '10:00', close: '18:00' }
+                        },
+                        status: 'active',
+                        manager: 'waimea.manager@jojos.com',
+                        staff: ['waimea.manager@jojos.com'],
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        name: 'CMP',
+                        address: '4-484 Kuhio Hwy, Kapaa, HI 96746',
+                        phone: '808-822-7465',
+                        operatingHours: {
+                            monday: { open: '10:00', close: '18:00' },
+                            tuesday: { open: '10:00', close: '18:00' },
+                            wednesday: { open: '10:00', close: '18:00' },
+                            thursday: { open: '10:00', close: '18:00' },
+                            friday: { open: '10:00', close: '18:00' },
+                            saturday: { open: '10:00', close: '18:00' },
+                            sunday: { open: '10:00', close: '18:00' }
+                        },
+                        status: 'active',
+                        manager: 'admin@jojos.com',
+                        staff: ['admin@jojos.com'],
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        name: 'Hanalei',
+                        address: '5-5190 Kuhio Hwy, Hanalei, HI 96714',
+                        phone: '808-826-7010',
+                        operatingHours: {
+                            monday: { open: '10:00', close: '18:00' },
+                            tuesday: { open: '10:00', close: '18:00' },
+                            wednesday: { open: '10:00', close: '18:00' },
+                            thursday: { open: '10:00', close: '18:00' },
+                            friday: { open: '10:00', close: '18:00' },
+                            saturday: { open: '10:00', close: '18:00' },
+                            sunday: { open: '10:00', close: '18:00' }
+                        },
+                        status: 'active',
+                        manager: 'admin@jojos.com',
+                        staff: ['hanalei.staff@jojos.com', 'admin@jojos.com'],
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                ];
+
+                for (const location of locations) {
+                    await setDoc(doc(db, 'locations', location.name), location);
+                }
+
+                document.getElementById('status').textContent = 'Data initialized successfully!';
+                console.log('All data initialized successfully');
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        window.onload = initializeData;
+    </script>
+</head>
+<body>
+    <h1>Initializing Firestore Data</h1>
+    <p id="status">Loading...</p>
+    <div id="details"></div>
+</body>
+</html> 

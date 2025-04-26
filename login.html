@@ -4,133 +4,356 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JoJo's Shave Ice - Login</title>
+    <!-- Add Firebase SDK -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background-color: #f4f4f4;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
         }
         .login-container {
             background-color: #FFFFFF;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .header {
             text-align: center;
+            margin-bottom: 30px;
         }
-        h1 {
+        .header h1 {
             color: #EF6C00;
+            margin: 0;
+            font-size: 28px;
         }
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .login-form label {
-            font-weight: bold;
+        .header p {
             color: #424242;
+            margin: 10px 0 0;
         }
-        .login-form input {
-            padding: 8px;
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #424242;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
             border: 1px solid #E0E0E0;
             border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
         }
-        .login-form button {
-            background-color: #1E88E5;
-            color: #FFFFFF;
-            padding: 10px;
+        .form-group input:focus {
+            outline: none;
+            border-color: #EF6C00;
+        }
+        .button {
+            width: 100%;
+            padding: 12px;
             border: none;
             border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
-        .login-form button:hover {
-            background-color: #1565C0;
+        .button-primary {
+            background-color: #EF6C00;
+            color: #FFFFFF;
+        }
+        .button-primary:hover {
+            background-color: #E65100;
         }
         .error-message {
-            color: #FF5252;
+            color: #D32F2F;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #FFEBEE;
+            text-align: center;
             display: none;
-            margin-top: 10px;
+        }
+        .success-message {
+            color: #2E7D32;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #E8F5E9;
+            text-align: center;
+            display: none;
+        }
+        .login-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        .login-tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            cursor: pointer;
+            color: #424242;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .login-tab:hover {
+            color: #EF6C00;
+            background-color: #FFF3E0;
+        }
+        .login-tab.active {
+            color: #EF6C00;
+            border-bottom: 2px solid #EF6C00;
+            font-weight: bold;
+        }
+        .login-form {
+            display: none;
+        }
+        .login-form.active {
+            display: block;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .loading::after {
+            content: "...";
+            animation: dots 1s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60%, 100% { content: "..."; }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h1>JoJo's Shave Ice - Login</h1>
-        <div class="login-form">
-            <label for="admin-code">Admin Code:</label>
-            <input type="password" id="admin-code" placeholder="Enter Admin Code">
-            <label for="location-code">Location Code:</label>
-            <input type="text" id="location-code" placeholder="Enter Location Code (e.g., LOC001)">
-            <button onclick="login()">Login</button>
+        <div class="header">
+            <h1>JoJo's Shave Ice</h1>
+            <p>Management Portal</p>
         </div>
-        <p id="error-message" class="error-message">Invalid admin code or location code.</p>
+        
+        <div class="login-tabs">
+            <div class="login-tab active" onclick="switchTab('email')">Email Login</div>
+            <div class="login-tab" onclick="switchTab('passcode')">Passcode Login</div>
+        </div>
+
+        <div class="success-message" id="successMessage"></div>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="loading" id="loadingMessage">Logging in</div>
+
+        <form id="emailLoginForm" class="login-form active">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="button button-primary">Login</button>
+        </form>
+
+        <form id="passcodeLoginForm" class="login-form">
+            <div class="form-group">
+                <label for="passcode">Passcode</label>
+                <input type="text" id="passcode" name="passcode" required>
+            </div>
+            <button type="submit" class="button button-primary">Login</button>
+        </form>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
     <script>
+        // Tab switching functionality
+        function switchTab(tabType) {
+            console.log('Switching to tab:', tabType);
+            // Update active tab
+            document.querySelectorAll('.login-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`.login-tab[onclick*="${tabType}"]`).classList.add('active');
+
+            // Show corresponding form
+            document.querySelectorAll('.login-form').forEach(form => form.classList.remove('active'));
+            document.getElementById(`${tabType}LoginForm`).classList.add('active');
+
+            // Clear messages
+            hideMessages();
+        }
+
+        // Message handling
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('loadingMessage').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successElement = document.getElementById('successMessage');
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('loadingMessage').style.display = 'none';
+        }
+
+        function showLoading() {
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('loadingMessage').style.display = 'none';
+        }
+    </script>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
         // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyBpkq5DgX3elAU1aBLAYbyUZJ6gF8_pcvE",
-            authDomain: "jojo-s-management-app.firebaseapp.com",
-            projectId: "jojo-s-management-app",
-            storageBucket: "jojo-s-management-app.firebasestorage.app",
-            messagingSenderId: "1057424025658",
-            appId: "1:1057424025658:web:954b5ad6109119b4136d03"
+            apiKey: "AIzaSyDvqG1YZgXZVHEVqwTR-4XewZg3l7Wg_vc",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.appspot.com",
+            messagingSenderId: "1098974997843",
+            appId: "1:1098974997843:web:a0a2c9e7c9f4d9c7c7d9d9",
+            measurementId: "G-VXVQE1TLFK"
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        async function login() {
-            const adminCode = document.getElementById('admin-code').value;
-            const inputLocationCode = document.getElementById('location-code').value.trim();
-            const errorMessage = document.getElementById('error-message');
-
-            console.log("Login attempt with adminCode:", adminCode, "and locationCode:", inputLocationCode);
-
-            // Hardcoded admin code for now
-            const validAdminCode = 'admin123';
-
-            if (adminCode !== validAdminCode || !inputLocationCode) {
-                console.log("Admin code or location code invalid. AdminCode:", adminCode, "Expected:", validAdminCode);
-                errorMessage.textContent = 'Invalid admin code or location code.';
-                errorMessage.style.display = 'block';
-                return;
-            }
-
+        // Handle role-based redirection
+        async function redirectBasedOnRole(email) {
+            console.log('Getting role for user:', email);
             try {
-                console.log("Querying Firestore for code:", inputLocationCode);
-                // Check if the input matches a code in Firestore
-                const locationsRef = db.collection('locations');
-                const querySnapshot = await locationsRef.where('code', '==', inputLocationCode).get();
+                const employeesRef = collection(db, 'employees');
+                const q = query(employeesRef, where("email", "==", email));
+                const querySnapshot = await getDocs(q);
+                
                 if (querySnapshot.empty) {
-                    console.log("No matching location found for code:", inputLocationCode);
-                    errorMessage.textContent = 'Location code does not exist.';
-                    errorMessage.style.display = 'block';
-                    return;
+                    console.error('No employee record found');
+                    throw new Error('No employee record found');
                 }
 
-                console.log("Location found for code:", inputLocationCode, "Setting locationCode in localStorage and redirecting...");
-                // Store locationCode in localStorage
-                localStorage.setItem('locationCode', inputLocationCode);
-                // Redirect to base-portal.html if BASE001, otherwise tasks.html
-                if (inputLocationCode === 'BASE001') {
-                    window.location.href = 'base-portal.html';
-                } else {
-                    window.location.href = 'tasks.html';
+                const employeeData = querySnapshot.docs[0].data();
+                console.log('Employee data:', employeeData);
+
+                // Store user data in session
+                sessionStorage.setItem('userData', JSON.stringify(employeeData));
+
+                // Redirect based on role
+                switch (employeeData.role) {
+                    case 'Admin':
+                        console.log('Redirecting to base portal');
+                        window.location.href = '/base-portal.html';
+                        break;
+                    case 'Manager':
+                        console.log('Redirecting to location portal');
+                        window.location.href = '/location-portal.html';
+                        break;
+                    case 'Staff':
+                        console.log('Redirecting to staff portal');
+                        window.location.href = '/staff-portal.html';
+                        break;
+                    default:
+                        throw new Error('Invalid role: ' + employeeData.role);
                 }
             } catch (error) {
-                console.error('Error during login:', error);
-                errorMessage.textContent = 'Error verifying location code. Please try again.';
-                errorMessage.style.display = 'block';
+                console.error('Redirection error:', error);
+                throw error;
             }
         }
+
+        // Email login form handler
+        document.getElementById('emailLoginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            showLoading();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                console.log('Attempting email login for:', email);
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                console.log('Login successful:', userCredential);
+                showSuccess('Login successful! Redirecting...');
+                await redirectBasedOnRole(email);
+            } catch (error) {
+                console.error('Login error:', error);
+                let errorMessage = 'Login failed: ';
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage += 'Invalid email address';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage += 'Account has been disabled';
+                        break;
+                    case 'auth/user-not-found':
+                        errorMessage += 'User not found';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage += 'Incorrect password';
+                        break;
+                    default:
+                        errorMessage += error.message;
+                }
+                showError(errorMessage);
+            }
+        });
+
+        // Passcode login form handler
+        document.getElementById('passcodeLoginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            showLoading();
+
+            const passcode = document.getElementById('passcode').value;
+
+            try {
+                console.log('Attempting passcode login');
+                const employeesRef = collection(db, 'employees');
+                const q = query(employeesRef, where("passcode", "==", passcode));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    throw new Error('Invalid passcode');
+                }
+
+                const employeeData = querySnapshot.docs[0].data();
+                console.log('Found employee:', employeeData);
+
+                // Store user data in session
+                sessionStorage.setItem('userData', JSON.stringify(employeeData));
+                showSuccess('Login successful! Redirecting...');
+                await redirectBasedOnRole(employeeData.email);
+            } catch (error) {
+                console.error('Passcode login error:', error);
+                showError('Login failed: ' + error.message);
+            }
+        });
     </script>
 </body>
-</html>
+</html> 
