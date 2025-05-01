@@ -3018,13 +3018,13 @@
                     type: 'bar',
                     data: {
                         labels: labels,
-                        datasets: dataSets.map(set => ({
-                            label: set.name,
-                            data: data.map(d => d[set.id]),
+                        datasets: [{
+                            label: title,
+                            data: data,
                             backgroundColor: color,
                             borderColor: color.replace('0.7', '1'),
                             borderWidth: 1
-                        }))
+                        }]
                     },
                     options: {
                         responsive: true,
@@ -3041,6 +3041,26 @@
                                     display: true,
                                     text: 'Date'
                                 }
+                            }
+                        },
+                        onClick: (e, activeElements) => {
+                            if (activeElements.length > 0) {
+                                const index = activeElements[0].index;
+                                const day = dataSets[index];
+                                
+                                console.log(`Drill down into date: ${day.dateKey}`);
+                                
+                                // Set drill-down state
+                                drillDownState = {
+                                    type: 'day',
+                                    date: day.dateKey
+                                };
+                                
+                                // Show drill-up button
+                                document.getElementById('drill-up-btn').style.display = 'inline-block';
+                                
+                                // Load details for this day
+                                loadDayDetails(day.dateKey, selectedProjects);
                             }
                         }
                     }
@@ -3501,6 +3521,615 @@
             function afterConnectionEstablished() {
                 // Initialize auto-sync
                 initializeAutoSync();
+            }
+            
+            // Add these new functions for drill-down capabilities
+            
+            // Load details for a specific day
+            function loadDayDetails(dateKey, projectIds) {
+                console.log(`Loading details for day: ${dateKey}`);
+                
+                // Convert date string to Date objects for Firestore query
+                const startDate = new Date(dateKey);
+                const endDate = new Date(dateKey);
+                endDate.setDate(endDate.getDate() + 1); // End of the day
+                
+                // Query sync logs for this day
+                db.collection('asana_sync_logs')
+                    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
+                    .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(endDate))
+                    .orderBy('timestamp', 'asc')
+                    .get()
+                    .then(snapshot => {
+                        if (snapshot.empty) {
+                            console.log('No sync logs found for the selected day');
+                            displayNoDataMessage();
+                            return;
+                        }
+                        
+                        // Process the sync logs
+                        const logs = [];
+                        snapshot.forEach(doc => {
+                            const log = doc.data();
+                            logs.push({
+                                id: doc.id,
+                                ...log,
+                                time: log.timestamp ? log.timestamp.toDate() : new Date()
+                            });
+                        });
+                        
+                        console.log(`Found ${logs.length} sync logs for ${dateKey}`);
+                        
+                        // Filter logs by selected projects if needed
+                        let filteredLogs = logs;
+                        if (projectIds && projectIds.length > 0) {
+                            filteredLogs = logs.filter(log => {
+                                for (const projectId of projectIds) {
+                                    if (log.projects && log.projects.includes(projectId)) {
+                                        return true;
+                                    }
+                                    if (log.projectStats && log.projectStats[projectId]) {
+                                        return true;
+                                    }
+                                }
+                                return false;
+                            });
+                        }
+                        
+                        if (filteredLogs.length === 0) {
+                            displayNoDataMessage();
+                            return;
+                        }
+                        
+                        // Prepare data for chart: sync details by hour
+                        const hourlyData = {};
+                        const labels = [];
+                        
+                        // Initialize all hours in the day
+                        for (let hour = 0; hour < 24; hour++) {
+                            const hourKey = hour.toString().padStart(2, '0');
+                            labels.push(`${hourKey}:00`);
+                            hourlyData[hourKey] = {
+                                syncCount: 0,
+                                successCount: 0,
+                                errorCount: 0,
+                                totalCount: 0
+                            };
+                        }
+                        
+                        // Populate with actual logs
+                        filteredLogs.forEach(log => {
+                            const hour = log.time.getHours().toString().padStart(2, '0');
+                            
+                            if (hourlyData[hour]) {
+                                hourlyData[hour].syncCount++;
+                                
+                                if (log.success_count !== undefined && log.project_count !== undefined) {
+                                    hourlyData[hour].successCount += log.success_count;
+                                    hourlyData[hour].totalCount += log.project_count;
+                                }
+                                
+                                if (log.errors && Array.isArray(log.errors)) {
+                                    hourlyData[hour].errorCount += log.errors.length;
+                                }
+                                
+                                if (log.projectStats) {
+                                    Object.values(log.projectStats).forEach(stat => {
+                                        if (stat.error) {
+                                            hourlyData[hour].errorCount++;
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                        
+                        // Get the view type
+                        const viewType = document.getElementById('stats-view-type').value || 'success-rate';
+                        
+                        // Prepare data for chart based on view type
+                        let chartData;
+                        let chartTitle;
+                        let chartColor;
+                        
+                        switch (viewType) {
+                            case 'success-rate':
+                                chartTitle = 'Hourly Success Rate (%)';
+                                chartColor = 'rgba(40, 167, 69, 0.7)';
+                                chartData = Object.values(hourlyData).map(hour => {
+                                    return hour.totalCount === 0 ? 0 : 
+                                        Math.round((hour.successCount / hour.totalCount) * 100);
+                                });
+                                break;
+                                
+                            case 'sync-count':
+                                chartTitle = 'Syncs per Hour';
+                                chartColor = 'rgba(23, 162, 184, 0.7)';
+                                chartData = Object.values(hourlyData).map(hour => {
+                                    return hour.syncCount;
+                                });
+                                break;
+                                
+                            case 'errors':
+                                chartTitle = 'Errors per Hour';
+                                chartColor = 'rgba(220, 53, 69, 0.7)';
+                                chartData = Object.values(hourlyData).map(hour => {
+                                    return hour.errorCount;
+                                });
+                                break;
+                        }
+                        
+                        // Create or update chart
+                        createHourlyChart(labels, chartData, chartTitle, chartColor);
+                        
+                        // Update summary statistics
+                        updateSummaryStats(logs, filteredLogs);
+                    })
+                    .catch(error => {
+                        console.error('Error loading day details:', error);
+                        displayErrorMessage(error);
+                    });
+            }
+            
+            // Create hourly chart for day drill-down
+            function createHourlyChart(labels, data, title, color) {
+                const ctx = document.getElementById('sync-stats-graph').getContext('2d');
+                
+                // Destroy previous chart if it exists
+                if (syncStatsChart) {
+                    syncStatsChart.destroy();
+                }
+                
+                // Create new chart
+                syncStatsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: title,
+                            data: data,
+                            backgroundColor: color,
+                            borderColor: color.replace('0.7', '1'),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: title
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Hour of Day'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Load details for a specific project over time
+            function loadProjectDetails(projectId, days) {
+                console.log(`Loading details for project: ${projectId} over ${days} days`);
+                
+                // Calculate date range
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - days);
+                
+                // Get project name
+                db.collection('asana_projects').doc(projectId).get()
+                    .then(doc => {
+                        let projectName = `Project ${projectId}`;
+                        if (doc.exists) {
+                            projectName = doc.data().name || projectName;
+                        }
+                        
+                        // Query sync logs for the date range
+                        return db.collection('asana_sync_logs')
+                            .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
+                            .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(endDate))
+                            .orderBy('timestamp', 'asc')
+                            .get()
+                            .then(snapshot => {
+                                if (snapshot.empty) {
+                                    console.log('No sync logs found for the selected project');
+                                    displayNoDataMessage();
+                                    return;
+                                }
+                                
+                                // Process the sync logs
+                                const logs = [];
+                                snapshot.forEach(doc => {
+                                    const log = doc.data();
+                                    
+                                    // Check if the log contains the project
+                                    let hasProject = false;
+                                    if (log.projects && log.projects.includes(projectId)) {
+                                        hasProject = true;
+                                    }
+                                    if (log.projectStats && log.projectStats[projectId]) {
+                                        hasProject = true;
+                                    }
+                                    
+                                    if (hasProject) {
+                                        logs.push({
+                                            id: doc.id,
+                                            ...log,
+                                            date: log.timestamp ? log.timestamp.toDate() : new Date()
+                                        });
+                                    }
+                                });
+                                
+                                console.log(`Found ${logs.length} sync logs for project ${projectName}`);
+                                
+                                if (logs.length === 0) {
+                                    displayNoDataMessage();
+                                    return;
+                                }
+                                
+                                // Group logs by day
+                                const logsByDay = {};
+                                const labels = [];
+                                const currentDate = new Date(startDate);
+                                
+                                // Initialize all days in the range
+                                while (currentDate <= endDate) {
+                                    const dateKey = currentDate.toISOString().split('T')[0];
+                                    labels.push(moment(dateKey).format('MMM D'));
+                                    logsByDay[dateKey] = {
+                                        date: new Date(currentDate),
+                                        logs: [],
+                                        successCount: 0,
+                                        totalCount: 0,
+                                        errorCount: 0,
+                                        dateKey: dateKey
+                                    };
+                                    currentDate.setDate(currentDate.getDate() + 1);
+                                }
+                                
+                                // Populate with actual logs
+                                logs.forEach(log => {
+                                    const dateKey = log.date.toISOString().split('T')[0];
+                                    if (logsByDay[dateKey]) {
+                                        logsByDay[dateKey].logs.push(log);
+                                        
+                                        // Count project-specific stats
+                                        if (log.projectStats && log.projectStats[projectId]) {
+                                            const stat = log.projectStats[projectId];
+                                            logsByDay[dateKey].totalCount++;
+                                            
+                                            if (stat.status === 'success') {
+                                                logsByDay[dateKey].successCount++;
+                                            }
+                                            
+                                            if (stat.error) {
+                                                logsByDay[dateKey].errorCount++;
+                                            }
+                                        }
+                                    }
+                                });
+                                
+                                // Get the view type
+                                const viewType = document.getElementById('stats-view-type').value || 'success-rate';
+                                
+                                // Prepare data for chart based on view type
+                                let chartData;
+                                let chartTitle;
+                                let chartColor;
+                                
+                                switch (viewType) {
+                                    case 'success-rate':
+                                        chartTitle = `Success Rate for ${projectName} (%)`;
+                                        chartColor = 'rgba(40, 167, 69, 0.7)';
+                                        chartData = Object.values(logsByDay).map(day => {
+                                            return day.totalCount === 0 ? 0 : 
+                                                Math.round((day.successCount / day.totalCount) * 100);
+                                        });
+                                        break;
+                                        
+                                    case 'sync-count':
+                                        chartTitle = `Sync Count for ${projectName}`;
+                                        chartColor = 'rgba(23, 162, 184, 0.7)';
+                                        chartData = Object.values(logsByDay).map(day => {
+                                            return day.logs.length;
+                                        });
+                                        break;
+                                        
+                                    case 'errors':
+                                        chartTitle = `Errors for ${projectName}`;
+                                        chartColor = 'rgba(220, 53, 69, 0.7)';
+                                        chartData = Object.values(logsByDay).map(day => {
+                                            return day.errorCount;
+                                        });
+                                        break;
+                                }
+                                
+                                // Create or update chart
+                                createDrillableChart(labels, chartData, chartTitle, chartColor, Object.values(logsByDay));
+                                
+                                // Update summary statistics based on project-specific logs
+                                updateSummaryStats(logs, logs);
+                            });
+                    })
+                    .catch(error => {
+                        console.error('Error loading project details:', error);
+                        displayErrorMessage(error);
+                    });
+            }
+            
+            // Load details for a specific error type
+            function loadErrorDetails(errorType, days, projectIds) {
+                console.log(`Loading details for error type: ${errorType} over ${days} days`);
+                
+                // Calculate date range
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - days);
+                
+                // Query sync logs for the date range
+                db.collection('asana_sync_logs')
+                    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
+                    .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(endDate))
+                    .orderBy('timestamp', 'asc')
+                    .get()
+                    .then(snapshot => {
+                        if (snapshot.empty) {
+                            console.log('No sync logs found for the selected period');
+                            displayNoDataMessage();
+                            return;
+                        }
+                        
+                        // Process the sync logs
+                        const logs = [];
+                        snapshot.forEach(doc => {
+                            const log = doc.data();
+                            logs.push({
+                                id: doc.id,
+                                ...log,
+                                date: log.timestamp ? log.timestamp.toDate() : new Date()
+                            });
+                        });
+                        
+                        // Filter logs by selected projects if needed
+                        let filteredLogs = logs;
+                        if (projectIds && projectIds.length > 0) {
+                            filteredLogs = logs.filter(log => {
+                                for (const projectId of projectIds) {
+                                    if (log.projects && log.projects.includes(projectId)) {
+                                        return true;
+                                    }
+                                    if (log.projectStats && log.projectStats[projectId]) {
+                                        return true;
+                                    }
+                                }
+                                return false;
+                            });
+                        }
+                        
+                        // Filter logs by error type
+                        filteredLogs = filteredLogs.filter(log => {
+                            // Check for errors array
+                            if (log.errors && Array.isArray(log.errors)) {
+                                for (const error of log.errors) {
+                                    const errorStr = String(error);
+                                    const currentErrorType = errorStr.includes(':') ? 
+                                        errorStr.split(':')[0].trim() : errorStr.trim();
+                                    
+                                    if (currentErrorType === errorType) {
+                                        return true;
+                                    }
+                                }
+                            }
+                            
+                            // Check for project-specific errors
+                            if (log.projectStats) {
+                                for (const projectStat of Object.values(log.projectStats)) {
+                                    if (projectStat.error) {
+                                        const errorStr = String(projectStat.error);
+                                        const currentErrorType = errorStr.includes(':') ? 
+                                            errorStr.split(':')[0].trim() : errorStr.trim();
+                                        
+                                        if (currentErrorType === errorType) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            return false;
+                        });
+                        
+                        console.log(`Found ${filteredLogs.length} logs with error type "${errorType}"`);
+                        
+                        if (filteredLogs.length === 0) {
+                            displayNoDataMessage();
+                            return;
+                        }
+                        
+                        // Group logs by day
+                        const logsByDay = {};
+                        const labels = [];
+                        const currentDate = new Date(startDate);
+                        
+                        // Initialize all days in the range
+                        while (currentDate <= endDate) {
+                            const dateKey = currentDate.toISOString().split('T')[0];
+                            labels.push(moment(dateKey).format('MMM D'));
+                            logsByDay[dateKey] = {
+                                date: new Date(currentDate),
+                                logs: [],
+                                errorCount: 0,
+                                dateKey: dateKey
+                            };
+                            currentDate.setDate(currentDate.getDate() + 1);
+                        }
+                        
+                        // Populate with actual logs
+                        filteredLogs.forEach(log => {
+                            const dateKey = log.date.toISOString().split('T')[0];
+                            if (logsByDay[dateKey]) {
+                                logsByDay[dateKey].logs.push(log);
+                                
+                                // Count errors
+                                let dayErrorCount = 0;
+                                
+                                // Check errors array
+                                if (log.errors && Array.isArray(log.errors)) {
+                                    for (const error of log.errors) {
+                                        const errorStr = String(error);
+                                        const currentErrorType = errorStr.includes(':') ? 
+                                            errorStr.split(':')[0].trim() : errorStr.trim();
+                                        
+                                        if (currentErrorType === errorType) {
+                                            dayErrorCount++;
+                                        }
+                                    }
+                                }
+                                
+                                // Check project-specific errors
+                                if (log.projectStats) {
+                                    for (const projectStat of Object.values(log.projectStats)) {
+                                        if (projectStat.error) {
+                                            const errorStr = String(projectStat.error);
+                                            const currentErrorType = errorStr.includes(':') ? 
+                                                errorStr.split(':')[0].trim() : errorStr.trim();
+                                            
+                                            if (currentErrorType === errorType) {
+                                                dayErrorCount++;
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                logsByDay[dateKey].errorCount += dayErrorCount;
+                            }
+                        });
+                        
+                        // Prepare data for chart
+                        const chartTitle = `"${errorType}" Errors Over Time`;
+                        const chartColor = 'rgba(220, 53, 69, 0.7)';
+                        const chartData = Object.values(logsByDay).map(day => day.errorCount);
+                        
+                        // Create or update chart
+                        createDrillableChart(labels, chartData, chartTitle, chartColor, Object.values(logsByDay));
+                        
+                        // Update summary statistics
+                        updateSummaryStats(logs, filteredLogs);
+                    })
+                    .catch(error => {
+                        console.error('Error loading error details:', error);
+                        displayErrorMessage(error);
+                    });
+            }
+            
+            // Update auto-sync functionality with more visible indicators
+            function scheduleAutoSync() {
+                // Clear existing timer
+                if (autoSyncTimer) {
+                    clearTimeout(autoSyncTimer);
+                }
+                
+                // Get sync frequency from settings
+                db.collection('asana_config').doc('settings').get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            let syncFrequencyMinutes = 60; // Default to hourly
+                            
+                            // Get frequency from various possible field names
+                            if (data.sync_frequency) {
+                                syncFrequencyMinutes = parseInt(data.sync_frequency);
+                            } else if (data.syncFrequency) {
+                                syncFrequencyMinutes = parseInt(data.syncFrequency);
+                            } else if (data.syncFrequency === '5min') {
+                                syncFrequencyMinutes = 5;
+                            }
+                            
+                            // Ensure frequency is at least 5 minutes
+                            syncFrequencyMinutes = Math.max(5, syncFrequencyMinutes);
+                            
+                            // Schedule next sync
+                            console.log(`Scheduling next auto-sync in ${syncFrequencyMinutes} minutes`);
+                            
+                            // Calculate next sync time
+                            const nextSyncTime = new Date();
+                            nextSyncTime.setMinutes(nextSyncTime.getMinutes() + syncFrequencyMinutes);
+                            
+                            // Update UI
+                            const autoSyncElem = document.getElementById('next-auto-sync');
+                            autoSyncElem.textContent = `Next auto-sync: ${nextSyncTime.toLocaleTimeString()}`;
+                            autoSyncElem.style.backgroundColor = '#e8f7ff';
+                            autoSyncElem.style.padding = '3px 8px';
+                            autoSyncElem.style.borderRadius = '4px';
+                            autoSyncElem.style.border = '1px solid #b8e2ff';
+                            autoSyncElem.style.display = 'inline-block';
+                            
+                            // Add a visual indicator that auto-sync is active
+                            document.getElementById('connection-notice').innerHTML = `
+                                <p>Your Asana account is connected. Auto-sync is <span style="background-color: #28a745; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8rem;">ACTIVE</span> and will run every ${syncFrequencyMinutes} minutes.</p>
+                            `;
+                            
+                            // Set timer
+                            autoSyncTimer = setTimeout(performAutoSync, syncFrequencyMinutes * 60 * 1000);
+                            
+                            // Start countdown timer
+                            startCountdownTimer(nextSyncTime);
+                        } else {
+                            console.log('No settings found, defaulting to hourly auto-sync');
+                            document.getElementById('next-auto-sync').textContent = 'Auto-sync: Not configured';
+                            document.getElementById('next-auto-sync').style.backgroundColor = '#fff3cd';
+                            document.getElementById('next-auto-sync').style.border = '1px solid #ffeeba';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error scheduling auto-sync:', error);
+                        document.getElementById('next-auto-sync').textContent = 'Auto-sync: Error';
+                        document.getElementById('next-auto-sync').style.backgroundColor = '#f8d7da';
+                        document.getElementById('next-auto-sync').style.border = '1px solid #f5c6cb';
+                    });
+            }
+            
+            // Add a countdown timer for the next auto-sync
+            let countdownInterval = null;
+            function startCountdownTimer(nextSyncTime) {
+                // Clear any existing countdown
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
+                
+                // Update countdown every second
+                countdownInterval = setInterval(() => {
+                    const now = new Date();
+                    const timeLeft = nextSyncTime - now;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(countdownInterval);
+                        return;
+                    }
+                    
+                    // Calculate minutes and seconds
+                    const minutes = Math.floor(timeLeft / 60000);
+                    const seconds = Math.floor((timeLeft % 60000) / 1000);
+                    
+                    // Format countdown
+                    const countdown = `Next auto-sync: ${nextSyncTime.toLocaleTimeString()} (${minutes}m ${seconds}s)`;
+                    
+                    // Update UI
+                    const autoSyncElem = document.getElementById('next-auto-sync');
+                    autoSyncElem.textContent = countdown;
+                    
+                    // Change color as it gets closer
+                    if (timeLeft < 30000) { // Less than 30 seconds
+                        autoSyncElem.style.backgroundColor = '#ffeeba';
+                        autoSyncElem.style.border = '1px solid #ffdf7e';
+                    }
+                }, 1000);
             }
         });
     </script>
