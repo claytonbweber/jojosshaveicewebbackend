@@ -3044,23 +3044,41 @@
                             }
                         },
                         onClick: (e, activeElements) => {
-                            if (activeElements.length > 0) {
-                                const index = activeElements[0].index;
-                                const day = dataSets[index];
-                                
-                                console.log(`Drill down into date: ${day.dateKey}`);
-                                
-                                // Set drill-down state
-                                drillDownState = {
-                                    type: 'day',
-                                    date: day.dateKey
-                                };
-                                
-                                // Show drill-up button
-                                document.getElementById('drill-up-btn').style.display = 'inline-block';
-                                
-                                // Load details for this day
-                                loadDayDetails(day.dateKey, selectedProjects);
+                            try {
+                                if (activeElements.length > 0) {
+                                    const index = activeElements[0].index;
+                                    
+                                    // Check if dataSets exists and has the required index
+                                    if (!dataSets || !dataSets[index]) {
+                                        console.error('Invalid dataset or index:', { dataSets, index });
+                                        return;
+                                    }
+                                    
+                                    const day = dataSets[index];
+                                    
+                                    // Check if day has the required dateKey property
+                                    if (!day.dateKey) {
+                                        console.error('Day object missing dateKey property:', day);
+                                        return;
+                                    }
+                                    
+                                    console.log(`Drill down into date: ${day.dateKey}`);
+                                    
+                                    // Set drill-down state
+                                    drillDownState = {
+                                        type: 'day',
+                                        date: day.dateKey
+                                    };
+                                    
+                                    // Show drill-up button
+                                    document.getElementById('drill-up-btn').style.display = 'inline-block';
+                                    
+                                    // Load details for this day
+                                    loadDayDetails(day.dateKey, selectedProjects);
+                                }
+                            } catch (error) {
+                                console.error('Error in chart click handler:', error);
+                                displayErrorMessage(error);
                             }
                         }
                     }
@@ -3540,28 +3558,34 @@
                 // Add view toggle controls if they don't exist
                 if (!document.getElementById('drill-view-toggle')) {
                     const controlsContainer = document.querySelector('.stats-controls .row:first-child');
-                    const viewToggleCol = document.createElement('div');
-                    viewToggleCol.className = 'col';
-                    viewToggleCol.innerHTML = `
-                        <div class="form-group">
-                            <label for="drill-view-toggle">View By:</label>
-                            <select id="drill-view-toggle" class="form-control">
-                                <option value="hour">Hour</option>
-                                <option value="project">Project</option>
-                            </select>
-                        </div>
-                    `;
-                    controlsContainer.appendChild(viewToggleCol);
                     
-                    // Add event listener for view toggle
-                    document.getElementById('drill-view-toggle').addEventListener('change', function() {
-                        const viewType = this.value;
-                        if (viewType === 'hour') {
-                            loadDayDetailsByHour(dateKey, projectIds);
-                        } else {
-                            loadDayDetailsByProject(dateKey, projectIds);
-                        }
-                    });
+                    // Check if the stats-controls container exists
+                    if (controlsContainer) {
+                        const viewToggleCol = document.createElement('div');
+                        viewToggleCol.className = 'col';
+                        viewToggleCol.innerHTML = `
+                            <div class="form-group">
+                                <label for="drill-view-toggle">View By:</label>
+                                <select id="drill-view-toggle" class="form-control">
+                                    <option value="hour">Hour</option>
+                                    <option value="project">Project</option>
+                                </select>
+                            </div>
+                        `;
+                        controlsContainer.appendChild(viewToggleCol);
+                        
+                        // Add event listener for view toggle
+                        document.getElementById('drill-view-toggle').addEventListener('change', function() {
+                            const viewType = this.value;
+                            if (viewType === 'hour') {
+                                loadDayDetailsByHour(dateKey, projectIds);
+                            } else {
+                                loadDayDetailsByProject(dateKey, projectIds);
+                            }
+                        });
+                    } else {
+                        console.warn('Stats controls container not found, cannot add view toggle');
+                    }
                 } else {
                     // Reset to hour view by default
                     document.getElementById('drill-view-toggle').value = 'hour';
