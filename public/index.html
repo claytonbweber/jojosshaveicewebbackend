@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0;url=/">
     <title>JoJo's Shave Ice - Management Hub</title>
     <link rel="stylesheet" href="/assets/css/styles.css">
     <style>
@@ -156,5 +157,12 @@
     <div class="version">
         Version 1.1.0 (2024-04-27)
     </div>
+    
+    <script>
+        // Ensure we're at the root URL
+        if (window.location.pathname !== '/') {
+            window.location.href = '/';
+        }
+    </script>
 </body>
 </html> 
