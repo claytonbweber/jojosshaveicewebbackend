@@ -8,44 +8,26 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(html|js|css)",
+        "source": "**/*",
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "max-age=0, no-cache, no-store, must-revalidate"
+            "value": "no-cache, no-store, must-revalidate"
+          },
+          {
+            "key": "Pragma",
+            "value": "no-cache"
+          },
+          {
+            "key": "Expires",
+            "value": "0"
           }
         ]
       }
     ],
+    "cleanUrls": true,
+    "trailingSlash": false,
     "rewrites": [
-      {
-        "source": "/login",
-        "destination": "/login.html"
-      },
-      {
-        "source": "/admin/init-data",
-        "destination": "/admin/init-data.html"
-      },
-      {
-        "source": "/admin/locations",
-        "destination": "/admin/locations-manager.html"
-      },
-      {
-        "source": "/portals/base",
-        "destination": "/portals/base-portal.html"
-      },
-      {
-        "source": "/portals/location",
-        "destination": "/portals/location-portal.html"
-      },
-      {
-        "source": "/portals/staff",
-        "destination": "/portals/staff-portal.html"
-      },
-      {
-        "source": "/asana",
-        "destination": "/admin/asana-manager.html"
-      },
       {
         "source": "**",
         "destination": "/index.html"

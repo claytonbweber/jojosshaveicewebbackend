@@ -3,264 +3,571 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JoJo's Shave Ice - Asana Task Manager</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Custom styles -->
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Asana Sync Manager - JoJo's Shave Ice</title>
+    <link rel="stylesheet" href="../assets/css/styles.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #FFD60A;
-        }
-        h1 {
-            color: #87CEEB;
-            text-align: center;
-            margin-bottom: 20px;
-        }
         .container {
-            background-color: white;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-            margin-top: 15px;
-            margin-bottom: 15px;
         }
-        .btn-primary {
-            background-color: #FF4040;
-            border-color: #FF4040;
-        }
-        .btn-primary:hover {
-            background-color: #d93333;
-            border-color: #d93333;
-        }
-        .card {
+        .back-link {
+            display: inline-block;
             margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .card-header {
-            background-color: #87CEEB;
-            color: white;
+            color: #FF4040;
+            text-decoration: none;
             font-weight: bold;
         }
-        .status-log {
-            height: 200px;
-            overflow-y: auto;
+        .back-link:hover {
+            text-decoration: underline;
         }
-        .back-button {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            text-decoration: none;
-            display: inline-block;
+        .asana-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .back-button:hover {
-            background-color: #5a6268;
-            color: white;
-            text-decoration: none;
+        h2 {
+            color: #444;
+            margin-top: 0;
         }
-        .header-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #87CEEB;
+            padding: 15px;
             margin-bottom: 20px;
         }
-        .title-area {
-            flex-grow: 1;
+        .connection-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        .status-connected {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-disconnected {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #FF4040;
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #d93333;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-weight: bold;
+            color: #666;
+        }
+        .tab-btn.active {
+            border-bottom: 2px solid #FF4040;
+            color: #FF4040;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Two-column layout */
+        .row {
+            display: flex;
+            margin: 0 -10px;
+        }
+        .col {
+            padding: 0 10px;
+            flex: 1;
+        }
+        
+        /* Project list */
+        .project-list {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .project-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .project-item:last-child {
+            border-bottom: none;
+        }
+        .project-checkbox {
+            margin-right: 8px;
+        }
+        .project-stats {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* History log */
+        .history-log {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .log-entry {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .log-time {
+            color: #888;
+            font-size: 0.8rem;
+        }
+        .log-message {
+            margin-top: 3px;
+        }
+        .log-success {
+            color: #28a745;
+        }
+        .log-error {
+            color: #dc3545;
+        }
+        .log-warning {
+            color: #ffc107;
+        }
+        
+        /* Task viewer */
+        .task-filters {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .task-list {
+            margin-top: 20px;
+        }
+        .task-item {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .task-item:hover {
+            background-color: #f0f0f0;
+        }
+        .task-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .task-details {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        /* Task modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow: auto;
+        }
+        .modal-content {
+            background-color: white;
+            margin: 40px auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .task-property {
+            margin-bottom: 15px;
+        }
+        .property-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .load-more {
             text-align: center;
+            margin-top: 15px;
         }
     </style>
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
-    <div class="container mt-4">
-        <div class="header-container">
-            <div>
-                <a href="/" class="back-button"><i class="fas fa-arrow-left"></i> Back to Main Menu</a>
-            </div>
-            <div class="title-area">
-                <h1>JoJo's Shave Ice - Asana Task Manager</h1>
-            </div>
-            <div style="width: 100px;"></div> <!-- Spacer for alignment -->
-        </div>
+    <header>
+        <h1>JoJo's Shave Ice Management Hub</h1>
+    </header>
+    
+    <div class="container">
+        <a href="/" class="back-link">← Back to Dashboard</a>
         
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="alert alert-info">
-                    <p>This page allows you to manage the Asana integration:</p>
-                    <ul>
-                        <li>Configure Asana API integration</li>
-                        <li>Sync tasks from Asana to Firestore</li>
-                        <li>View sync status and logs</li>
-                    </ul>
+        <div class="asana-container">
+            <h2>Asana Sync Manager <span class="connection-status status-disconnected">Disconnected</span></h2>
+            
+            <div id="connection-notice" class="info-box">
+                <p>This tool allows you to synchronize tasks between Asana and JoJo's Shave Ice internal systems. Connect your Asana account to get started.</p>
+            </div>
+            
+            <div id="not-connected-message">
+                <div class="info-box" style="background-color: #fff3cd; border-left-color: #ffc107;">
+                    <p>You need to configure your Asana connection first. Go to the Settings tab to enter your Asana Personal Access Token.</p>
                 </div>
             </div>
-        </div>
-        
-        <ul class="nav nav-tabs mb-4" id="managementTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="config-tab" data-bs-toggle="tab" data-bs-target="#config-content" type="button" role="tab">
-                    Configuration
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="workspaces-tab" data-bs-toggle="tab" data-bs-target="#workspaces-content" type="button" role="tab">
-                    Workspaces
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="sync-tab" data-bs-toggle="tab" data-bs-target="#sync-content" type="button" role="tab">
-                    Sync Tasks
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs-content" type="button" role="tab">
-                    Sync Logs
-                </button>
-            </li>
-        </ul>
-        
-        <div class="tab-content" id="managementTabsContent">
-            <!-- Configuration Tab -->
-            <div class="tab-pane fade show active" id="config-content" role="tabpanel">
-                <div class="card">
-                    <div class="card-header">
-                        Asana API Configuration
+            
+            <div id="connected-content" style="display: none;">
+                <div class="tab-nav">
+                    <button class="tab-btn active" data-tab="workspace-sync">Workspace Sync</button>
+                    <button class="tab-btn" data-tab="task-viewer">Task Viewer</button>
+                    <button class="tab-btn" data-tab="settings">Settings</button>
+                </div>
+                
+                <!-- Workspace Sync Tab -->
+                <div id="workspace-sync" class="tab-content active">
+                    <div class="form-group">
+                        <label for="workspace-select">Select Workspace</label>
+                        <select id="workspace-select">
+                            <option value="">-- Select a workspace --</option>
+                            <option value="workspace1">JoJo's Shave Ice</option>
+                            <option value="workspace2">Operations Team</option>
+                            <option value="workspace3">Marketing Team</option>
+                        </select>
                     </div>
-                    <div class="card-body">
-                        <form id="config-form">
-                            <div class="mb-3">
-                                <label for="personalAccessToken" class="form-label">Personal Access Token</label>
-                                <input type="password" class="form-control" id="personalAccessToken" placeholder="Enter your Asana Personal Access Token">
-                                <div class="form-text">
-                                    Create a token in <a href="https://app.asana.com/0/developer-console" target="_blank">Asana Developer Console</a>
+                    
+                    <div class="form-group">
+                        <button id="force-sync-btn" class="btn">Force Sync Now</button>
+                        <span id="last-sync-time" style="margin-left: 15px; font-size: 0.9rem; color: #666;">Last sync: Never</span>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <h3>Projects</h3>
+                            <div class="form-group">
+                                <label class="project-select-all">
+                                    <input type="checkbox" id="select-all-projects"> Select all projects
+                                </label>
+                            </div>
+                            <div class="project-list" id="project-list">
+                                <div class="project-item">
+                                    <label>
+                                        <input type="checkbox" class="project-checkbox" value="project1">
+                                        JoJo's Operations
+                                    </label>
+                                    <div class="project-stats">
+                                        Tasks synced: 24 | Failed: 0 | Last sync: May 1, 2024
+                                    </div>
+                                </div>
+                                <div class="project-item">
+                                    <label>
+                                        <input type="checkbox" class="project-checkbox" value="project2">
+                                        Store Maintenance
+                                    </label>
+                                    <div class="project-stats">
+                                        Tasks synced: 12 | Failed: 1 | Last sync: May 1, 2024
+                                    </div>
+                                </div>
+                                <div class="project-item">
+                                    <label>
+                                        <input type="checkbox" class="project-checkbox" value="project3">
+                                        Inventory Management
+                                    </label>
+                                    <div class="project-stats">
+                                        Tasks synced: 31 | Failed: 0 | Last sync: May 1, 2024
+                                    </div>
+                                </div>
+                                <div class="project-item">
+                                    <label>
+                                        <input type="checkbox" class="project-checkbox" value="project4">
+                                        Marketing Campaigns
+                                    </label>
+                                    <div class="project-stats">
+                                        Tasks synced: 18 | Failed: 2 | Last sync: April 30, 2024
+                                    </div>
+                                </div>
+                                <div class="project-item">
+                                    <label>
+                                        <input type="checkbox" class="project-checkbox" value="project5">
+                                        Product Development
+                                    </label>
+                                    <div class="project-stats">
+                                        Tasks synced: 7 | Failed: 0 | Last sync: April 29, 2024
+                                    </div>
+                                </div>
+                                <div class="project-item">
+                                    <label>
+                                        <input type="checkbox" class="project-checkbox" value="project6">
+                                        Customer Feedback
+                                    </label>
+                                    <div class="project-stats">
+                                        Tasks synced: 14 | Failed: 1 | Last sync: April 28, 2024
+                                    </div>
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="syncFrequency" class="form-label">Sync Frequency</label>
-                                <select class="form-control" id="syncFrequency">
-                                    <option value="hourly">Hourly</option>
-                                    <option value="daily" selected>Daily</option>
-                                    <option value="manual">Manual Only</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Save Configuration</button>
-                            <button type="button" id="init-btn" class="btn btn-success">Initialize Asana Integration</button>
-                        </form>
-                        <div id="config-status" class="mt-3"></div>
-                    </div>
-                </div>
-                
-                <div class="card mt-4">
-                    <div class="card-header">
-                        Current Configuration
-                    </div>
-                    <div class="card-body">
-                        <div id="current-config">
-                            <p class="text-center">Loading configuration...</p>
                         </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Workspaces Tab -->
-            <div class="tab-pane fade" id="workspaces-content" role="tabpanel">
-                <div class="card">
-                    <div class="card-header">
-                        Asana Workspaces
-                    </div>
-                    <div class="card-body">
-                        <div id="workspaces-list">
-                            <p class="text-center">Loading workspaces...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Sync Tasks Tab -->
-            <div class="tab-pane fade" id="sync-content" role="tabpanel">
-                <div class="card">
-                    <div class="card-header">
-                        Sync Tasks from Asana
-                    </div>
-                    <div class="card-body">
-                        <form id="sync-form">
-                            <div class="mb-3">
-                                <label for="syncWorkspace" class="form-label">Workspace</label>
-                                <select class="form-control" id="syncWorkspace">
-                                    <option value="">Loading workspaces...</option>
-                                </select>
+                        <div class="col">
+                            <h3>Sync History</h3>
+                            <div class="history-log" id="history-log">
+                                <div class="log-entry">
+                                    <div class="log-time">May 1, 2024 - 14:32:15</div>
+                                    <div class="log-message log-success">Successfully synced 15 tasks from JoJo's Operations</div>
+                                </div>
+                                <div class="log-entry">
+                                    <div class="log-time">May 1, 2024 - 14:32:10</div>
+                                    <div class="log-message log-error">Failed to sync 1 task from Store Maintenance: Task ID 12345 not found</div>
+                                </div>
+                                <div class="log-entry">
+                                    <div class="log-time">May 1, 2024 - 14:32:05</div>
+                                    <div class="log-message log-success">Successfully synced 12 tasks from Store Maintenance</div>
+                                </div>
+                                <div class="log-entry">
+                                    <div class="log-time">May 1, 2024 - 14:31:58</div>
+                                    <div class="log-message log-success">Successfully synced 31 tasks from Inventory Management</div>
+                                </div>
+                                <div class="log-entry">
+                                    <div class="log-time">April 30, 2024 - 09:15:40</div>
+                                    <div class="log-message log-warning">Partial sync completed for Marketing Campaigns: 18 tasks synced, 2 failed</div>
+                                </div>
+                                <div class="log-entry">
+                                    <div class="log-time">April 29, 2024 - 11:30:22</div>
+                                    <div class="log-message log-success">Successfully synced 7 tasks from Product Development</div>
+                                </div>
+                                <div class="log-entry">
+                                    <div class="log-time">April 28, 2024 - 15:45:10</div>
+                                    <div class="log-message log-warning">Partial sync completed for Customer Feedback: 14 tasks synced, 1 failed</div>
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">Sync Tasks Now</button>
-                        </form>
-                        <div id="sync-status" class="mt-3"></div>
-                        <div class="progress mt-3" style="display: none;" id="sync-progress-container">
-                            <div 
-                                id="sync-progress" 
-                                class="progress-bar progress-bar-striped progress-bar-animated" 
-                                role="progressbar" 
-                                aria-valuenow="0" 
-                                aria-valuemin="0" 
-                                aria-valuemax="100" 
-                                style="width: 0%">
+                            <div class="load-more">
+                                <button id="load-more-logs" class="btn btn-secondary">Load More</button>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="card mt-4">
-                    <div class="card-header">
-                        Task Statistics
-                    </div>
-                    <div class="card-body">
-                        <div id="task-stats">
-                            <p class="text-center">Loading statistics...</p>
+                <!-- Task Viewer Tab -->
+                <div id="task-viewer" class="tab-content">
+                    <div class="task-filters">
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="filter-project">Project</label>
+                                    <select id="filter-project">
+                                        <option value="">All Projects</option>
+                                        <option value="project1">JoJo's Operations</option>
+                                        <option value="project2">Store Maintenance</option>
+                                        <option value="project3">Inventory Management</option>
+                                        <option value="project4">Marketing Campaigns</option>
+                                        <option value="project5">Product Development</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="filter-status">Status</label>
+                                    <select id="filter-status">
+                                        <option value="">All Statuses</option>
+                                        <option value="not_started">Not Started</option>
+                                        <option value="in_progress">In Progress</option>
+                                        <option value="completed">Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="filter-assignee">Assignee</label>
+                                    <select id="filter-assignee">
+                                        <option value="">All Assignees</option>
+                                        <option value="user1">John Smith</option>
+                                        <option value="user2">Jane Doe</option>
+                                        <option value="user3">Mike Johnson</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button id="apply-filters" class="btn">Apply Filters</button>
+                            <button id="reset-filters" class="btn btn-secondary" style="margin-left: 10px;">Reset</button>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Sync Logs Tab -->
-            <div class="tab-pane fade" id="logs-content" role="tabpanel">
-                <div class="card">
-                    <div class="card-header">
-                        Sync Operation Logs
-                    </div>
-                    <div class="card-body">
-                        <div id="sync-logs">
-                            <p class="text-center">Loading logs...</p>
+                    
+                    <div class="task-list" id="task-list">
+                        <div class="task-item" data-task-id="task1">
+                            <div class="task-title">Update weekly inventory sheet</div>
+                            <div class="task-details">
+                                <p>Project: Inventory Management | Assigned to: Manager | Due: May 5, 2024</p>
+                                <p>Status: In Progress</p>
+                            </div>
+                        </div>
+                        <div class="task-item" data-task-id="task2">
+                            <div class="task-title">Order new cups and lids</div>
+                            <div class="task-details">
+                                <p>Project: Inventory Management | Assigned to: Inventory Manager | Due: May 8, 2024</p>
+                                <p>Status: Not Started</p>
+                            </div>
+                        </div>
+                        <div class="task-item" data-task-id="task3">
+                            <div class="task-title">Schedule staff training for new flavors</div>
+                            <div class="task-details">
+                                <p>Project: JoJo's Operations | Assigned to: Store Manager | Due: May 12, 2024</p>
+                                <p>Status: Not Started</p>
+                            </div>
+                        </div>
+                        <div class="task-item" data-task-id="task4">
+                            <div class="task-title">Fix leaking faucet in Waimea location</div>
+                            <div class="task-details">
+                                <p>Project: Store Maintenance | Assigned to: Maintenance | Due: May 3, 2024</p>
+                                <p>Status: In Progress</p>
+                            </div>
+                        </div>
+                        <div class="task-item" data-task-id="task5">
+                            <div class="task-title">Create summer promotion materials</div>
+                            <div class="task-details">
+                                <p>Project: Marketing Campaigns | Assigned to: Marketing Manager | Due: May 15, 2024</p>
+                                <p>Status: Not Started</p>
+                            </div>
                         </div>
                     </div>
+                    <div class="load-more">
+                        <button id="load-more-tasks" class="btn btn-secondary">Load More Tasks</button>
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Status Log -->
-        <div class="card mt-4">
-            <div class="card-header">
-                Status Log
-            </div>
-            <div class="card-body status-log">
-                <div id="status-log"></div>
+                
+                <!-- Settings Tab -->
+                <div id="settings" class="tab-content">
+                    <div class="info-box">
+                        <p>Configure your Asana integration settings here. Your Personal Access Token will be securely stored in Firestore.</p>
+                    </div>
+                    
+                    <form id="settings-form">
+                        <div class="form-group">
+                            <label for="asana-pat">Asana Personal Access Token (PAT)</label>
+                            <input type="password" id="asana-pat" placeholder="Enter your Asana PAT">
+                            <small style="display: block; margin-top: 5px; color: #666;">You can generate a PAT in your Asana account settings</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="sync-frequency">Sync Frequency</label>
+                            <select id="sync-frequency">
+                                <option value="15">Every 15 minutes</option>
+                                <option value="30">Every 30 minutes</option>
+                                <option value="60" selected>Every hour</option>
+                                <option value="360">Every 6 hours</option>
+                                <option value="720">Every 12 hours</option>
+                                <option value="1440">Once a day</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn">Save Settings</button>
+                            <button type="button" id="test-connection" class="btn btn-secondary" style="margin-left: 10px;">Test Connection</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Asana Integration Scripts -->
-    <script src="js/asana-schema.js"></script>
-    <script src="js/asana-sync.js"></script>
+    <!-- Task Detail Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Task Details</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body" id="task-modal-body">
+                <!-- Task details will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
     
+    <footer>
+        JoJo's Shave Ice Management Hub &copy; 2024 | Version 1.0.0
+    </footer>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script>
-        // Firebase configuration
+        // Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
             authDomain: "jojo-s-app-back-end.firebaseapp.com",
@@ -270,542 +577,317 @@
             appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
             measurementId: "G-VBP44WBTCP"
         };
-
-        // Initialize Firebase
+        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         
-        // Initialize Asana sync utility
-        const asanaSync = new AsanaSync(db);
-
-        // DOM elements
-        const statusLogDiv = document.getElementById('status-log');
-        const configForm = document.getElementById('config-form');
-        const initButton = document.getElementById('init-btn');
-        const configStatusDiv = document.getElementById('config-status');
-        const currentConfigDiv = document.getElementById('current-config');
-        const workspacesListDiv = document.getElementById('workspaces-list');
-        const syncForm = document.getElementById('sync-form');
-        const syncWorkspaceSelect = document.getElementById('syncWorkspace');
-        const syncStatusDiv = document.getElementById('sync-status');
-        const syncProgressContainer = document.getElementById('sync-progress-container');
-        const syncProgress = document.getElementById('sync-progress');
-        const taskStatsDiv = document.getElementById('task-stats');
-        const syncLogsDiv = document.getElementById('sync-logs');
-
-        // Add status message
-        function addStatus(message, isError = false) {
-            const statusItem = document.createElement('div');
-            statusItem.className = isError ? 'alert alert-danger' : 'alert alert-info';
-            statusItem.textContent = message;
-            statusLogDiv.appendChild(statusItem);
-            statusLogDiv.scrollTop = statusLogDiv.scrollHeight;
-            console.log(message);
-        }
-
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', async function() {
-            addStatus("Welcome to the JoJo's Shave Ice Asana Task Manager!");
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if connection is established from Firestore
+            checkConnectionStatus();
             
-            // Load current configuration
-            await loadCurrentConfig();
+            // Tab navigation
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
             
-            // Load workspaces
-            await loadWorkspaces();
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.getAttribute('data-tab');
+                    
+                    // Update active tab button
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Show active tab content
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
             
-            // Load task statistics
-            await loadTaskStats();
+            // Select all projects checkbox
+            const selectAllCheckbox = document.getElementById('select-all-projects');
+            const projectCheckboxes = document.querySelectorAll('.project-checkbox');
             
-            // Load sync logs
-            await loadSyncLogs();
-        });
-
-        // Load current Asana configuration
-        async function loadCurrentConfig() {
-            try {
-                const configDoc = await db.collection('asana_config').doc('settings').get();
-                
-                if (configDoc.exists) {
-                    const config = configDoc.data();
-                    
-                    // Set form values
-                    document.getElementById('syncFrequency').value = config.syncFrequency;
-                    
-                    // Display configuration details
-                    currentConfigDiv.innerHTML = `
-                        <table class="table table-bordered">
-                            <tr>
-                                <th>API Token</th>
-                                <td>${config.personalAccessToken ? '******' : 'Not configured'}</td>
-                            </tr>
-                            <tr>
-                                <th>Sync Enabled</th>
-                                <td>${config.syncEnabled ? 'Yes' : 'No'}</td>
-                            </tr>
-                            <tr>
-                                <th>Sync Frequency</th>
-                                <td>${config.syncFrequency}</td>
-                            </tr>
-                            <tr>
-                                <th>Default Workspace</th>
-                                <td>${config.defaultWorkspaceId || 'Not set'}</td>
-                            </tr>
-                            <tr>
-                                <th>Last Full Sync</th>
-                                <td>${config.lastFullSyncTimestamp ? new Date(config.lastFullSyncTimestamp.toDate()).toLocaleString() : 'Never'}</td>
-                            </tr>
-                        </table>
-                    `;
-                    
-                    addStatus("Loaded Asana configuration.");
-                } else {
-                    currentConfigDiv.innerHTML = `
-                        <div class="alert alert-warning">
-                            Asana integration is not configured yet. Please initialize the integration.
-                        </div>
-                    `;
-                    
-                    addStatus("Asana integration is not configured yet.");
-                }
-            } catch (error) {
-                currentConfigDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error loading configuration: ${error.message}
-                    </div>
-                `;
-                
-                addStatus(`Error loading configuration: ${error.message}`, true);
-            }
-        }
-
-        // Load workspaces
-        async function loadWorkspaces() {
-            try {
-                const workspacesSnapshot = await db.collection('asana_workspaces').get();
-                
-                if (workspacesSnapshot.empty) {
-                    workspacesListDiv.innerHTML = `
-                        <div class="alert alert-warning">
-                            No Asana workspaces found. Please initialize the integration.
-                        </div>
-                    `;
-                    
-                    syncWorkspaceSelect.innerHTML = `
-                        <option value="">No workspaces available</option>
-                    `;
-                    
-                    addStatus("No Asana workspaces found.");
-                } else {
-                    let workspacesHTML = `
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Status</th>
-                                        <th>Last Sync</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                    `;
-                    
-                    let workspaceOptions = '';
-                    
-                    workspacesSnapshot.forEach(doc => {
-                        const workspace = doc.data();
-                        
-                        workspacesHTML += `
-                            <tr>
-                                <td>${workspace.name}</td>
-                                <td>${workspace.status}</td>
-                                <td>${workspace.lastSyncTimestamp ? new Date(workspace.lastSyncTimestamp.toDate()).toLocaleString() : 'Never'}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-primary sync-workspace-btn" data-id="${workspace.gid}">
-                                        Sync Now
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                        
-                        workspaceOptions += `
-                            <option value="${workspace.gid}">${workspace.name}</option>
-                        `;
-                    });
-                    
-                    workspacesHTML += `
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                    
-                    workspacesListDiv.innerHTML = workspacesHTML;
-                    syncWorkspaceSelect.innerHTML = workspaceOptions;
-                    
-                    // Add event listeners to sync buttons
-                    document.querySelectorAll('.sync-workspace-btn').forEach(button => {
-                        button.addEventListener('click', async () => {
-                            const workspaceId = button.getAttribute('data-id');
-                            await syncWorkspace(workspaceId);
-                        });
-                    });
-                    
-                    addStatus(`Loaded ${workspacesSnapshot.size} Asana workspaces.`);
-                }
-            } catch (error) {
-                workspacesListDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error loading workspaces: ${error.message}
-                    </div>
-                `;
-                
-                addStatus(`Error loading workspaces: ${error.message}`, true);
-            }
-        }
-
-        // Load task statistics
-        async function loadTaskStats() {
-            try {
-                const tasksSnapshot = await db.collection('asana_tasks').get();
-                const completedTasksSnapshot = await db.collection('asana_tasks').where('completed', '==', true).get();
-                
-                const totalTasks = tasksSnapshot.size;
-                const completedTasks = completedTasksSnapshot.size;
-                const incompleteTasks = totalTasks - completedTasks;
-                const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-                
-                taskStatsDiv.innerHTML = `
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="card bg-primary text-white">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Total Tasks</h5>
-                                    <h2>${totalTasks}</h2>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-success text-white">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Completed</h5>
-                                    <h2>${completedTasks}</h2>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-warning text-dark">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Incomplete</h5>
-                                    <h2>${incompleteTasks}</h2>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-info text-white">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Completion</h5>
-                                    <h2>${completionPercentage}%</h2>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                addStatus("Loaded task statistics.");
-            } catch (error) {
-                taskStatsDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error loading task statistics: ${error.message}
-                    </div>
-                `;
-                
-                addStatus(`Error loading task statistics: ${error.message}`, true);
-            }
-        }
-
-        // Load sync logs
-        async function loadSyncLogs() {
-            try {
-                const logsSnapshot = await db.collection('asana_sync_logs')
-                    .orderBy('timestamp', 'desc')
-                    .limit(10)
-                    .get();
-                
-                if (logsSnapshot.empty) {
-                    syncLogsDiv.innerHTML = `
-                        <div class="alert alert-info">
-                            No sync logs found yet.
-                        </div>
-                    `;
-                    
-                    addStatus("No sync logs found.");
-                } else {
-                    let logsHTML = `
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Date/Time</th>
-                                        <th>Operation</th>
-                                        <th>Status</th>
-                                        <th>Processed</th>
-                                        <th>Created</th>
-                                        <th>Updated</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                    `;
-                    
-                    logsSnapshot.forEach(doc => {
-                        const log = doc.data();
-                        
-                        logsHTML += `
-                            <tr>
-                                <td>${log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString() : 'N/A'}</td>
-                                <td>${log.operation}</td>
-                                <td>
-                                    <span class="badge ${log.status === 'success' ? 'bg-success' : (log.status === 'in_progress' ? 'bg-warning' : 'bg-danger')}">
-                                        ${log.status}
-                                    </span>
-                                </td>
-                                <td>${log.totalProcessed || 0}</td>
-                                <td>${log.created || 0}</td>
-                                <td>${log.updated || 0}</td>
-                            </tr>
-                        `;
-                    });
-                    
-                    logsHTML += `
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                    
-                    syncLogsDiv.innerHTML = logsHTML;
-                    
-                    addStatus(`Loaded ${logsSnapshot.size} sync logs.`);
-                }
-            } catch (error) {
-                syncLogsDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error loading sync logs: ${error.message}
-                    </div>
-                `;
-                
-                addStatus(`Error loading sync logs: ${error.message}`, true);
-            }
-        }
-
-        // Save configuration
-        configForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
+            selectAllCheckbox.addEventListener('change', function() {
+                projectCheckboxes.forEach(checkbox => {
+                    checkbox.checked = selectAllCheckbox.checked;
+                });
+            });
             
-            try {
-                const personalAccessToken = document.getElementById('personalAccessToken').value.trim();
-                const syncFrequency = document.getElementById('syncFrequency').value;
+            // Force sync button
+            const forceSyncBtn = document.getElementById('force-sync-btn');
+            forceSyncBtn.addEventListener('click', function() {
+                const selectedProjects = Array.from(document.querySelectorAll('.project-checkbox:checked'))
+                    .map(checkbox => checkbox.value);
                 
-                // Check if config exists
-                const configDoc = await db.collection('asana_config').doc('settings').get();
-                
-                if (configDoc.exists) {
-                    // Update existing config
-                    const updateData = {
-                        syncFrequency: syncFrequency,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    
-                    // Only update token if provided
-                    if (personalAccessToken) {
-                        updateData.personalAccessToken = personalAccessToken;
-                    }
-                    
-                    await db.collection('asana_config').doc('settings').update(updateData);
-                    
-                    configStatusDiv.innerHTML = `
-                        <div class="alert alert-success">
-                            Configuration updated successfully!
-                        </div>
-                    `;
-                    
-                    addStatus("Configuration updated successfully.");
-                } else {
-                    // Create new config
-                    if (!personalAccessToken) {
-                        configStatusDiv.innerHTML = `
-                            <div class="alert alert-danger">
-                                Personal Access Token is required for initial configuration.
-                            </div>
-                        `;
-                        
-                        addStatus("Personal Access Token is required for initial configuration.", true);
-                        return;
-                    }
-                    
-                    await db.collection('asana_config').doc('settings').set({
-                        version: '1.0.0',
-                        personalAccessToken: personalAccessToken,
-                        defaultWorkspaceId: '',
-                        syncEnabled: true,
-                        syncFrequency: syncFrequency,
-                        lastFullSyncTimestamp: null,
-                        webhookEnabled: false,
-                        webhookSecret: '',
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    configStatusDiv.innerHTML = `
-                        <div class="alert alert-success">
-                            Configuration created successfully! You can now initialize the integration.
-                        </div>
-                    `;
-                    
-                    addStatus("Configuration created successfully.");
-                }
-                
-                // Reload current config
-                await loadCurrentConfig();
-            } catch (error) {
-                configStatusDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error saving configuration: ${error.message}
-                    </div>
-                `;
-                
-                addStatus(`Error saving configuration: ${error.message}`, true);
-            }
-        });
-
-        // Initialize Asana integration
-        initButton.addEventListener('click', async function() {
-            try {
-                // Check if config exists
-                const configDoc = await db.collection('asana_config').doc('settings').get();
-                
-                if (!configDoc.exists || !configDoc.data().personalAccessToken) {
-                    configStatusDiv.innerHTML = `
-                        <div class="alert alert-danger">
-                            Please save a valid Personal Access Token first.
-                        </div>
-                    `;
-                    
-                    addStatus("Please save a valid Personal Access Token first.", true);
+                if (selectedProjects.length === 0) {
+                    alert('Please select at least one project to sync');
                     return;
                 }
                 
-                configStatusDiv.innerHTML = `
-                    <div class="alert alert-info">
-                        Initializing Asana integration... Please wait.
-                    </div>
+                alert(`Starting sync for ${selectedProjects.length} projects...`);
+                // Here you would trigger the actual sync process with the Asana API
+                
+                // Update last sync time (for demo purposes)
+                const now = new Date();
+                const formattedDate = now.toLocaleString();
+                document.getElementById('last-sync-time').textContent = `Last sync: ${formattedDate}`;
+                
+                // Add a new log entry (for demo purposes)
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                logEntry.innerHTML = `
+                    <div class="log-time">${formattedDate}</div>
+                    <div class="log-message log-success">Started manual sync for ${selectedProjects.length} projects</div>
                 `;
-                
-                addStatus("Initializing Asana integration...");
-                
-                // Initialize the integration
-                const result = await asanaSync.setupAsanaIntegration(configDoc.data().personalAccessToken);
-                
-                configStatusDiv.innerHTML = `
-                    <div class="alert alert-success">
-                        <p>Asana integration initialized successfully!</p>
-                        <p>Found ${result.workspaceCount} workspaces.</p>
-                    </div>
-                `;
-                
-                addStatus(`Asana integration initialized successfully! Found ${result.workspaceCount} workspaces.`);
-                
-                // Reload workspaces
-                await loadWorkspaces();
-                
-                // Reload current config
-                await loadCurrentConfig();
-            } catch (error) {
-                configStatusDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error initializing Asana integration: ${error.message}
-                    </div>
-                `;
-                
-                addStatus(`Error initializing Asana integration: ${error.message}`, true);
-            }
-        });
-
-        // Sync tasks form submit
-        syncForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
+                const historyLog = document.getElementById('history-log');
+                historyLog.insertBefore(logEntry, historyLog.firstChild);
+            });
             
-            const workspaceId = syncWorkspaceSelect.value;
+            // Load more logs button
+            document.getElementById('load-more-logs').addEventListener('click', function() {
+                alert('Loading more log entries...');
+                // Here you would fetch more log entries from Firestore
+            });
             
-            if (!workspaceId) {
-                syncStatusDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        Please select a workspace.
-                    </div>
-                `;
+            // Apply filters button
+            document.getElementById('apply-filters').addEventListener('click', function() {
+                const project = document.getElementById('filter-project').value;
+                const status = document.getElementById('filter-status').value;
+                const assignee = document.getElementById('filter-assignee').value;
                 
-                addStatus("Please select a workspace.", true);
-                return;
-            }
+                alert(`Filtering tasks by - Project: ${project || 'All'}, Status: ${status || 'All'}, Assignee: ${assignee || 'All'}`);
+                // Here you would filter tasks based on the selected criteria
+            });
             
-            await syncWorkspace(workspaceId);
-        });
-
-        // Sync workspace tasks
-        async function syncWorkspace(workspaceId) {
-            try {
-                syncStatusDiv.innerHTML = `
-                    <div class="alert alert-info">
-                        Syncing tasks from workspace... This may take a while.
-                    </div>
-                `;
+            // Reset filters button
+            document.getElementById('reset-filters').addEventListener('click', function() {
+                document.getElementById('filter-project').value = '';
+                document.getElementById('filter-status').value = '';
+                document.getElementById('filter-assignee').value = '';
+            });
+            
+            // Load more tasks button
+            document.getElementById('load-more-tasks').addEventListener('click', function() {
+                alert('Loading more tasks...');
+                // Here you would fetch more tasks from Firestore
+            });
+            
+            // Settings form submission
+            document.getElementById('settings-form').addEventListener('submit', function(e) {
+                e.preventDefault();
                 
-                syncProgressContainer.style.display = 'block';
-                syncProgress.style.width = '25%';
-                syncProgress.setAttribute('aria-valuenow', '25');
+                const pat = document.getElementById('asana-pat').value;
+                const syncFrequency = document.getElementById('sync-frequency').value;
                 
-                addStatus(`Syncing tasks from workspace ${workspaceId}...`);
+                if (!pat) {
+                    alert('Please enter your Asana Personal Access Token');
+                    return;
+                }
                 
-                // Start the sync
-                const result = await asanaSync.syncWorkspaceTasks(workspaceId);
+                // Save settings to Firestore
+                db.collection('asanaSettings').doc('config').set({
+                    pat: pat,
+                    syncFrequency: syncFrequency,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                })
+                .then(() => {
+                    alert('Settings saved successfully!');
+                    updateConnectionStatus(true);
+                })
+                .catch((error) => {
+                    alert(`Error saving settings: ${error.message}`);
+                });
+            });
+            
+            // Test connection button
+            document.getElementById('test-connection').addEventListener('click', function() {
+                const pat = document.getElementById('asana-pat').value;
                 
-                syncProgressContainer.style.display = 'block';
-                syncProgress.style.width = '100%';
-                syncProgress.setAttribute('aria-valuenow', '100');
+                if (!pat) {
+                    alert('Please enter your Asana Personal Access Token');
+                    return;
+                }
                 
-                syncStatusDiv.innerHTML = `
-                    <div class="alert alert-success">
-                        <p>Sync completed successfully!</p>
-                        <p>Processed ${result.totalProcessed} tasks.</p>
-                        <p>Created ${result.created} new tasks.</p>
-                        <p>Updated ${result.updated} existing tasks.</p>
-                    </div>
-                `;
+                alert('Testing connection to Asana...');
+                // Here you would test the connection to Asana using the PAT
                 
-                addStatus(`Sync completed. Processed ${result.totalProcessed} tasks.`);
-                
-                // Hide progress bar after a delay
+                // For demo purposes, simulate a successful connection
                 setTimeout(() => {
-                    syncProgressContainer.style.display = 'none';
-                }, 3000);
-                
-                // Reload task statistics
-                await loadTaskStats();
-                
-                // Reload sync logs
-                await loadSyncLogs();
-                
-                // Reload workspaces
-                await loadWorkspaces();
-            } catch (error) {
-                syncProgressContainer.style.display = 'none';
-                
-                syncStatusDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        Error syncing tasks: ${error.message}
+                    alert('Connection successful!');
+                    updateConnectionStatus(true);
+                }, 1000);
+            });
+            
+            // Open task detail modal when clicking on a task
+            const taskItems = document.querySelectorAll('.task-item');
+            const taskModal = document.getElementById('task-modal');
+            const closeBtn = document.querySelector('.close-btn');
+            
+            taskItems.forEach(task => {
+                task.addEventListener('click', function() {
+                    const taskId = this.getAttribute('data-task-id');
+                    openTaskModal(taskId);
+                });
+            });
+            
+            closeBtn.addEventListener('click', function() {
+                taskModal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', function(e) {
+                if (e.target === taskModal) {
+                    taskModal.style.display = 'none';
+                }
+            });
+        });
+        
+        // Check connection status from Firestore
+        function checkConnectionStatus() {
+            db.collection('asanaSettings').doc('config').get()
+                .then((doc) => {
+                    if (doc.exists && doc.data().pat) {
+                        updateConnectionStatus(true);
+                    } else {
+                        updateConnectionStatus(false);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error checking connection status:', error);
+                    updateConnectionStatus(false);
+                });
+        }
+        
+        // Update UI based on connection status
+        function updateConnectionStatus(isConnected) {
+            const connectionStatus = document.querySelector('.connection-status');
+            const notConnectedMessage = document.getElementById('not-connected-message');
+            const connectedContent = document.getElementById('connected-content');
+            
+            if (isConnected) {
+                connectionStatus.className = 'connection-status status-connected';
+                connectionStatus.textContent = 'Connected';
+                notConnectedMessage.style.display = 'none';
+                connectedContent.style.display = 'block';
+            } else {
+                connectionStatus.className = 'connection-status status-disconnected';
+                connectionStatus.textContent = 'Disconnected';
+                notConnectedMessage.style.display = 'block';
+                connectedContent.style.display = 'none';
+            }
+        }
+        
+        // Open task detail modal
+        function openTaskModal(taskId) {
+            const taskModal = document.getElementById('task-modal');
+            const taskModalBody = document.getElementById('task-modal-body');
+            
+            // For demo purposes, set some static data based on task ID
+            let taskData;
+            
+            switch (taskId) {
+                case 'task1':
+                    taskData = {
+                        title: 'Update weekly inventory sheet',
+                        description: 'Compile a comprehensive inventory report for all three locations. Make sure to include current stock levels, items that need reordering, and notes about any discrepancies.',
+                        assignee: 'Manager',
+                        dueDate: 'May 5, 2024',
+                        status: 'In Progress',
+                        project: 'Inventory Management',
+                        createdAt: 'April 28, 2024',
+                        priority: 'High',
+                        sections: ['Weekly Tasks', 'Admin'],
+                        tags: ['Inventory', 'Reporting', 'Weekly']
+                    };
+                    break;
+                case 'task2':
+                    taskData = {
+                        title: 'Order new cups and lids',
+                        description: 'Place an order for 5,000 small cups, 3,000 medium cups, and 2,000 large cups with matching lids. Use the approved supplier and check for any available discounts.',
+                        assignee: 'Inventory Manager',
+                        dueDate: 'May 8, 2024',
+                        status: 'Not Started',
+                        project: 'Inventory Management',
+                        createdAt: 'April 30, 2024',
+                        priority: 'Medium',
+                        sections: ['Supplies', 'Ordering'],
+                        tags: ['Inventory', 'Supplies', 'Ordering']
+                    };
+                    break;
+                default:
+                    taskData = {
+                        title: 'Task details not found',
+                        description: 'No additional information available for this task.',
+                        assignee: 'Unknown',
+                        dueDate: 'Unknown',
+                        status: 'Unknown',
+                        project: 'Unknown',
+                        createdAt: 'Unknown',
+                        priority: 'Unknown',
+                        sections: [],
+                        tags: []
+                    };
+            }
+            
+            // Generate HTML for task details
+            let taskDetailsHTML = `
+                <div class="task-property">
+                    <div class="property-name">Title</div>
+                    <div>${taskData.title}</div>
+                </div>
+                <div class="task-property">
+                    <div class="property-name">Description</div>
+                    <div>${taskData.description}</div>
+                </div>
+                <div class="task-property">
+                    <div class="property-name">Project</div>
+                    <div>${taskData.project}</div>
+                </div>
+                <div class="task-property">
+                    <div class="property-name">Assignee</div>
+                    <div>${taskData.assignee}</div>
+                </div>
+                <div class="task-property">
+                    <div class="property-name">Due Date</div>
+                    <div>${taskData.dueDate}</div>
+                </div>
+                <div class="task-property">
+                    <div class="property-name">Status</div>
+                    <div>${taskData.status}</div>
+                </div>
+                <div class="task-property">
+                    <div class="property-name">Priority</div>
+                    <div>${taskData.priority}</div>
+                </div>
+                <div class="task-property">
+                    <div class="property-name">Created</div>
+                    <div>${taskData.createdAt}</div>
+                </div>
+            `;
+            
+            if (taskData.sections && taskData.sections.length > 0) {
+                taskDetailsHTML += `
+                    <div class="task-property">
+                        <div class="property-name">Sections</div>
+                        <div>${taskData.sections.join(', ')}</div>
                     </div>
                 `;
-                
-                addStatus(`Error syncing tasks: ${error.message}`, true);
             }
+            
+            if (taskData.tags && taskData.tags.length > 0) {
+                taskDetailsHTML += `
+                    <div class="task-property">
+                        <div class="property-name">Tags</div>
+                        <div>${taskData.tags.join(', ')}</div>
+                    </div>
+                `;
+            }
+            
+            // Set modal title and content
+            document.querySelector('.modal-title').textContent = taskData.title;
+            taskModalBody.innerHTML = taskDetailsHTML;
+            
+            // Show the modal
+            taskModal.style.display = 'block';
         }
     </script>
 </body>
