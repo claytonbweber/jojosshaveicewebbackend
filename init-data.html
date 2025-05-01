@@ -1,180 +1,206 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Initialize Data</title>
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialize Data - JoJo's Shave Ice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        #statusContainer {
+            margin-top: 20px;
+        }
+        .version-alert {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: inline-block;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>JoJo's Shave Ice - Initialize Data</h1>
+        <div class="version-alert" id="versionAlert">
+            Version 1.0.9 (2024-04-26)
+        </div>
+    </div>
+    <div id="statusContainer"></div>
+
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
         import { getAuth, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, query, getDocs, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
+        // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyBXvOFZjqMqtHjWq6Qp-VWM5uXxAk9Kz_Y",
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
             authDomain: "jojo-s-app-back-end.firebaseapp.com",
             projectId: "jojo-s-app-back-end",
             storageBucket: "jojo-s-app-back-end.appspot.com",
             messagingSenderId: "344579778389",
             appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
-            measurementId: "G-VXVQE1TLFK"
+            measurementId: "G-VBP44WBTCP"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        async function clearCollection(collectionName) {
-            const querySnapshot = await getDocs(collection(db, collectionName));
-            const deletePromises = [];
-            querySnapshot.forEach((doc) => {
-                deletePromises.push(deleteDoc(doc.ref));
-            });
-            await Promise.all(deletePromises);
-            console.log(`Cleared ${collectionName} collection`);
-        }
-
-        async function createAuthUser(email, password) {
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                console.log(`Created auth user for ${email}`);
-            } catch (error) {
-                if (error.code !== 'auth/email-already-in-use') {
-                    throw error;
-                }
-                console.log(`Auth user ${email} already exists`);
-            }
+        function addStatus(message, isError = false) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${isError ? 'error' : 'success'}`;
+            statusDiv.textContent = message;
+            document.getElementById('statusContainer').appendChild(statusDiv);
         }
 
         async function initializeData() {
             try {
-                document.getElementById('status').textContent = 'Clearing existing data...';
-                await clearCollection('employees');
-                await clearCollection('locations');
-                
-                document.getElementById('status').textContent = 'Creating employees...';
-                
-                // Create employees
-                const employees = [
-                    {
-                        email: 'admin@jojos.com',
-                        password: 'admin1234',
-                        role: 'Admin',
-                        passcode: '1234',
-                        name: 'John Admin',
-                        assignedLocations: ['Waimea', 'CMP', 'Hanalei'],
-                        primaryLocation: 'Waimea',
-                        permissions: ['all']
-                    },
-                    {
-                        email: 'waimea.manager@jojos.com',
-                        password: 'manager1234',
-                        role: 'Manager',
-                        passcode: '5678',
-                        name: 'Sarah Manager',
-                        assignedLocations: ['Waimea'],
-                        primaryLocation: 'Waimea',
-                        permissions: ['manage_location']
-                    },
-                    {
-                        email: 'hanalei.staff@jojos.com',
-                        password: 'staff1234',
-                        role: 'Staff',
-                        passcode: '9012',
-                        name: 'Mike Staff',
-                        assignedLocations: ['Hanalei'],
-                        primaryLocation: 'Hanalei',
-                        permissions: ['basic']
-                    }
-                ];
+                // Check if admin user exists
+                const employeesRef = collection(db, 'employees');
+                const adminQuery = query(employeesRef, where('email', '==', 'admin@jojos.com'));
+                const adminSnapshot = await getDocs(adminQuery);
 
-                for (const employee of employees) {
-                    await createAuthUser(employee.email, employee.password);
-                    const { password, ...employeeData } = employee;
-                    await setDoc(doc(db, 'employees', employee.email), employeeData);
+                if (adminSnapshot.empty) {
+                    // Create admin user in Auth
+                    const adminEmail = 'admin@jojos.com';
+                    const adminPassword = 'admin1234';
+                    
+                    try {
+                        const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
+                        const adminUid = userCredential.user.uid;
+
+                        // Create admin user in Firestore
+                        await addDoc(employeesRef, {
+                            name: 'Admin User',
+                            email: adminEmail,
+                            role: 'Admin',
+                            passcode: '1234',
+                            assignedLocations: ['waimea', 'cmp', 'hanalei'],
+                            primaryLocation: 'waimea',
+                            permissions: ['all'],
+                            uid: adminUid,
+                            createdAt: serverTimestamp(),
+                            updatedAt: serverTimestamp()
+                        });
+                        addStatus('Admin user created successfully');
+                    } catch (error) {
+                        if (error.code === 'auth/email-already-in-use') {
+                            addStatus('Admin user already exists in Auth', true);
+                        } else {
+                            throw error;
+                        }
+                    }
+                } else {
+                    addStatus('Admin user already exists');
                 }
 
-                document.getElementById('status').textContent = 'Creating locations...';
-                
-                // Create locations
-                const locations = [
-                    {
-                        name: 'Waimea',
-                        address: '9400 Kaumualii Hwy, Waimea, HI 96796',
-                        phone: '808-338-1751',
-                        operatingHours: {
-                            monday: { open: '10:00', close: '18:00' },
-                            tuesday: { open: '10:00', close: '18:00' },
-                            wednesday: { open: '10:00', close: '18:00' },
-                            thursday: { open: '10:00', close: '18:00' },
-                            friday: { open: '10:00', close: '18:00' },
-                            saturday: { open: '10:00', close: '18:00' },
-                            sunday: { open: '10:00', close: '18:00' }
-                        },
-                        status: 'active',
-                        manager: 'waimea.manager@jojos.com',
-                        staff: ['waimea.manager@jojos.com'],
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    },
-                    {
-                        name: 'CMP',
-                        address: '4-484 Kuhio Hwy, Kapaa, HI 96746',
-                        phone: '808-822-7465',
-                        operatingHours: {
-                            monday: { open: '10:00', close: '18:00' },
-                            tuesday: { open: '10:00', close: '18:00' },
-                            wednesday: { open: '10:00', close: '18:00' },
-                            thursday: { open: '10:00', close: '18:00' },
-                            friday: { open: '10:00', close: '18:00' },
-                            saturday: { open: '10:00', close: '18:00' },
-                            sunday: { open: '10:00', close: '18:00' }
-                        },
-                        status: 'active',
-                        manager: 'admin@jojos.com',
-                        staff: ['admin@jojos.com'],
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    },
-                    {
-                        name: 'Hanalei',
-                        address: '5-5190 Kuhio Hwy, Hanalei, HI 96714',
-                        phone: '808-826-7010',
-                        operatingHours: {
-                            monday: { open: '10:00', close: '18:00' },
-                            tuesday: { open: '10:00', close: '18:00' },
-                            wednesday: { open: '10:00', close: '18:00' },
-                            thursday: { open: '10:00', close: '18:00' },
-                            friday: { open: '10:00', close: '18:00' },
-                            saturday: { open: '10:00', close: '18:00' },
-                            sunday: { open: '10:00', close: '18:00' }
-                        },
-                        status: 'active',
-                        manager: 'admin@jojos.com',
-                        staff: ['hanalei.staff@jojos.com', 'admin@jojos.com'],
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    }
-                ];
+                // Initialize locations
+                const locationsRef = collection(db, 'locations');
+                const locationsSnapshot = await getDocs(locationsRef);
 
-                for (const location of locations) {
-                    await setDoc(doc(db, 'locations', location.name), location);
+                if (locationsSnapshot.empty) {
+                    const locations = [
+                        {
+                            id: 'waimea',
+                            name: 'Waimea',
+                            address: '65-1158 Mamalahoa Hwy, Kamuela, HI 96743',
+                            phone: '808-885-8888',
+                            operatingHours: {
+                                monday: { open: '10:00', close: '20:00' },
+                                tuesday: { open: '10:00', close: '20:00' },
+                                wednesday: { open: '10:00', close: '20:00' },
+                                thursday: { open: '10:00', close: '20:00' },
+                                friday: { open: '10:00', close: '20:00' },
+                                saturday: { open: '10:00', close: '20:00' },
+                                sunday: { open: '10:00', close: '20:00' }
+                            },
+                            status: 'active',
+                            createdAt: serverTimestamp(),
+                            updatedAt: serverTimestamp()
+                        },
+                        {
+                            id: 'cmp',
+                            name: 'CMP',
+                            address: '65-1158 Mamalahoa Hwy, Kamuela, HI 96743',
+                            phone: '808-885-8888',
+                            operatingHours: {
+                                monday: { open: '10:00', close: '20:00' },
+                                tuesday: { open: '10:00', close: '20:00' },
+                                wednesday: { open: '10:00', close: '20:00' },
+                                thursday: { open: '10:00', close: '20:00' },
+                                friday: { open: '10:00', close: '20:00' },
+                                saturday: { open: '10:00', close: '20:00' },
+                                sunday: { open: '10:00', close: '20:00' }
+                            },
+                            status: 'active',
+                            createdAt: serverTimestamp(),
+                            updatedAt: serverTimestamp()
+                        },
+                        {
+                            id: 'hanalei',
+                            name: 'Hanalei',
+                            address: '65-1158 Mamalahoa Hwy, Kamuela, HI 96743',
+                            phone: '808-885-8888',
+                            operatingHours: {
+                                monday: { open: '10:00', close: '20:00' },
+                                tuesday: { open: '10:00', close: '20:00' },
+                                wednesday: { open: '10:00', close: '20:00' },
+                                thursday: { open: '10:00', close: '20:00' },
+                                friday: { open: '10:00', close: '20:00' },
+                                saturday: { open: '10:00', close: '20:00' },
+                                sunday: { open: '10:00', close: '20:00' }
+                            },
+                            status: 'active',
+                            createdAt: serverTimestamp(),
+                            updatedAt: serverTimestamp()
+                        }
+                    ];
+
+                    for (const location of locations) {
+                        await addDoc(locationsRef, location);
+                    }
+                    addStatus('Locations initialized successfully');
+                } else {
+                    addStatus('Locations already exist');
                 }
 
-                document.getElementById('status').textContent = 'Data initialized successfully!';
-                console.log('All data initialized successfully');
+                addStatus('Data initialization complete!');
             } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('status').textContent = 'Error: ' + error.message;
+                console.error('Error initializing data:', error);
+                addStatus(`Error: ${error.message}`, true);
             }
         }
-        
-        window.onload = initializeData;
+
+        // Initialize data when the page loads
+        window.addEventListener('load', initializeData);
     </script>
-</head>
-<body>
-    <h1>Initializing Firestore Data</h1>
-    <p id="status">Loading...</p>
-    <div id="details"></div>
 </body>
 </html> 

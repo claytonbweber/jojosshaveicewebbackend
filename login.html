@@ -3,441 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JoJo's Shave Ice - Login</title>
-    <!-- Add Firebase SDK -->
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js"></script>
+    <title>Login - Jojo's Shave Ice</title>
+    <link rel="stylesheet" href="styles.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .login-container {
-            background-color: #FFFFFF;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            color: #EF6C00;
-            margin: 0;
-            font-size: 28px;
-        }
-        .header p {
-            color: #424242;
-            margin: 10px 0 0;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #424242;
-            font-weight: bold;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #E0E0E0;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #EF6C00;
-        }
-        .button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .button-primary {
-            background-color: #EF6C00;
-            color: #FFFFFF;
-        }
-        .button-primary:hover {
-            background-color: #E65100;
-        }
-        .error-message {
-            color: #D32F2F;
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #FFEBEE;
-            text-align: center;
-            display: none;
-        }
-        .success-message {
-            color: #2E7D32;
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #E8F5E9;
-            text-align: center;
-            display: none;
-        }
-        .login-tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #E0E0E0;
-        }
-        .login-tab {
-            flex: 1;
-            text-align: center;
-            padding: 15px;
-            cursor: pointer;
-            color: #424242;
-            transition: all 0.3s ease;
-            border-bottom: 2px solid transparent;
-        }
-        .login-tab:hover {
-            color: #EF6C00;
-            background-color: #FFF3E0;
-        }
-        .login-tab.active {
-            color: #EF6C00;
-            border-bottom: 2px solid #EF6C00;
-            font-weight: bold;
-        }
-        .login-form {
-            display: none;
-        }
-        .login-form.active {
-            display: block;
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 10px 0;
-        }
-        .loading::after {
-            content: "...";
-            animation: dots 1s steps(5, end) infinite;
-        }
-        @keyframes dots {
-            0%, 20% { content: "."; }
-            40% { content: ".."; }
-            60%, 100% { content: "..."; }
-        }
-        .version-alert {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            display: none;
-            animation: fadeInOut 3s ease-in-out;
-            z-index: 1000;
-        }
-        @keyframes fadeInOut {
-            0% { opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-        .nav-dropdown {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-        }
-        .nav-dropdown select {
-            padding: 8px;
-            font-size: 14px;
-            border: 1px solid #E0E0E0;
-            border-radius: 5px;
-            background-color: white;
-            cursor: pointer;
-        }
-        .nav-dropdown select:focus {
-            outline: none;
-            border-color: #EF6C00;
-        }
+        .login-form { display: none; }
+        .login-form.active { display: block; }
+        .login-option-btn { padding: 10px; margin: 5px; cursor: pointer; }
+        .login-option-btn.active { background-color: #ccc; }
+        .error-message, .loading-message { margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="version-alert" id="versionAlert">
-        Version updated: v1.0.0 (2024-03-20)
-    </div>
-
-    <div class="nav-dropdown">
-        <select id="pageNavigator" onchange="navigateToPage(this.value)">
-            <option value="">Select Page</option>
-            <option value="init-data.html">Initialize Data</option>
-            <option value="base-portal.html">Base Portal</option>
-            <option value="location-portal.html">Location Portal</option>
-            <option value="staff-portal.html">Staff Portal</option>
-        </select>
-    </div>
-
     <div class="login-container">
-        <div class="header">
-            <h1>JoJo's Shave Ice</h1>
-            <p>Management Portal</p>
+        <h1>Jojo's Shave Ice</h1>
+        <div class="version-alert" id="versionAlert">
+            Version 1.0.10 (2024-04-26)
         </div>
         
-        <div class="login-tabs">
-            <div class="login-tab active" onclick="switchTab('email')">Email Login</div>
-            <div class="login-tab" onclick="switchTab('passcode')">Passcode Login</div>
+        <!-- Login Options -->
+        <div class="login-options">
+            <button type="button" id="emailLoginBtn" class="login-option-btn active">Email Login</button>
+            <button type="button" id="passcodeLoginBtn" class="login-option-btn">Passcode Login</button>
         </div>
 
-        <div class="success-message" id="successMessage"></div>
-        <div class="error-message" id="errorMessage"></div>
-        <div class="loading" id="loadingMessage">Logging in</div>
-
+        <!-- Email Login Form -->
         <form id="emailLoginForm" class="login-form active">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" class="button button-primary">Login</button>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
         </form>
 
+        <!-- Passcode Login Form -->
         <form id="passcodeLoginForm" class="login-form">
-            <div class="form-group">
-                <label for="passcode">Passcode</label>
-                <input type="text" id="passcode" name="passcode" required>
-            </div>
-            <button type="submit" class="button button-primary">Login</button>
+            <input type="password" id="passcode" placeholder="Passcode" required>
+            <button type="submit">Login</button>
         </form>
+
+        <!-- Error and Loading Messages -->
+        <div id="error" class="error-message" style="display: none;"></div>
+        <div id="loading" class="loading-message" style="display: none;">Loading...</div>
     </div>
 
-    <script>
-        // Tab switching functionality
-        function switchTab(tabType) {
-            console.log('Switching to tab:', tabType);
-            // Update active tab
-            document.querySelectorAll('.login-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`.login-tab[onclick*="${tabType}"]`).classList.add('active');
-
-            // Show corresponding form
-            document.querySelectorAll('.login-form').forEach(form => form.classList.remove('active'));
-            document.getElementById(`${tabType}LoginForm`).classList.add('active');
-
-            // Clear messages
-            hideMessages();
-        }
-
-        // Message handling
-        function showError(message) {
-            const errorElement = document.getElementById('errorMessage');
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-            document.getElementById('successMessage').style.display = 'none';
-            document.getElementById('loadingMessage').style.display = 'none';
-        }
-
-        function showSuccess(message) {
-            const successElement = document.getElementById('successMessage');
-            successElement.textContent = message;
-            successElement.style.display = 'block';
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('loadingMessage').style.display = 'none';
-        }
-
-        function showLoading() {
-            document.getElementById('loadingMessage').style.display = 'block';
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'none';
-        }
-
-        function hideMessages() {
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'none';
-            document.getElementById('loadingMessage').style.display = 'none';
-        }
-
-        // Version alert functionality
-        const VERSION = '1.0.1';
-        const BUILD_DATE = '2024-03-20';
-
-        function showVersionAlert() {
-            const storedVersion = localStorage.getItem('appVersion');
-            if (storedVersion !== VERSION) {
-                const alert = document.getElementById('versionAlert');
-                alert.textContent = `Version updated: v${VERSION} (${BUILD_DATE})`;
-                alert.style.display = 'block';
-                localStorage.setItem('appVersion', VERSION);
-                setTimeout(() => {
-                    alert.style.display = 'none';
-                }, 3000);
-            }
-        }
-
-        // Navigation functionality
-        function navigateToPage(page) {
-            if (page) {
-                // Check if user is logged in
-                const userData = sessionStorage.getItem('userData');
-                if (userData) {
-                    window.location.href = page;
-                } else {
-                    showError('Please log in first to access other pages');
-                    document.getElementById('pageNavigator').value = '';
-                }
-            }
-        }
-
-        // Call version check on page load
-        window.addEventListener('load', showVersionAlert);
-    </script>
-
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
         import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { firebaseConfig } from './firebase-config.js';
 
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBXvOFZjqMqtHjWq6Qp-VWM5uXxAk9Kz_Y",
-            authDomain: "jojo-s-app-back-end.firebaseapp.com",
-            projectId: "jojo-s-app-back-end",
-            storageBucket: "jojo-s-app-back-end.appspot.com",
-            messagingSenderId: "344579778389",
-            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
-            measurementId: "G-VXVQE1TLFK"
-        };
+        // Initialize Firebase with error handling
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            console.log('Firebase initialized:', app);
+        } catch (error) {
+            console.error('Firebase initialization failed:', error);
+        }
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Helper function to show error
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+        }
 
-        // Handle role-based redirection
-        async function redirectBasedOnRole(email) {
-            console.log('Getting role for user:', email);
-            try {
-                const employeesRef = collection(db, 'employees');
-                const q = query(employeesRef, where("email", "==", email));
-                const querySnapshot = await getDocs(q);
-                
-                if (querySnapshot.empty) {
-                    console.error('No employee record found');
-                    throw new Error('No employee record found');
-                }
+        // Helper function to show loading
+        function showLoading() {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+        }
 
-                const employeeData = querySnapshot.docs[0].data();
-                console.log('Employee data:', employeeData);
+        // Helper function to hide both error and loading
+        function hideMessages() {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+        }
 
-                // Store user data in session
-                sessionStorage.setItem('userData', JSON.stringify(employeeData));
-
-                // Redirect based on role
-                switch (employeeData.role) {
-                    case 'Admin':
-                        console.log('Redirecting to base portal');
-                        window.location.href = '/base-portal.html';
-                        break;
-                    case 'Manager':
-                        console.log('Redirecting to location portal');
-                        window.location.href = '/location-portal.html';
-                        break;
-                    case 'Staff':
-                        console.log('Redirecting to staff portal');
-                        window.location.href = '/staff-portal.html';
-                        break;
-                    default:
-                        throw new Error('Invalid role: ' + employeeData.role);
-                }
-            } catch (error) {
-                console.error('Redirection error:', error);
-                throw error;
+        // Helper function to redirect based on role
+        async function redirectBasedOnRole(employeeData) {
+            console.log('Employee data:', employeeData);
+            console.log('Role:', employeeData?.role);
+            if (!employeeData?.role) {
+                console.error('No role found in employee data');
+                showError('No role assigned to user');
+                return;
+            }
+            sessionStorage.setItem('employeeData', JSON.stringify(employeeData));
+            const user = auth.currentUser;
+            if (user) {
+                const token = await user.getIdToken();
+                sessionStorage.setItem('authToken', token);
+                console.log('Auth token stored:', token);
+            } else {
+                console.error('No authenticated user found');
+                showError('Authentication session expired');
+                return;
+            }
+            const role = employeeData.role.toLowerCase();
+            console.log('Redirecting to role-based portal:', role);
+            switch(role) {
+                case 'admin':
+                    window.location.href = '/base-portal';
+                    break;
+                case 'manager':
+                    window.location.href = '/location-portal';
+                    break;
+                case 'staff':
+                    window.location.href = '/staff-portal';
+                    break;
+                default:
+                    console.error('Invalid role:', role);
+                    showError('Invalid role assigned to user');
+                    window.location.href = '/default-portal';
             }
         }
 
-        // Email login form handler
-        document.getElementById('emailLoginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            showLoading();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+        // Toggle between login forms
+        function switchForm(showEmailForm) {
+            console.log('Switching to:', showEmailForm ? 'email form' : 'passcode form');
+            const emailForm = document.getElementById('emailLoginForm');
+            const passcodeForm = document.getElementById('passcodeLoginForm');
+            const emailBtn = document.getElementById('emailLoginBtn');
+            const passcodeBtn = document.getElementById('passcodeLoginBtn');
 
-            try {
-                console.log('Attempting email login for:', email);
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                console.log('Login successful:', userCredential);
-                showSuccess('Login successful! Redirecting...');
-                await redirectBasedOnRole(email);
-            } catch (error) {
-                console.error('Login error:', error);
-                let errorMessage = 'Login failed: ';
-                switch (error.code) {
-                    case 'auth/invalid-email':
-                        errorMessage += 'Invalid email address';
-                        break;
-                    case 'auth/user-disabled':
-                        errorMessage += 'Account has been disabled';
-                        break;
-                    case 'auth/user-not-found':
-                        errorMessage += 'User not found';
-                        break;
-                    case 'auth/wrong-password':
-                        errorMessage += 'Incorrect password';
-                        break;
-                    default:
-                        errorMessage += error.message;
-                }
-                showError(errorMessage);
+            if (!emailForm || !passcodeForm || !emailBtn || !passcodeBtn) {
+                console.error('Form or button elements not found');
+                return;
             }
+
+            emailForm.classList.toggle('active', showEmailForm);
+            passcodeForm.classList.toggle('active', !showEmailForm);
+            emailBtn.classList.toggle('active', showEmailForm);
+            passcodeBtn.classList.toggle('active', !showEmailForm);
+            hideMessages();
+        }
+
+        // Set up event listeners immediately
+        const emailLoginBtn = document.getElementById('emailLoginBtn');
+        const passcodeLoginBtn = document.getElementById('passcodeLoginBtn');
+
+        if (emailLoginBtn && passcodeLoginBtn) {
+            emailLoginBtn.addEventListener('click', () => {
+                console.log('Email Login button clicked');
+                switchForm(true);
+            });
+            passcodeLoginBtn.addEventListener('click', () => {
+                console.log('Passcode Login button clicked');
+                switchForm(false);
+            });
+        } else {
+            console.error('Login buttons not found in DOM');
+        }
+
+            // Email login form handler
+        document.getElementById('emailLoginForm')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideMessages();
+                showLoading();
+
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    console.log('Auth successful:', userCredential.user.uid);
+                    
+                    const employeesRef = collection(db, 'employees');
+                    const q = query(employeesRef, where('email', '==', email));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        const employeeData = querySnapshot.docs[0].data();
+                        console.log('Employee data found:', employeeData);
+                        await redirectBasedOnRole(employeeData);
+                    } else {
+                        console.error('No employee data found for email:', email);
+                        showError('Employee data not found');
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    showError(error.message || 'Failed to login. Please try again.');
+                }
         });
 
-        // Passcode login form handler
-        document.getElementById('passcodeLoginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            showLoading();
+            // Passcode login form handler
+        document.getElementById('passcodeLoginForm')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideMessages();
+                showLoading();
 
-            const passcode = document.getElementById('passcode').value;
+                const passcode = document.getElementById('passcode').value;
 
-            try {
-                console.log('Attempting passcode login');
-                const employeesRef = collection(db, 'employees');
-                const q = query(employeesRef, where("passcode", "==", passcode));
-                const querySnapshot = await getDocs(q);
+                try {
+                    const employeesRef = collection(db, 'employees');
+                    const q = query(employeesRef, where('passcode', '==', passcode));
+                    const querySnapshot = await getDocs(q);
 
-                if (querySnapshot.empty) {
-                    throw new Error('Invalid passcode');
+                    if (!querySnapshot.empty) {
+                        const employeeData = querySnapshot.docs[0].data();
+                        console.log('Employee data found with passcode:', employeeData);
+                        await redirectBasedOnRole(employeeData);
+                    } else {
+                        console.error('No employee found with passcode');
+                        showError('Invalid passcode');
+                    }
+                } catch (error) {
+                    console.error('Passcode login error:', error);
+                    showError(error.message || 'Failed to login. Please try again.');
                 }
-
-                const employeeData = querySnapshot.docs[0].data();
-                console.log('Found employee:', employeeData);
-
-                // Store user data in session
-                sessionStorage.setItem('userData', JSON.stringify(employeeData));
-                showSuccess('Login successful! Redirecting...');
-                await redirectBasedOnRole(employeeData.email);
-            } catch (error) {
-                console.error('Passcode login error:', error);
-                showError('Login failed: ' + error.message);
-            }
         });
+
+            // Start with email form visible
+            switchForm(true);
     </script>
 </body>
 </html> 

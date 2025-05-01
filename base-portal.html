@@ -150,8 +150,8 @@
                 <h2>Manage Employees</h2>
                 <button class="button" id="addEmployeeButton">Add Employee</button>
                 <div id="employeesList"></div>
-            </div>
         </div>
+    </div>
 
         <!-- Base Tasks Tab -->
         <div class="tab-content" id="tasksTab">
@@ -159,8 +159,8 @@
                 <h2>Manage Base Tasks</h2>
                 <button class="button" id="addTaskButton">Add Task</button>
                 <div id="tasksList"></div>
-            </div>
         </div>
+    </div>
 
         <!-- Settings Tab -->
         <div class="tab-content" id="settingsTab">
@@ -254,7 +254,7 @@
                     address: document.getElementById('locationAddress').value,
                     phone: document.getElementById('locationPhone').value,
                     status: 'active',
-                    createdAt: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
 

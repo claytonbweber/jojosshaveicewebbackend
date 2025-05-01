@@ -5,12 +5,31 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
-      "offlineSync.js",
-      "tasks.html"
+      "offlineSync.js"
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "/init-data",
+        "destination": "/init-data.html"
+      },
+      {
+        "source": "/login",
+        "destination": "/login.html"
+      },
+      {
+        "source": "/base-portal",
+        "destination": "/base-portal.html"
+      },
+      {
+        "source": "/location-portal",
+        "destination": "/location-portal.html"
+      },
+      {
+        "source": "/staff-portal",
+        "destination": "/staff-portal.html"
+      },
+      {
+        "source": "/",
         "destination": "/login.html"
       }
     ]

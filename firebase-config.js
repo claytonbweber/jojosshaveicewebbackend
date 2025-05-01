@@ -1,11 +1,10 @@
-// Firebase configuration and initialization
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getAnalytics } from 'firebase/analytics';
-import { collection, query, where, limit, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+// Import Firebase modules
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js';
 
+// Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
     authDomain: "jojo-s-app-back-end.firebaseapp.com",
@@ -17,12 +16,12 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const analytics = getAnalytics(app);
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const analytics = getAnalytics(app);
 
-// Employee roles
+// Constants
 export const ROLES = {
     ADMIN: 'Admin',
     MANAGER: 'Manager',
@@ -38,52 +37,76 @@ export const COLLECTIONS = {
     OVERRIDES: 'baseTaskOverrides'
 };
 
-// Initialize employee data structure
-export async function initializeEmployeeData() {
+// Login with email function
+export async function loginWithEmail(email, password) {
     try {
-        // Check if employees collection exists
-        const employeesRef = collection(db, COLLECTIONS.EMPLOYEES);
-        const q = query(employeesRef, limit(1));
-        const snapshot = await getDocs(q);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
         
-        if (snapshot.empty) {
-            // Create initial admin user in Firebase Auth
-            const adminEmail = 'admin@jojos.com';
-            const adminPassword = 'admin1234';
-            
-            try {
-                // Create the admin user in Firebase Authentication
-                const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
-                const adminUid = userCredential.user.uid;
-
-                // Create initial admin user in Firestore
-                const adminUser = {
-                    name: 'Admin User',
-                    phone: '',
-                    email: adminEmail,
-                    role: ROLES.ADMIN,
-                    passcode: '1234',
-                    assignedLocations: [], // All locations accessible
-                    primaryLocation: null,
-                    permissions: ['all'],
-                    uid: adminUid, // Link to Firebase Auth user
-                    createdAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                };
-
-                // Create the admin user in Firestore
-                await addDoc(employeesRef, adminUser);
-                console.log('Initial admin user created in both Auth and Firestore');
-            } catch (error) {
-                if (error.code === 'auth/email-already-in-use') {
-                    console.log('Admin user already exists in Auth');
-                } else {
-                    console.error('Error creating admin user:', error);
-                }
-            }
+        // Query Firestore for employee data
+        const employeesRef = collection(db, 'employees');
+        const q = query(employeesRef, where('email', '==', email));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            throw new Error('Employee not found');
         }
 
-        // Initialize locations if they don't exist
+        return querySnapshot.docs[0].data();
+    } catch (error) {
+        console.error('Login error:', error);
+        throw error;
+    }
+}
+
+// Login with passcode function
+export async function loginWithPasscode(passcode) {
+    try {
+        // Query Firestore for employee with matching passcode
+        const employeesRef = collection(db, 'employees');
+        const q = query(employeesRef, where('passcode', '==', passcode));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            throw new Error('Invalid passcode');
+        }
+
+        return querySnapshot.docs[0].data();
+    } catch (error) {
+        console.error('Login error:', error);
+        throw error;
+    }
+}
+
+// Initialize employee data function
+export async function initializeEmployeeData() {
+    try {
+        const employeesRef = collection(db, 'employees');
+        const querySnapshot = await getDocs(employeesRef);
+        
+        if (querySnapshot.empty) {
+            // Create initial admin user
+            const adminData = {
+                email: 'admin@jojos.com',
+                role: ROLES.ADMIN,
+                passcode: '1234',
+                assignedLocations: ['Waimea', 'CMP', 'Hanalei'],
+                primaryLocation: 'Waimea',
+                permissions: ['all']
+            };
+            
+            await addDoc(employeesRef, adminData);
+            console.log('Initial admin user created');
+        }
+    } catch (error) {
+        console.error('Error initializing employee data:', error);
+        throw error;
+    }
+}
+
+// Initialize locations if they don't exist
+export async function initializeLocations() {
+    try {
         const locationsRef = collection(db, COLLECTIONS.LOCATIONS);
         const locationsSnapshot = await getDocs(locationsRef);
         
@@ -151,73 +174,23 @@ export async function initializeEmployeeData() {
             console.log('Initial locations created');
         }
     } catch (error) {
-        console.error('Error initializing data:', error);
-    }
-}
-
-// Authentication functions
-export async function loginWithEmail(email, password) {
-    try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        
-        // Get employee data
-        const employeesRef = collection(db, COLLECTIONS.EMPLOYEES);
-        const q = query(employeesRef, where('email', '==', email), limit(1));
-        const employeeSnapshot = await getDocs(q);
-
-        if (!employeeSnapshot.empty) {
-            const employeeData = employeeSnapshot.docs[0].data();
-            const employeeId = employeeSnapshot.docs[0].id;
-            
-            // Get assigned locations
-            const locationsRef = collection(db, COLLECTIONS.LOCATIONS);
-            const locationsQuery = query(locationsRef, where('id', 'in', employeeData.assignedLocations || []));
-            const locationsSnapshot = await getDocs(locationsQuery);
-            const locations = locationsSnapshot.docs.map(doc => doc.data());
-
-            return {
-                uid: user.uid,
-                id: employeeId,
-                ...employeeData,
-                locations: locations
-            };
-        }
-        throw new Error('Employee data not found');
-    } catch (error) {
-        console.error('Login error:', error);
+        console.error('Error initializing locations:', error);
         throw error;
     }
 }
 
-export async function loginWithPasscode(passcode) {
-    try {
-        const employeesRef = collection(db, COLLECTIONS.EMPLOYEES);
-        const q = query(employeesRef, where('passcode', '==', passcode), limit(1));
-        const employeeSnapshot = await getDocs(q);
-
-        if (!employeeSnapshot.empty) {
-            const employeeData = employeeSnapshot.docs[0].data();
-            const employeeId = employeeSnapshot.docs[0].id;
-            
-            // Get assigned locations
-            const locationsRef = collection(db, COLLECTIONS.LOCATIONS);
-            const locationsQuery = query(locationsRef, where('id', 'in', employeeData.assignedLocations || []));
-            const locationsSnapshot = await getDocs(locationsQuery);
-            const locations = locationsSnapshot.docs.map(doc => doc.data());
-
-            return {
-                id: employeeId,
-                ...employeeData,
-                locations: locations
-            };
-        }
-        throw new Error('Invalid passcode');
-    } catch (error) {
-        console.error('Passcode login error:', error);
-        throw error;
-    }
-}
-
-// Export the initialized Firebase instances
-export { app, db, auth, analytics }; 
+// Export all necessary functions and constants
+export { 
+    collection,
+    query,
+    where,
+    getDocs,
+    addDoc,
+    serverTimestamp,
+    loginWithEmail,
+    loginWithPasscode,
+    initializeEmployeeData,
+    initializeLocations,
+    ROLES,
+    COLLECTIONS
+}; 

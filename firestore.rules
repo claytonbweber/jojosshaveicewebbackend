@@ -23,7 +23,8 @@ service cloud.firestore {
 
     // Employees collection
     match /employees/{employeeId} {
-      allow read: if isAuthenticated();
+      // Allow reading employee data for login verification
+      allow read: if true;  // This allows unauthenticated reads for login
       allow create: if isAdmin();
       allow update: if isAdmin() || (isAuthenticated() && request.auth.uid == employeeId);
       allow delete: if isAdmin();
