@@ -2799,266 +2799,352 @@
             
             // Load and display sync statistics
             function loadSyncStatistics() {
-                const days = parseInt(document.getElementById('stats-date-range').value) || 7;
-                const viewType = document.getElementById('stats-view-type').value || 'success-rate';
-                
-                // Calculate date range
-                const endDate = new Date();
-                const startDate = new Date();
-                startDate.setDate(startDate.getDate() - days);
-                
-                console.log(`Loading sync statistics for the last ${days} days (${startDate.toISOString()} to ${endDate.toISOString()})`);
-                console.log(`Using project filters: ${selectedProjects.length > 0 ? selectedProjects.join(', ') : 'All Projects'}`);
-                
-                // If we're in a drill-down view, handle that specially
-                if (drillDownState) {
-                    if (drillDownState.type === 'day') {
-                        loadDayDetails(drillDownState.date, selectedProjects);
-                        return;
-                    } else if (drillDownState.type === 'project') {
-                        loadProjectDetails(drillDownState.projectId, days);
-                        return;
-                    } else if (drillDownState.type === 'error') {
-                        loadErrorDetails(drillDownState.errorType, days, selectedProjects);
-                        return;
-                    }
-                }
-                
-                // Always make sure project filter is populated with all projects
-                populateProjectFilter();
-                
-                // Query the sync logs within the date range
-                let query = db.collection('asana_sync_logs')
-                    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
-                    .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(endDate))
-                    .orderBy('timestamp', 'asc');
-                
-                query.get()
-                    .then(snapshot => {
-                        if (snapshot.empty) {
-                            console.log('No sync logs found for the selected period');
-                            displayNoDataMessage();
-                            return;
-                        }
+                try {
+                    const days = parseInt(document.getElementById('stats-date-range').value) || 7;
+                    const viewType = document.getElementById('stats-view-type').value || 'success-rate';
+                    
+                    console.log('Loading sync statistics with params:', { days, viewType, selectedProjects });
+                    
+                    // Calculate date range
+                    const endDate = new Date();
+                    const startDate = new Date();
+                    startDate.setDate(startDate.getDate() - days);
+                    
+                    console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+                    console.log(`Using project filters: ${selectedProjects.length > 0 ? selectedProjects.join(', ') : 'All Projects'}`);
+                    
+                    // If we're in a drill-down view, handle that specially
+                    if (drillDownState) {
+                        console.log('In drill-down state:', drillDownState);
                         
-                        // Process the sync logs
-                        const logs = [];
-                        snapshot.forEach(doc => {
-                            const log = doc.data();
-                            if (log.timestamp) {
-                                logs.push({
-                                    id: doc.id,
-                                    ...log,
-                                    date: log.timestamp.toDate()
-                                });
+                        if (drillDownState.type === 'day') {
+                            if (!drillDownState.date) {
+                                console.error('Missing date in drillDownState', drillDownState);
+                                displayErrorMessage(new Error('Invalid drill-down state: missing date'));
+                                return;
                             }
-                        });
-                        
-                        console.log(`Found ${logs.length} sync logs`);
-                        
-                        // Filter logs by selected projects if needed
-                        let filteredLogs = logs;
-                        if (selectedProjects.length > 0) {
-                            filteredLogs = logs.filter(log => {
-                                // Check if any selected projects are included in this log
-                                for (const projectId of selectedProjects) {
-                                    // Check in projects array (GID should be the ID)
-                                    if (log.projects && log.projects.includes(projectId)) {
-                                        return true;
-                                    }
-                                    
-                                    // Check in projectStats object (GID is the key)
-                                    if (log.projectStats && log.projectStats[projectId]) {
-                                        return true;
-                                    }
-                                }
-                                return false;
-                            });
-                            console.log(`Filtered to ${filteredLogs.length} logs for selected projects`);
-                        }
-                        
-                        if (filteredLogs.length === 0) {
-                            displayNoDataMessage();
+                            loadDayDetails(drillDownState.date, selectedProjects);
+                            return;
+                        } else if (drillDownState.type === 'project') {
+                            if (!drillDownState.projectId) {
+                                console.error('Missing projectId in drillDownState', drillDownState);
+                                displayErrorMessage(new Error('Invalid drill-down state: missing projectId'));
+                                return;
+                            }
+                            loadProjectDetails(drillDownState.projectId, days);
+                            return;
+                        } else if (drillDownState.type === 'error') {
+                            if (!drillDownState.errorType) {
+                                console.error('Missing errorType in drillDownState', drillDownState);
+                                displayErrorMessage(new Error('Invalid drill-down state: missing errorType'));
+                                return;
+                            }
+                            loadErrorDetails(drillDownState.errorType, days, selectedProjects);
                             return;
                         }
-                        
-                        // Group logs by day
-                        const logsByDay = {};
-                        const labels = [];
-                        const currentDate = new Date(startDate);
-                        
-                        // Initialize all days in the range
-                        while (currentDate <= endDate) {
-                            const dateKey = currentDate.toISOString().split('T')[0];
-                            labels.push(moment(dateKey).format('MMM D'));
-                            logsByDay[dateKey] = {
-                                date: new Date(currentDate),
-                                logs: [],
-                                successCount: 0,
-                                totalCount: 0,
-                                errorCount: 0,
-                                projectSuccessCount: 0,
-                                projectTotalCount: 0,
-                                dateKey: dateKey
-                            };
-                            currentDate.setDate(currentDate.getDate() + 1);
-                        }
-                        
-                        // Populate with actual logs
-                        filteredLogs.forEach(log => {
-                            const dateKey = log.date.toISOString().split('T')[0];
-                            if (logsByDay[dateKey]) {
-                                logsByDay[dateKey].logs.push(log);
-                                
-                                // For multi-select projects, we need to count only the selected projects
-                                if (selectedProjects.length > 0) {
-                                    // Count only selected projects' stats
-                                    let daySuccessCount = 0;
-                                    let dayTotalCount = 0;
-                                    let dayErrorCount = 0;
-                                    
-                                    selectedProjects.forEach(projectId => {
-                                        if (log.projectStats && log.projectStats[projectId]) {
-                                            const stat = log.projectStats[projectId];
-                                            dayTotalCount++;
-                                            if (stat.status === 'success') {
-                                                daySuccessCount++;
-                                            } else if (stat.error) {
-                                                dayErrorCount++;
-                                            }
-                                        }
+                    }
+                    
+                    // Always make sure project filter is populated with all projects
+                    populateProjectFilter();
+                    
+                    // Query the sync logs within the date range
+                    let query = db.collection('asana_sync_logs')
+                        .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
+                        .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(endDate))
+                        .orderBy('timestamp', 'asc');
+                    
+                    query.get()
+                        .then(snapshot => {
+                            if (snapshot.empty) {
+                                console.log('No sync logs found for the selected period');
+                                displayNoDataMessage();
+                                return;
+                            }
+                            
+                            // Process the sync logs
+                            const logs = [];
+                            snapshot.forEach(doc => {
+                                const log = doc.data();
+                                if (log.timestamp) {
+                                    logs.push({
+                                        id: doc.id,
+                                        ...log,
+                                        date: log.timestamp.toDate()
                                     });
-                                    
-                                    logsByDay[dateKey].successCount += daySuccessCount;
-                                    logsByDay[dateKey].totalCount += dayTotalCount;
-                                    logsByDay[dateKey].errorCount += dayErrorCount;
-                                } else {
-                                    // Count all projects
-                                    if (log.success_count !== undefined && log.project_count !== undefined) {
-                                        logsByDay[dateKey].successCount += log.success_count;
-                                        logsByDay[dateKey].totalCount += log.project_count;
-                                    }
-                                    
-                                    // Count errors
-                                    try {
-                                        if (log.errors && Array.isArray(log.errors)) {
-                                            logsByDay[dateKey].errorCount += log.errors.length;
+                                }
+                            });
+                            
+                            console.log(`Found ${logs.length} sync logs`);
+                            
+                            // Filter logs by selected projects if needed
+                            let filteredLogs = logs;
+                            if (selectedProjects.length > 0) {
+                                filteredLogs = logs.filter(log => {
+                                    // Check if any selected projects are included in this log
+                                    for (const projectId of selectedProjects) {
+                                        // Check in projects array (GID should be the ID)
+                                        if (log.projects && log.projects.includes(projectId)) {
+                                            return true;
                                         }
                                         
-                                        // Also count project-specific errors
-                                        if (log.projectStats) {
-                                            Object.values(log.projectStats).forEach(stat => {
-                                                if (stat.error) {
-                                                    logsByDay[dateKey].errorCount++;
+                                        // Check in projectStats object (GID is the key)
+                                        if (log.projectStats && log.projectStats[projectId]) {
+                                            return true;
+                                        }
+                                    }
+                                    return false;
+                                });
+                                console.log(`Filtered to ${filteredLogs.length} logs for selected projects`);
+                            }
+                            
+                            if (filteredLogs.length === 0) {
+                                displayNoDataMessage();
+                                return;
+                            }
+                            
+                            // Group logs by day
+                            const logsByDay = {};
+                            const labels = [];
+                            const currentDate = new Date(startDate);
+                            
+                            // Initialize all days in the range
+                            while (currentDate <= endDate) {
+                                const dateKey = currentDate.toISOString().split('T')[0];
+                                labels.push(moment(dateKey).format('MMM D'));
+                                logsByDay[dateKey] = {
+                                    date: new Date(currentDate),
+                                    logs: [],
+                                    successCount: 0,
+                                    totalCount: 0,
+                                    errorCount: 0,
+                                    projectSuccessCount: 0,
+                                    projectTotalCount: 0,
+                                    dateKey: dateKey
+                                };
+                                currentDate.setDate(currentDate.getDate() + 1);
+                            }
+                            
+                            console.log(`Initialized ${Object.keys(logsByDay).length} day slots for data`);
+                            
+                            // Populate with actual logs
+                            filteredLogs.forEach(log => {
+                                try {
+                                    const dateKey = log.date.toISOString().split('T')[0];
+                                    if (logsByDay[dateKey]) {
+                                        logsByDay[dateKey].logs.push(log);
+                                        
+                                        // For multi-select projects, we need to count only the selected projects
+                                        if (selectedProjects.length > 0) {
+                                            // Count only selected projects' stats
+                                            let daySuccessCount = 0;
+                                            let dayTotalCount = 0;
+                                            let dayErrorCount = 0;
+                                            
+                                            selectedProjects.forEach(projectId => {
+                                                if (log.projectStats && log.projectStats[projectId]) {
+                                                    const stat = log.projectStats[projectId];
+                                                    dayTotalCount++;
+                                                    if (stat.status === 'success') {
+                                                        daySuccessCount++;
+                                                    } else if (stat.error) {
+                                                        dayErrorCount++;
+                                                    }
                                                 }
                                             });
+                                            
+                                            logsByDay[dateKey].successCount += daySuccessCount;
+                                            logsByDay[dateKey].totalCount += dayTotalCount;
+                                            logsByDay[dateKey].errorCount += dayErrorCount;
+                                        } else {
+                                            // Count all projects
+                                            if (log.success_count !== undefined && log.project_count !== undefined) {
+                                                logsByDay[dateKey].successCount += log.success_count;
+                                                logsByDay[dateKey].totalCount += log.project_count;
+                                            }
+                                            
+                                            // Count errors
+                                            try {
+                                                if (log.errors && Array.isArray(log.errors)) {
+                                                    logsByDay[dateKey].errorCount += log.errors.length;
+                                                }
+                                                
+                                                // Also count project-specific errors
+                                                if (log.projectStats) {
+                                                    Object.values(log.projectStats).forEach(stat => {
+                                                        if (stat.error) {
+                                                            logsByDay[dateKey].errorCount++;
+                                                        }
+                                                    });
+                                                }
+                                            } catch (e) {
+                                                console.error('Error counting errors:', e);
+                                            }
                                         }
-                                    } catch (e) {
-                                        console.error('Error counting errors:', e);
+                                    } else {
+                                        console.warn(`Date key ${dateKey} not found in logsByDay`);
                                     }
+                                } catch (e) {
+                                    console.error('Error processing log:', e, log);
                                 }
+                            });
+                            
+                            // Convert logsByDay to array for the chart
+                            const logsByDayArray = Object.values(logsByDay);
+                            console.log(`Prepared ${logsByDayArray.length} data points for chart`);
+                            
+                            // Prepare data for chart based on view type
+                            let chartData;
+                            let chartTitle;
+                            let chartColor;
+                            
+                            switch (viewType) {
+                                case 'success-rate':
+                                    chartTitle = 'Sync Success Rate (%)';
+                                    chartColor = 'rgba(40, 167, 69, 0.7)';
+                                    chartData = logsByDayArray.map(day => {
+                                        return day.totalCount === 0 ? 0 : 
+                                            Math.round((day.successCount / day.totalCount) * 100);
+                                    });
+                                    break;
+                                    
+                                case 'sync-count':
+                                    chartTitle = 'Number of Syncs';
+                                    chartColor = 'rgba(23, 162, 184, 0.7)';
+                                    chartData = logsByDayArray.map(day => {
+                                        return day.logs.length;
+                                    });
+                                    break;
+                                    
+                                case 'errors':
+                                    chartTitle = 'Number of Errors';
+                                    chartColor = 'rgba(220, 53, 69, 0.7)';
+                                    chartData = logsByDayArray.map(day => {
+                                        return day.errorCount;
+                                    });
+                                    break;
                             }
+                            
+                            console.log('Chart data prepared:', {
+                                title: chartTitle,
+                                dataPoints: chartData.length
+                            });
+                            
+                            // Create or update chart
+                            createDrillableChart(labels, chartData, chartTitle, chartColor, logsByDayArray);
+                            
+                            // Update summary statistics
+                            updateSummaryStats(logs, filteredLogs);
+                        })
+                        .catch(error => {
+                            console.error('Error loading sync statistics:', error);
+                            displayErrorMessage(error);
                         });
-                        
-                        // Prepare data for chart based on view type
-                        let chartData;
-                        let chartTitle;
-                        let chartColor;
-                        
-                        switch (viewType) {
-                            case 'success-rate':
-                                chartTitle = 'Sync Success Rate (%)';
-                                chartColor = 'rgba(40, 167, 69, 0.7)';
-                                chartData = Object.values(logsByDay).map(day => {
-                                    return day.totalCount === 0 ? 0 : 
-                                        Math.round((day.successCount / day.totalCount) * 100);
-                                });
-                                break;
-                                
-                            case 'sync-count':
-                                chartTitle = 'Number of Syncs';
-                                chartColor = 'rgba(23, 162, 184, 0.7)';
-                                chartData = Object.values(logsByDay).map(day => {
-                                    return day.logs.length;
-                                });
-                                break;
-                                
-                            case 'errors':
-                                chartTitle = 'Number of Errors';
-                                chartColor = 'rgba(220, 53, 69, 0.7)';
-                                chartData = Object.values(logsByDay).map(day => {
-                                    return day.errorCount;
-                                });
-                                break;
-                        }
-                        
-                        // Create or update chart
-                        createDrillableChart(labels, chartData, chartTitle, chartColor, Object.values(logsByDay));
-                        
-                        // Update summary statistics
-                        updateSummaryStats(logs, filteredLogs);
-                    })
-                    .catch(error => {
-                        console.error('Error loading sync statistics:', error);
-                        displayErrorMessage(error);
-                    });
+                } catch (error) {
+                    console.error('Error in loadSyncStatistics:', error);
+                    displayErrorMessage(error);
+                }
             }
             
             // Create or update the chart
             function createDrillableChart(labels, data, title, color, dataSets) {
-                const ctx = document.getElementById('sync-stats-graph').getContext('2d');
-                
-                // Destroy previous chart if it exists
-                if (syncStatsChart) {
-                    syncStatsChart.destroy();
-                }
-                
-                // Create new chart
-                syncStatsChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: title,
-                            data: data,
-                            backgroundColor: color,
-                            borderColor: color.replace('0.7', '1'),
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: title
+                try {
+                    console.log('Creating drillable chart with:', {
+                        labelCount: labels ? labels.length : 0,
+                        dataCount: data ? data.length : 0,
+                        title: title,
+                        dataSetsCount: dataSets ? dataSets.length : 0
+                    });
+                    
+                    // Safety checks for required parameters
+                    if (!labels || !data || !dataSets) {
+                        console.error('Missing required parameters for createDrillableChart', {
+                            labels: !!labels,
+                            data: !!data,
+                            dataSets: !!dataSets
+                        });
+                        // Create fallback chart if parameters are missing
+                        labels = labels || [];
+                        data = data || [];
+                        dataSets = dataSets || [];
+                    }
+                    
+                    const graphElement = document.getElementById('sync-stats-graph');
+                    if (!graphElement) {
+                        console.error('Graph element not found');
+                        return;
+                    }
+                    
+                    const ctx = graphElement.getContext('2d');
+                    if (!ctx) {
+                        console.error('Could not get 2D context from canvas');
+                        return;
+                    }
+                    
+                    // Destroy previous chart if it exists
+                    if (syncStatsChart) {
+                        syncStatsChart.destroy();
+                    }
+                    
+                    // Create new chart
+                    syncStatsChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: title,
+                                data: data,
+                                backgroundColor: color,
+                                borderColor: color.replace('0.7', '1'),
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: title
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Date'
+                                    }
                                 }
                             },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Date'
-                                }
-                            }
-                        },
-                        onClick: (e, activeElements) => {
-                            try {
-                                if (activeElements.length > 0) {
+                            onClick: (e, activeElements) => {
+                                try {
+                                    console.log('Chart click detected', activeElements);
+                                    
+                                    if (!activeElements || activeElements.length === 0) {
+                                        console.log('No active elements in chart click');
+                                        return;
+                                    }
+                                    
+                                    // Access the index safely
                                     const index = activeElements[0].index;
+                                    console.log('Clicked element index:', index);
                                     
                                     // Check if dataSets exists and has the required index
-                                    if (!dataSets || !dataSets[index]) {
-                                        console.error('Invalid dataset or index:', { dataSets, index });
+                                    if (!dataSets) {
+                                        console.error('dataSets is not defined');
+                                        return;
+                                    }
+                                    
+                                    if (index < 0 || index >= dataSets.length) {
+                                        console.error(`Index ${index} out of bounds for dataSets length ${dataSets.length}`);
                                         return;
                                     }
                                     
                                     const day = dataSets[index];
+                                    console.log('Selected day object:', day);
                                     
                                     // Check if day has the required dateKey property
-                                    if (!day.dateKey) {
-                                        console.error('Day object missing dateKey property:', day);
+                                    if (!day || !day.dateKey) {
+                                        console.error('Day object is invalid or missing dateKey property:', day);
                                         return;
                                     }
                                     
@@ -3071,18 +3157,32 @@
                                     };
                                     
                                     // Show drill-up button
-                                    document.getElementById('drill-up-btn').style.display = 'inline-block';
+                                    const drillUpBtn = document.getElementById('drill-up-btn');
+                                    if (drillUpBtn) {
+                                        drillUpBtn.style.display = 'inline-block';
+                                    } else {
+                                        console.error('Drill-up button not found in DOM');
+                                    }
                                     
                                     // Load details for this day
                                     loadDayDetails(day.dateKey, selectedProjects);
+                                } catch (error) {
+                                    console.error('Error in chart click handler:', error);
+                                    console.error('Error details:', {
+                                        message: error.message,
+                                        stack: error.stack,
+                                        activeElements: JSON.stringify(activeElements),
+                                        dataSets: dataSets ? `Array(${dataSets.length})` : 'undefined'
+                                    });
+                                    displayErrorMessage(error);
                                 }
-                            } catch (error) {
-                                console.error('Error in chart click handler:', error);
-                                displayErrorMessage(error);
                             }
                         }
-                    }
-                });
+                    });
+                } catch (error) {
+                    console.error('Error creating drillable chart:', error);
+                    displayErrorMessage(error);
+                }
             }
             
             // Display a message when no data is available
@@ -3545,54 +3645,114 @@
             
             // Load details for a specific day
             function loadDayDetails(dateKey, projectIds) {
-                console.log(`Loading details for day: ${dateKey}`);
-                
-                // Convert date string to Date objects for Firestore query
-                const startDate = new Date(dateKey);
-                const endDate = new Date(dateKey);
-                endDate.setDate(endDate.getDate() + 1); // End of the day
-                
-                // Show drill-down controls and include view type toggle
-                document.getElementById('drill-up-btn').style.display = 'inline-block';
-                
-                // Add view toggle controls if they don't exist
-                if (!document.getElementById('drill-view-toggle')) {
-                    const controlsContainer = document.querySelector('.stats-controls .row:first-child');
+                try {
+                    console.log(`Loading details for day: ${dateKey}`, { projectIds });
                     
-                    // Check if the stats-controls container exists
-                    if (controlsContainer) {
-                        const viewToggleCol = document.createElement('div');
-                        viewToggleCol.className = 'col';
-                        viewToggleCol.innerHTML = `
-                            <div class="form-group">
-                                <label for="drill-view-toggle">View By:</label>
-                                <select id="drill-view-toggle" class="form-control">
-                                    <option value="hour">Hour</option>
-                                    <option value="project">Project</option>
-                                </select>
-                            </div>
-                        `;
-                        controlsContainer.appendChild(viewToggleCol);
-                        
-                        // Add event listener for view toggle
-                        document.getElementById('drill-view-toggle').addEventListener('change', function() {
-                            const viewType = this.value;
-                            if (viewType === 'hour') {
-                                loadDayDetailsByHour(dateKey, projectIds);
-                            } else {
-                                loadDayDetailsByProject(dateKey, projectIds);
-                            }
-                        });
-                    } else {
-                        console.warn('Stats controls container not found, cannot add view toggle');
+                    if (!dateKey) {
+                        throw new Error('dateKey parameter is required for loadDayDetails');
                     }
-                } else {
-                    // Reset to hour view by default
-                    document.getElementById('drill-view-toggle').value = 'hour';
+                    
+                    // Convert date string to Date objects for Firestore query
+                    const startDate = new Date(dateKey);
+                    const endDate = new Date(dateKey);
+                    endDate.setDate(endDate.getDate() + 1); // End of the day
+                    
+                    // Show drill-up button
+                    const drillUpBtn = document.getElementById('drill-up-btn');
+                    if (drillUpBtn) {
+                        drillUpBtn.style.display = 'inline-block';
+                    } else {
+                        console.warn('Drill-up button not found in DOM');
+                    }
+                    
+                    // Add view toggle controls if they don't exist
+                    if (!document.getElementById('drill-view-toggle')) {
+                        // First check if stats-controls exists
+                        const statsControls = document.querySelector('.stats-controls');
+                        if (!statsControls) {
+                            console.warn('Stats controls container (.stats-controls) not found in DOM');
+                            
+                            // Create the controls container if it doesn't exist
+                            const modalBody = document.getElementById('sync-stats-modal-body');
+                            if (modalBody) {
+                                const newStatsControls = document.createElement('div');
+                                newStatsControls.className = 'stats-controls';
+                                newStatsControls.style.marginBottom = '15px';
+                                newStatsControls.style.paddingBottom = '15px';
+                                newStatsControls.style.borderBottom = '1px solid #eee';
+                                
+                                const controlsRow = document.createElement('div');
+                                controlsRow.className = 'row';
+                                newStatsControls.appendChild(controlsRow);
+                                
+                                // Insert before the chart
+                                const graphContainer = document.getElementById('sync-stats-graph');
+                                if (graphContainer) {
+                                    modalBody.insertBefore(newStatsControls, graphContainer);
+                                    console.log('Created missing stats-controls container');
+                                } else {
+                                    console.error('Neither stats-controls nor graph container found');
+                                }
+                            } else {
+                                console.error('Modal body not found, cannot create controls');
+                            }
+                        }
+                        
+                        // Try again to find .stats-controls .row:first-child
+                        const controlsContainer = document.querySelector('.stats-controls .row:first-child');
+                        
+                        // Check if the stats-controls container exists
+                        if (controlsContainer) {
+                            const viewToggleCol = document.createElement('div');
+                            viewToggleCol.className = 'col';
+                            viewToggleCol.innerHTML = `
+                                <div class="form-group">
+                                    <label for="drill-view-toggle">View By:</label>
+                                    <select id="drill-view-toggle" class="form-control">
+                                        <option value="hour">Hour</option>
+                                        <option value="project">Project</option>
+                                    </select>
+                                </div>
+                            `;
+                            controlsContainer.appendChild(viewToggleCol);
+                            
+                            // Add event listener for view toggle
+                            document.getElementById('drill-view-toggle').addEventListener('change', function() {
+                                try {
+                                    const viewType = this.value;
+                                    console.log(`View toggle changed to: ${viewType}`);
+                                    if (viewType === 'hour') {
+                                        loadDayDetailsByHour(dateKey, projectIds);
+                                    } else {
+                                        loadDayDetailsByProject(dateKey, projectIds);
+                                    }
+                                } catch (error) {
+                                    console.error('Error in view toggle handler:', error);
+                                    displayErrorMessage(error);
+                                }
+                            });
+                            
+                            console.log('Added view toggle controls');
+                        } else {
+                            console.warn('Stats controls row container still not found after creation attempt');
+                        }
+                    } else {
+                        // Reset to hour view by default
+                        try {
+                            const toggleElement = document.getElementById('drill-view-toggle');
+                            toggleElement.value = 'hour';
+                            console.log('Reset view toggle to "hour"');
+                        } catch (error) {
+                            console.error('Error setting view toggle value:', error);
+                        }
+                    }
+                    
+                    // Load details by hour (default view)
+                    loadDayDetailsByHour(dateKey, projectIds);
+                } catch (error) {
+                    console.error('Error in loadDayDetails:', error);
+                    displayErrorMessage(error);
                 }
-                
-                // Load details by hour (default view)
-                loadDayDetailsByHour(dateKey, projectIds);
             }
             
             // Load day details with hourly breakdown
