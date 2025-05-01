@@ -290,21 +290,20 @@
                 <p>This tool allows you to synchronize tasks between Asana and JoJo's Shave Ice internal systems. Connect your Asana account to get started.</p>
             </div>
             
-            <div id="not-connected-message">
-                <div class="info-box" style="background-color: #fff3cd; border-left-color: #ffc107;">
-                    <p>You need to configure your Asana connection first. Go to the Settings tab to enter your Asana Personal Access Token.</p>
-                </div>
+            <!-- Always show tab navigation -->
+            <div class="tab-nav">
+                <button class="tab-btn" data-tab="workspace-sync">Workspace Sync</button>
+                <button class="tab-btn" data-tab="task-viewer">Task Viewer</button>
+                <button class="tab-btn active" data-tab="settings">Settings</button>
             </div>
             
-            <div id="connected-content" style="display: none;">
-                <div class="tab-nav">
-                    <button class="tab-btn active" data-tab="workspace-sync">Workspace Sync</button>
-                    <button class="tab-btn" data-tab="task-viewer">Task Viewer</button>
-                    <button class="tab-btn" data-tab="settings">Settings</button>
+            <!-- Workspace Sync Tab -->
+            <div id="workspace-sync" class="tab-content">
+                <div id="not-connected-workspace" class="info-box" style="background-color: #fff3cd; border-left-color: #ffc107;">
+                    <p>You need to configure your Asana connection first. Go to the Settings tab to enter your Asana Personal Access Token.</p>
                 </div>
                 
-                <!-- Workspace Sync Tab -->
-                <div id="workspace-sync" class="tab-content active">
+                <div id="connected-workspace" style="display: none;">
                     <div class="form-group">
                         <label for="workspace-select">Select Workspace</label>
                         <select id="workspace-select">
@@ -423,9 +422,15 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Task Viewer Tab -->
+            <div id="task-viewer" class="tab-content">
+                <div id="not-connected-tasks" class="info-box" style="background-color: #fff3cd; border-left-color: #ffc107;">
+                    <p>You need to configure your Asana connection first. Go to the Settings tab to enter your Asana Personal Access Token.</p>
+                </div>
                 
-                <!-- Task Viewer Tab -->
-                <div id="task-viewer" class="tab-content">
+                <div id="connected-tasks" style="display: none;">
                     <div class="task-filters">
                         <div class="row">
                             <div class="col">
@@ -511,38 +516,38 @@
                         <button id="load-more-tasks" class="btn btn-secondary">Load More Tasks</button>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content active">
+                <div class="info-box">
+                    <p>Configure your Asana integration settings here. Your Personal Access Token will be securely stored in Firestore.</p>
+                </div>
                 
-                <!-- Settings Tab -->
-                <div id="settings" class="tab-content">
-                    <div class="info-box">
-                        <p>Configure your Asana integration settings here. Your Personal Access Token will be securely stored in Firestore.</p>
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label for="asana-pat">Asana Personal Access Token (PAT)</label>
+                        <input type="password" id="asana-pat" placeholder="Enter your Asana PAT">
+                        <small style="display: block; margin-top: 5px; color: #666;">You can generate a PAT in your Asana account settings</small>
                     </div>
                     
-                    <form id="settings-form">
-                        <div class="form-group">
-                            <label for="asana-pat">Asana Personal Access Token (PAT)</label>
-                            <input type="password" id="asana-pat" placeholder="Enter your Asana PAT">
-                            <small style="display: block; margin-top: 5px; color: #666;">You can generate a PAT in your Asana account settings</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="sync-frequency">Sync Frequency</label>
-                            <select id="sync-frequency">
-                                <option value="15">Every 15 minutes</option>
-                                <option value="30">Every 30 minutes</option>
-                                <option value="60" selected>Every hour</option>
-                                <option value="360">Every 6 hours</option>
-                                <option value="720">Every 12 hours</option>
-                                <option value="1440">Once a day</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <button type="submit" class="btn">Save Settings</button>
-                            <button type="button" id="test-connection" class="btn btn-secondary" style="margin-left: 10px;">Test Connection</button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="form-group">
+                        <label for="sync-frequency">Sync Frequency</label>
+                        <select id="sync-frequency">
+                            <option value="15">Every 15 minutes</option>
+                            <option value="30">Every 30 minutes</option>
+                            <option value="60" selected>Every hour</option>
+                            <option value="360">Every 6 hours</option>
+                            <option value="720">Every 12 hours</option>
+                            <option value="1440">Once a day</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn">Save Settings</button>
+                        <button type="button" id="test-connection" class="btn btn-secondary" style="margin-left: 10px;">Test Connection</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -760,19 +765,27 @@
         // Update UI based on connection status
         function updateConnectionStatus(isConnected) {
             const connectionStatus = document.querySelector('.connection-status');
-            const notConnectedMessage = document.getElementById('not-connected-message');
-            const connectedContent = document.getElementById('connected-content');
             
             if (isConnected) {
                 connectionStatus.className = 'connection-status status-connected';
                 connectionStatus.textContent = 'Connected';
-                notConnectedMessage.style.display = 'none';
-                connectedContent.style.display = 'block';
+                
+                // Show connected content
+                document.getElementById('connected-workspace').style.display = 'block';
+                document.getElementById('not-connected-workspace').style.display = 'none';
+                
+                document.getElementById('connected-tasks').style.display = 'block';
+                document.getElementById('not-connected-tasks').style.display = 'none';
             } else {
                 connectionStatus.className = 'connection-status status-disconnected';
                 connectionStatus.textContent = 'Disconnected';
-                notConnectedMessage.style.display = 'block';
-                connectedContent.style.display = 'none';
+                
+                // Show disconnected content
+                document.getElementById('connected-workspace').style.display = 'none';
+                document.getElementById('not-connected-workspace').style.display = 'block';
+                
+                document.getElementById('connected-tasks').style.display = 'none';
+                document.getElementById('not-connected-tasks').style.display = 'block';
             }
         }
         
