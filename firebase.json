@@ -1,1 +1,47 @@
-{"hosting":{"public":"public","ignore":["firebase.json","**/.*","**/node_modules/**"],"rewrites":[{"source":"/login","destination":"/login.html"},{"source":"/admin/init-data","destination":"/admin/init-data.html"},{"source":"/portals/base","destination":"/portals/base-portal.html"},{"source":"/portals/location","destination":"/portals/location-portal.html"},{"source":"/portals/staff","destination":"/portals/staff-portal.html"},{"source":"/asana","destination":"/admin/asana-manager.html"},{"source":"**","destination":"/index.html"}]},"firestore":{"rules":"firestore.rules"}}
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/login",
+        "destination": "/login.html"
+      },
+      {
+        "source": "/admin/init-data",
+        "destination": "/admin/init-data.html"
+      },
+      {
+        "source": "/admin/locations",
+        "destination": "/admin/locations-manager.html"
+      },
+      {
+        "source": "/portals/base",
+        "destination": "/portals/base-portal.html"
+      },
+      {
+        "source": "/portals/location",
+        "destination": "/portals/location-portal.html"
+      },
+      {
+        "source": "/portals/staff",
+        "destination": "/portals/staff-portal.html"
+      },
+      {
+        "source": "/asana",
+        "destination": "/admin/asana-manager.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
