@@ -3534,6 +3534,52 @@
                 const endDate = new Date(dateKey);
                 endDate.setDate(endDate.getDate() + 1); // End of the day
                 
+                // Show drill-down controls and include view type toggle
+                document.getElementById('drill-up-btn').style.display = 'inline-block';
+                
+                // Add view toggle controls if they don't exist
+                if (!document.getElementById('drill-view-toggle')) {
+                    const controlsContainer = document.querySelector('.stats-controls .row:first-child');
+                    const viewToggleCol = document.createElement('div');
+                    viewToggleCol.className = 'col';
+                    viewToggleCol.innerHTML = `
+                        <div class="form-group">
+                            <label for="drill-view-toggle">View By:</label>
+                            <select id="drill-view-toggle" class="form-control">
+                                <option value="hour">Hour</option>
+                                <option value="project">Project</option>
+                            </select>
+                        </div>
+                    `;
+                    controlsContainer.appendChild(viewToggleCol);
+                    
+                    // Add event listener for view toggle
+                    document.getElementById('drill-view-toggle').addEventListener('change', function() {
+                        const viewType = this.value;
+                        if (viewType === 'hour') {
+                            loadDayDetailsByHour(dateKey, projectIds);
+                        } else {
+                            loadDayDetailsByProject(dateKey, projectIds);
+                        }
+                    });
+                } else {
+                    // Reset to hour view by default
+                    document.getElementById('drill-view-toggle').value = 'hour';
+                }
+                
+                // Load details by hour (default view)
+                loadDayDetailsByHour(dateKey, projectIds);
+            }
+            
+            // Load day details with hourly breakdown
+            function loadDayDetailsByHour(dateKey, projectIds) {
+                console.log(`Loading hourly breakdown for day: ${dateKey}`);
+                
+                // Convert date string to Date objects for Firestore query
+                const startDate = new Date(dateKey);
+                const endDate = new Date(dateKey);
+                endDate.setDate(endDate.getDate() + 1); // End of the day
+                
                 // Query sync logs for this day
                 db.collection('asana_sync_logs')
                     .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
@@ -3665,14 +3711,193 @@
                         updateSummaryStats(logs, filteredLogs);
                     })
                     .catch(error => {
-                        console.error('Error loading day details:', error);
+                        console.error('Error loading day details by hour:', error);
                         displayErrorMessage(error);
                     });
             }
             
-            // Create hourly chart for day drill-down
-            function createHourlyChart(labels, data, title, color) {
+            // Load day details with project breakdown
+            function loadDayDetailsByProject(dateKey, projectIds) {
+                console.log(`Loading project breakdown for day: ${dateKey}`);
+                
+                // Convert date string to Date objects for Firestore query
+                const startDate = new Date(dateKey);
+                const endDate = new Date(dateKey);
+                endDate.setDate(endDate.getDate() + 1); // End of the day
+                
+                // Query sync logs for this day
+                db.collection('asana_sync_logs')
+                    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
+                    .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(endDate))
+                    .orderBy('timestamp', 'asc')
+                    .get()
+                    .then(snapshot => {
+                        if (snapshot.empty) {
+                            console.log('No sync logs found for the selected day');
+                            displayNoDataMessage();
+                            return;
+                        }
+                        
+                        // Process the sync logs
+                        const logs = [];
+                        snapshot.forEach(doc => {
+                            const log = doc.data();
+                            logs.push({
+                                id: doc.id,
+                                ...log,
+                                time: log.timestamp ? log.timestamp.toDate() : new Date()
+                            });
+                        });
+                        
+                        console.log(`Found ${logs.length} sync logs for ${dateKey}`);
+                        
+                        // Filter logs by selected projects if needed
+                        let filteredLogs = logs;
+                        if (projectIds && projectIds.length > 0) {
+                            filteredLogs = logs.filter(log => {
+                                for (const projectId of projectIds) {
+                                    if (log.projects && log.projects.includes(projectId)) {
+                                        return true;
+                                    }
+                                    if (log.projectStats && log.projectStats[projectId]) {
+                                        return true;
+                                    }
+                                }
+                                return false;
+                            });
+                        }
+                        
+                        if (filteredLogs.length === 0) {
+                            displayNoDataMessage();
+                            return;
+                        }
+                        
+                        // Extract all project data
+                        const projectsData = {};
+                        const projectIds = new Set();
+                        
+                        // Collect all projects from the logs
+                        filteredLogs.forEach(log => {
+                            if (log.projectStats) {
+                                Object.entries(log.projectStats).forEach(([projectId, stat]) => {
+                                    projectIds.add(projectId);
+                                    
+                                    if (!projectsData[projectId]) {
+                                        projectsData[projectId] = {
+                                            name: stat.name || `Project ${projectId}`,
+                                            syncCount: 0,
+                                            successCount: 0,
+                                            errorCount: 0,
+                                            totalCount: 0
+                                        };
+                                    }
+                                    
+                                    projectsData[projectId].syncCount++;
+                                    projectsData[projectId].totalCount++;
+                                    
+                                    if (stat.status === 'success') {
+                                        projectsData[projectId].successCount++;
+                                    }
+                                    
+                                    if (stat.error) {
+                                        projectsData[projectId].errorCount++;
+                                    }
+                                });
+                            }
+                        });
+                        
+                        // Get project names if not available in stats
+                        const projectNamePromises = Array.from(projectIds)
+                            .filter(projectId => !projectsData[projectId] || !projectsData[projectId].name || projectsData[projectId].name === `Project ${projectId}`)
+                            .map(projectId => 
+                                db.collection('asana_projects').doc(projectId).get()
+                                    .then(doc => {
+                                        if (doc.exists && doc.data().name) {
+                                            if (!projectsData[projectId]) {
+                                                projectsData[projectId] = {
+                                                    syncCount: 0,
+                                                    successCount: 0,
+                                                    errorCount: 0,
+                                                    totalCount: 0
+                                                };
+                                            }
+                                            projectsData[projectId].name = doc.data().name;
+                                        }
+                                        return projectId;
+                                    })
+                                    .catch(error => {
+                                        console.error(`Error fetching project name for ${projectId}:`, error);
+                                        return projectId;
+                                    })
+                            );
+                        
+                        Promise.all(projectNamePromises)
+                            .then(() => {
+                                // Sort projects by name
+                                const sortedProjects = Object.entries(projectsData)
+                                    .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                                    .map(entry => entry[1].name);
+                                
+                                // Get the view type
+                                const viewType = document.getElementById('stats-view-type').value || 'success-rate';
+                                
+                                // Prepare data for chart based on view type
+                                let chartData;
+                                let chartTitle;
+                                let chartColor;
+                                
+                                switch (viewType) {
+                                    case 'success-rate':
+                                        chartTitle = 'Project Success Rate (%)';
+                                        chartColor = 'rgba(40, 167, 69, 0.7)';
+                                        chartData = Object.entries(projectsData)
+                                            .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                                            .map(([id, data]) => {
+                                                return data.totalCount === 0 ? 0 : 
+                                                    Math.round((data.successCount / data.totalCount) * 100);
+                                            });
+                                        break;
+                                        
+                                    case 'sync-count':
+                                        chartTitle = 'Syncs per Project';
+                                        chartColor = 'rgba(23, 162, 184, 0.7)';
+                                        chartData = Object.entries(projectsData)
+                                            .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                                            .map(([id, data]) => data.syncCount);
+                                        break;
+                                        
+                                    case 'errors':
+                                        chartTitle = 'Errors per Project';
+                                        chartColor = 'rgba(220, 53, 69, 0.7)';
+                                        chartData = Object.entries(projectsData)
+                                            .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                                            .map(([id, data]) => data.errorCount);
+                                        break;
+                                }
+                                
+                                // Create or update chart
+                                createProjectChart(sortedProjects, chartData, chartTitle, chartColor, dateKey);
+                                
+                                // Update summary statistics
+                                updateSummaryStats(logs, filteredLogs);
+                            });
+                    })
+                    .catch(error => {
+                        console.error('Error loading day details by project:', error);
+                        displayErrorMessage(error);
+                    });
+            }
+            
+            // Create project chart for day drill-down
+            function createProjectChart(labels, data, title, color, dateKey) {
                 const ctx = document.getElementById('sync-stats-graph').getContext('2d');
+                
+                // Format date for display
+                const formattedDate = new Date(dateKey).toLocaleDateString(undefined, { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
                 
                 // Destroy previous chart if it exists
                 if (syncStatsChart) {
@@ -3705,7 +3930,27 @@
                             x: {
                                 title: {
                                     display: true,
-                                    text: 'Hour of Day'
+                                    text: `Projects on ${formattedDate}`
+                                },
+                                ticks: {
+                                    callback: function(value, index) {
+                                        // Truncate long project names
+                                        const label = this.getLabelForValue(index);
+                                        if (label.length > 15) {
+                                            return label.substr(0, 12) + '...';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItem) {
+                                        // Show full project name in tooltip
+                                        return tooltipItem[0].label;
+                                    }
                                 }
                             }
                         }
@@ -4130,6 +4375,49 @@
                         autoSyncElem.style.border = '1px solid #ffdf7e';
                     }
                 }, 1000);
+            }
+            
+            // Create hourly chart for day drill-down
+            function createHourlyChart(labels, data, title, color) {
+                const ctx = document.getElementById('sync-stats-graph').getContext('2d');
+                
+                // Destroy previous chart if it exists
+                if (syncStatsChart) {
+                    syncStatsChart.destroy();
+                }
+                
+                // Create new chart
+                syncStatsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: title,
+                            data: data,
+                            backgroundColor: color,
+                            borderColor: color.replace('0.7', '1'),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: title
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Hour of Day'
+                                }
+                            }
+                        }
+                    }
+                });
             }
         });
     </script>
