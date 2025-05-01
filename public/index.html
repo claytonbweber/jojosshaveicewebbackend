@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Portal</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #FFD60A;
+            font-family: Arial, sans-serif;
+        }
+        .logo {
+            max-width: 250px;
+            margin-bottom: 2rem;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        .btn {
+            background-color: #FF4040;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 0.5rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #d93333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JoJo's Shave Ice Management Portal</h1>
+        <p>Welcome to the JoJo's Shave Ice Management Portal. Please select your destination:</p>
+        
+        <div class="buttons">
+            <a href="/login" class="btn">Staff Login</a>
+            <a href="/admin/asana-manager.html" class="btn">Asana Manager</a>
+            <a href="/admin/init-data.html" class="btn">Initialize Data</a>
+        </div>
+    </div>
+
+    <script>
+        // Redirect to login page after short delay
+        setTimeout(() => {
+            window.location.href = "/login";
+        }, 3000);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Task History</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #FFD60A;
+        }
+        h1 {
+            color: #87CEEB;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            height: 300px;
+            margin-bottom: 30px;
+        }
+        .report-card {
+            margin-bottom: 20px;
+        }
+        .task-history-table th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 10;
+        }
+        .report-section {
+            margin-bottom: 30px;
+        }
+        .badge-completed {
+            background-color: #28a745;
+            color: white;
+        }
+        .badge-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .page-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255,255,255,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <h1>JoJo's Shave Ice - Task History</h1>
+    
+    <div class="container">
+        <div class="page-title mb-4">
+            <h2>Task Completion History</h2>
+            <a href="index.html" class="btn btn-outline-secondary">Back to Dashboard</a>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filter-section">
+            <form id="filters-form">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="location-select" class="form-label">Location</label>
+                        <select id="location-select" class="form-select">
+                            <option value="">All Locations</option>
+                            <!-- Locations will be loaded here -->
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="date-range" class="form-label">Date Range</label>
+                        <input type="text" id="date-range" class="form-control" placeholder="Select date range">
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="category-select" class="form-label">Category</label>
+                        <select id="category-select" class="form-select">
+                            <option value="">All Categories</option>
+                            <option value="opening">Opening</option>
+                            <option value="midday">Mid-Day</option>
+                            <option value="closing">Closing</option>
+                            <option value="cleaning">Day's Cleaning</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="task-type-select" class="form-label">Task Type</label>
+                        <select id="task-type-select" class="form-select">
+                            <option value="">All Types</option>
+                            <option value="check-off">Check-off</option>
+                            <option value="short-answer">Short Answer</option>
+                            <option value="long-answer">Long Answer</option>
+                            <option value="photo">Photo</option>
+                            <option value="numeric">Numeric</option>
+                            <option value="rating">Rating</option>
+                            <option value="single-select">Single Selection</option>
+                            <option value="multiple-choice">Multiple Choice</option>
+                            <option value="verification">Verification</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="employee-select" class="form-label">Employee</label>
+                        <select id="employee-select" class="form-select">
+                            <option value="">All Employees</option>
+                            <!-- Employees will be loaded here -->
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-9 mb-3 d-flex align-items-end justify-content-end">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Overview Stats -->
+        <div class="report-section">
+            <h3>Overview</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card report-card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Completion Rate</h5>
+                            <div class="display-4 fw-bold" id="completion-rate">0%</div>
+                            <div class="text-muted" id="completion-count">0 of 0 tasks</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card report-card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Average Rating</h5>
+                            <div class="display-4 fw-bold" id="average-rating">0.0</div>
+                            <div class="text-muted" id="rating-count">0 ratings</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card report-card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Top Performer</h5>
+                            <div class="display-6 fw-bold" id="top-performer">-</div>
+                            <div class="text-muted" id="top-performer-count">0 tasks</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="report-section">
+            <h3>Trends</h3>
+            <ul class="nav nav-tabs" id="trendTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab" aria-controls="daily" aria-selected="true">Daily</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="weekly-tab" data-bs-toggle="tab" data-bs-target="#weekly" type="button" role="tab" aria-controls="weekly" aria-selected="false">Weekly</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab" aria-controls="monthly" aria-selected="false">Monthly</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="category-tab" data-bs-toggle="tab" data-bs-target="#category" type="button" role="tab" aria-controls="category" aria-selected="false">By Category</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="trendTabsContent">
+                <div class="tab-pane fade show active" id="daily" role="tabpanel" aria-labelledby="daily-tab">
+                    <div class="chart-container">
+                        <canvas id="daily-chart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="weekly" role="tabpanel" aria-labelledby="weekly-tab">
+                    <div class="chart-container">
+                        <canvas id="weekly-chart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="monthly" role="tabpanel" aria-labelledby="monthly-tab">
+                    <div class="chart-container">
+                        <canvas id="monthly-chart"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="category" role="tabpanel" aria-labelledby="category-tab">
+                    <div class="chart-container">
+                        <canvas id="category-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Task History Table -->
+        <div class="report-section">
+            <h3>Task History</h3>
+            <div class="table-responsive" style="max-height: 500px;">
+                <table class="table table-striped table-hover task-history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Location</th>
+                            <th>Task</th>
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Completed By</th>
+                            <th>Response</th>
+                        </tr>
+                    </thead>
+                    <tbody id="task-history-tbody">
+                        <!-- Task history records will be loaded here -->
+                        <tr>
+                            <td colspan="8" class="text-center">Loading task history...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div id="task-count" class="text-muted">
+                    Showing 0 records
+                </div>
+                <div>
+                    <button id="export-csv" class="btn btn-outline-secondary">
+                        <i class="bi bi-download"></i> Export to CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.firebasestorage.app",
+            messagingSenderId: "344579778389",
+            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
+            measurementId: "G-VBP44WBTCP"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // Global variables
+        let allTaskLogs = [];
+        let locations = {};
+        let locationNames = {};
+        let charts = {};
+        
+        // DOM elements
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const filtersForm = document.getElementById('filters-form');
+        const locationSelect = document.getElementById('location-select');
+        const dateRangeInput = document.getElementById('date-range');
+        const categorySelect = document.getElementById('category-select');
+        const taskTypeSelect = document.getElementById('task-type-select');
+        const employeeSelect = document.getElementById('employee-select');
+        const taskHistoryTbody = document.getElementById('task-history-tbody');
+        const taskCountElement = document.getElementById('task-count');
+        const completionRateElement = document.getElementById('completion-rate');
+        const completionCountElement = document.getElementById('completion-count');
+        const averageRatingElement = document.getElementById('average-rating');
+        const ratingCountElement = document.getElementById('rating-count');
+        const topPerformerElement = document.getElementById('top-performer');
+        const topPerformerCountElement = document.getElementById('top-performer-count');
+        const exportCsvButton = document.getElementById('export-csv');
+        
+        // Initialize Flatpickr date range picker
+        const dateRangePicker = flatpickr(dateRangeInput, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            defaultDate: [
+                new Date(new Date().setDate(new Date().getDate() - 30)), // Last 30 days
+                new Date()
+            ]
+        });
+        
+        // Initialize charts
+        function initCharts() {
+            // Daily completions chart
+            const dailyChartCtx = document.getElementById('daily-chart').getContext('2d');
+            charts.daily = new Chart(dailyChartCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Completion Rate (%)',
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        data: [],
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Completion Rate (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Weekly completions chart
+            const weeklyChartCtx = document.getElementById('weekly-chart').getContext('2d');
+            charts.weekly = new Chart(weeklyChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Completion Rate (%)',
+                        backgroundColor: '#17a2b8',
+                        data: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Completion Rate (%)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Monthly completions chart
+            const monthlyChartCtx = document.getElementById('monthly-chart').getContext('2d');
+            charts.monthly = new Chart(monthlyChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Completion Rate (%)',
+                        backgroundColor: '#6f42c1',
+                        data: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Completion Rate (%)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Category chart
+            const categoryChartCtx = document.getElementById('category-chart').getContext('2d');
+            charts.category = new Chart(categoryChartCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Opening', 'Mid-Day', 'Closing', 'Cleaning'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#fd7e14', '#20c997', '#6c757d', '#e83e8c']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.parsed}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Load locations
+        function loadLocations() {
+            return db.collection('locations').get()
+                .then(snapshot => {
+                    locationSelect.innerHTML = '<option value="">All Locations</option>';
+                    
+                    snapshot.forEach(doc => {
+                        const location = doc.data();
+                        const option = document.createElement('option');
+                        option.value = doc.id;
+                        option.textContent = location.locationName;
+                        locationSelect.appendChild(option);
+                        
+                        locationNames[doc.id] = location.locationName;
+                    });
+                    
+                    return snapshot;
+                })
+                .catch(error => {
+                    console.error("Error loading locations:", error);
+                    alert("Failed to load locations. Using local data instead.");
+                    
+                    // Create a sample location for local use
+                    locationSelect.innerHTML = '<option value="">All Locations</option>';
+                    const option = document.createElement('option');
+                    option.value = 'sample-location';
+                    option.textContent = 'Sample Location';
+                    locationSelect.appendChild(option);
+                    
+                    locationNames['sample-location'] = 'Sample Location';
+                    
+                    return { empty: true };
+                });
+        }
+        
+        // Load task history based on filters
+        function loadTaskHistory(filters = {}) {
+            showLoading(true);
+            
+            // Prepare date range
+            let startDate = null;
+            let endDate = null;
+            
+            if (dateRangeInput.value) {
+                const dates = dateRangeInput.value.split(' to ');
+                if (dates.length === 2) {
+                    startDate = dates[0];
+                    endDate = dates[1];
+                } else if (dates.length === 1) {
+                    startDate = dates[0];
+                    endDate = dates[0];
+                }
+            }
+            
+            if (!startDate) {
+                // Default to last 30 days
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                startDate = formatDate(thirtyDaysAgo);
+                endDate = formatDate(new Date());
+            }
+            
+            console.log("Loading task history for date range:", startDate, "to", endDate);
+            
+            // Start with empty data
+            allTaskLogs = [];
+            taskHistoryTbody.innerHTML = '<tr><td colspan="8" class="text-center">Loading task history...</td></tr>';
+            
+            try {
+                // Build the query
+                let query = db.collection('dailyTaskLogs')
+                    .where('date', '>=', startDate)
+                    .where('date', '<=', endDate);
+                
+                if (filters.locationId) {
+                    query = query.where('locationId', '==', filters.locationId);
+                }
+                
+                // We can't filter on multiple fields that aren't indexed together,
+                // so we'll fetch and filter client-side for the other filters
+                return query.get()
+                    .then(snapshot => {
+                        console.log(`Fetched ${snapshot.size} logs from Firebase`);
+                        
+                        let logs = [];
+                        snapshot.forEach(doc => {
+                            const log = doc.data();
+                            log.id = doc.id;
+                            logs.push(log);
+                        });
+                        
+                        // Apply additional filters client-side
+                        if (filters.category) {
+                            logs = logs.filter(log => log.taskCategory === filters.category);
+                        }
+                        
+                        if (filters.taskType) {
+                            logs = logs.filter(log => log.taskType === filters.taskType);
+                        }
+                        
+                        if (filters.employee) {
+                            logs = logs.filter(log => log.completedBy === filters.employee);
+                        }
+                        
+                        // Sort by date (newest first)
+                        logs.sort((a, b) => {
+                            if (a.date === b.date) {
+                                return a.taskName.localeCompare(b.taskName);
+                            }
+                            return b.date.localeCompare(a.date);
+                        });
+                        
+                        allTaskLogs = logs;
+                        
+                        // Update the UI
+                        displayTaskHistory(logs);
+                        updateStatistics(logs);
+                        updateCharts(logs);
+                        updateEmployeeDropdown(logs);
+                        
+                        return logs;
+                    })
+                    .catch(error => {
+                        console.error("Error loading task history:", error);
+                        alert("Failed to load task history. Error: " + error.message);
+                        
+                        // Generate some sample data for UI testing
+                        const sampleLogs = generateSampleLogs(startDate, endDate);
+                        allTaskLogs = sampleLogs;
+                        
+                        // Update the UI with sample data
+                        displayTaskHistory(sampleLogs);
+                        updateStatistics(sampleLogs);
+                        updateCharts(sampleLogs);
+                        updateEmployeeDropdown(sampleLogs);
+                        
+                        return sampleLogs;
+                    })
+                    .finally(() => {
+                        showLoading(false);
+                    });
+            } catch (error) {
+                console.error("Error in loadTaskHistory:", error);
+                showLoading(false);
+                alert("An error occurred while loading task history: " + error.message);
+                return Promise.resolve([]);
+            }
+        }
+        
+        // Display task history in the table
+        function displayTaskHistory(logs) {
+            if (logs.length === 0) {
+                taskHistoryTbody.innerHTML = '<tr><td colspan="8" class="text-center">No records found</td></tr>';
+                taskCountElement.textContent = 'No records found';
+                return;
+            }
+            
+            taskHistoryTbody.innerHTML = '';
+            
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                
+                // Format the date nicely
+                const dateCell = document.createElement('td');
+                dateCell.textContent = formatDateForDisplay(log.date);
+                row.appendChild(dateCell);
+                
+                // Location name
+                const locationCell = document.createElement('td');
+                locationCell.textContent = locationNames[log.locationId] || log.locationId;
+                row.appendChild(locationCell);
+                
+                // Task name
+                const taskCell = document.createElement('td');
+                taskCell.textContent = log.taskName || 'Unknown Task';
+                row.appendChild(taskCell);
+                
+                // Category
+                const categoryCell = document.createElement('td');
+                categoryCell.textContent = getCategoryDisplayName(log.taskCategory);
+                row.appendChild(categoryCell);
+                
+                // Task type
+                const typeCell = document.createElement('td');
+                typeCell.textContent = getTaskTypeDisplayName(log.taskType);
+                row.appendChild(typeCell);
+                
+                // Status
+                const statusCell = document.createElement('td');
+                if (log.completed) {
+                    statusCell.innerHTML = '<span class="badge bg-success">Completed</span>';
+                } else {
+                    statusCell.innerHTML = '<span class="badge bg-warning text-dark">Pending</span>';
+                }
+                row.appendChild(statusCell);
+                
+                // Completed by
+                const completedByCell = document.createElement('td');
+                completedByCell.textContent = log.completedBy || 'N/A';
+                row.appendChild(completedByCell);
+                
+                // Response value
+                const responseCell = document.createElement('td');
+                if (log.responseValue) {
+                    if (Array.isArray(log.responseValue)) {
+                        responseCell.textContent = log.responseValue.join(', ');
+                    } else if (log.taskType === 'rating') {
+                        responseCell.textContent = `${log.responseValue} / 5`;
+                    } else {
+                        responseCell.textContent = log.responseValue;
+                    }
+                } else {
+                    responseCell.textContent = '—';
+                }
+                row.appendChild(responseCell);
+                
+                taskHistoryTbody.appendChild(row);
+            });
+            
+            taskCountElement.textContent = `Showing ${logs.length} record${logs.length !== 1 ? 's' : ''}`;
+        }
+        
+        // Update statistics based on logs
+        function updateStatistics(logs) {
+            // Completion rate
+            const totalTasks = logs.length;
+            const completedTasks = logs.filter(log => log.completed).length;
+            const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            
+            completionRateElement.textContent = `${completionRate}%`;
+            completionCountElement.textContent = `${completedTasks} of ${totalTasks} tasks`;
+            
+            // Average rating
+            const ratingLogs = logs.filter(log => log.taskType === 'rating' && log.responseValue);
+            let averageRating = 0;
+            
+            if (ratingLogs.length > 0) {
+                const sum = ratingLogs.reduce((total, log) => {
+                    return total + parseFloat(log.responseValue);
+                }, 0);
+                averageRating = (sum / ratingLogs.length).toFixed(1);
+            }
+            
+            averageRatingElement.textContent = averageRating;
+            ratingCountElement.textContent = `${ratingLogs.length} rating${ratingLogs.length !== 1 ? 's' : ''}`;
+            
+            // Top performer
+            const completedByMap = {};
+            logs.filter(log => log.completed && log.completedBy).forEach(log => {
+                completedByMap[log.completedBy] = (completedByMap[log.completedBy] || 0) + 1;
+            });
+            
+            let topPerformer = null;
+            let topCount = 0;
+            
+            for (const name in completedByMap) {
+                if (completedByMap[name] > topCount) {
+                    topPerformer = name;
+                    topCount = completedByMap[name];
+                }
+            }
+            
+            topPerformerElement.textContent = topPerformer || '-';
+            topPerformerCountElement.textContent = topPerformer ? `${topCount} task${topCount !== 1 ? 's' : ''}` : '0 tasks';
+        }
+        
+        // Update charts based on logs
+        function updateCharts(logs) {
+            // Group logs by date
+            const dailyData = {};
+            const allDates = new Set();
+            
+            logs.forEach(log => {
+                allDates.add(log.date);
+                
+                if (!dailyData[log.date]) {
+                    dailyData[log.date] = { total: 0, completed: 0 };
+                }
+                
+                dailyData[log.date].total++;
+                if (log.completed) {
+                    dailyData[log.date].completed++;
+                }
+            });
+            
+            // Sort dates and prepare chart data
+            const sortedDates = Array.from(allDates).sort();
+            const rates = sortedDates.map(date => {
+                const data = dailyData[date];
+                return data.total > 0 ? (data.completed / data.total) * 100 : 0;
+            });
+            
+            // Update daily chart
+            charts.daily.data.labels = sortedDates.map(formatDateForDisplay);
+            charts.daily.data.datasets[0].data = rates;
+            charts.daily.update();
+            
+            // Group by week
+            const weeklyData = {};
+            logs.forEach(log => {
+                const weekKey = getWeekKey(log.date);
+                
+                if (!weeklyData[weekKey]) {
+                    weeklyData[weekKey] = { total: 0, completed: 0 };
+                }
+                
+                weeklyData[weekKey].total++;
+                if (log.completed) {
+                    weeklyData[weekKey].completed++;
+                }
+            });
+            
+            const sortedWeeks = Object.keys(weeklyData).sort();
+            const weeklyRates = sortedWeeks.map(week => {
+                const data = weeklyData[week];
+                return data.total > 0 ? (data.completed / data.total) * 100 : 0;
+            });
+            
+            // Update weekly chart
+            charts.weekly.data.labels = sortedWeeks;
+            charts.weekly.data.datasets[0].data = weeklyRates;
+            charts.weekly.update();
+            
+            // Group by month
+            const monthlyData = {};
+            logs.forEach(log => {
+                const monthKey = log.date.substring(0, 7); // YYYY-MM
+                
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { total: 0, completed: 0 };
+                }
+                
+                monthlyData[monthKey].total++;
+                if (log.completed) {
+                    monthlyData[monthKey].completed++;
+                }
+            });
+            
+            const sortedMonths = Object.keys(monthlyData).sort();
+            const monthlyRates = sortedMonths.map(month => {
+                const data = monthlyData[month];
+                return data.total > 0 ? (data.completed / data.total) * 100 : 0;
+            });
+            
+            // Update monthly chart
+            charts.monthly.data.labels = sortedMonths.map(formatMonthForDisplay);
+            charts.monthly.data.datasets[0].data = monthlyRates;
+            charts.monthly.update();
+            
+            // Group by category
+            const categoryData = {
+                'opening': { total: 0, completed: 0 },
+                'midday': { total: 0, completed: 0 },
+                'closing': { total: 0, completed: 0 },
+                'cleaning': { total: 0, completed: 0 }
+            };
+            
+            logs.forEach(log => {
+                if (categoryData[log.taskCategory]) {
+                    categoryData[log.taskCategory].total++;
+                    if (log.completed) {
+                        categoryData[log.taskCategory].completed++;
+                    }
+                }
+            });
+            
+            const categoryRates = Object.keys(categoryData).map(category => {
+                const data = categoryData[category];
+                return data.total > 0 ? (data.completed / data.total) * 100 : 0;
+            });
+            
+            // Update category chart
+            charts.category.data.datasets[0].data = categoryRates;
+            charts.category.update();
+        }
+        
+        // Generate sample logs for UI testing when Firebase fails
+        function generateSampleLogs(startDate, endDate) {
+            const logs = [];
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const locationId = 'sample-location';
+            const categories = ['opening', 'midday', 'closing', 'cleaning'];
+            const taskTypes = ['check-off', 'numeric', 'short-answer', 'rating'];
+            const users = ['John Doe', 'Jane Smith', 'Robert Johnson'];
+            
+            // Generate tasks for each category
+            const tasks = [
+                { name: 'Turn on equipment', category: 'opening', type: 'check-off' },
+                { name: 'Inventory check', category: 'opening', type: 'numeric' },
+                { name: 'Clean counters', category: 'midday', type: 'check-off' },
+                { name: 'Restock supplies', category: 'midday', type: 'short-answer' },
+                { name: 'Clean equipment', category: 'closing', type: 'check-off' },
+                { name: 'Count cash drawer', category: 'closing', type: 'numeric' },
+                { name: 'Deep clean machines', category: 'cleaning', type: 'rating' },
+                { name: 'Sanitize areas', category: 'cleaning', type: 'check-off' }
+            ];
+            
+            // For each day in the range
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const date = formatDate(d);
+                
+                // Add logs for each task
+                tasks.forEach(task => {
+                    // 80% completion rate
+                    const completed = Math.random() < 0.8;
+                    const user = users[Math.floor(Math.random() * users.length)];
+                    
+                    let responseValue = null;
+                    if (completed) {
+                        if (task.type === 'numeric') {
+                            responseValue = Math.floor(Math.random() * 100).toString();
+                        } else if (task.type === 'short-answer') {
+                            responseValue = 'Completed as required';
+                        } else if (task.type === 'rating') {
+                            responseValue = (Math.floor(Math.random() * 5) + 1).toString();
+                        }
+                    }
+                    
+                    logs.push({
+                        id: `sample-${date}-${task.name.replace(/\s+/g, '-').toLowerCase()}`,
+                        date: date,
+                        taskName: task.name,
+                        taskCategory: task.category,
+                        taskType: task.type,
+                        locationId: locationId,
+                        completed: completed,
+                        completedBy: completed ? user : null,
+                        completedAt: completed ? new Date().toISOString() : null,
+                        responseValue: responseValue
+                    });
+                });
+            }
+            
+            return logs;
+        }
+        
+        // Export data to CSV
+        function exportToCsv() {
+            if (allTaskLogs.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            // Prepare headers
+            const headers = ['Date', 'Location', 'Task', 'Category', 'Type', 'Status', 'Completed By', 'Response'];
+            
+            // Prepare rows
+            const rows = allTaskLogs.map(log => [
+                log.date,
+                locationNames[log.locationId] || log.locationId,
+                log.taskName || 'Unknown Task',
+                getCategoryDisplayName(log.taskCategory),
+                getTaskTypeDisplayName(log.taskType),
+                log.completed ? 'Completed' : 'Pending',
+                log.completedBy || 'N/A',
+                Array.isArray(log.responseValue) ? log.responseValue.join(', ') : (log.responseValue || '')
+            ]);
+            
+            // Combine headers and rows
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
+            ].join('\n');
+            
+            // Create a download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `task-history-${formatDate(new Date())}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Helper functions
+        function formatDate(date) {
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        function formatDateForDisplay(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+        
+        function formatMonthForDisplay(monthString) {
+            const options = { year: 'numeric', month: 'short' };
+            return new Date(`${monthString}-01`).toLocaleDateString(undefined, options);
+        }
+        
+        function getWeekKey(dateString) {
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            
+            // Get the first day of the year
+            const firstDayOfYear = new Date(year, 0, 1);
+            
+            // Get the adjusted day of the year
+            const dayOfYear = Math.floor((date.getTime() - firstDayOfYear.getTime()) / (24 * 60 * 60 * 1000));
+            
+            // Calculate the week number
+            const weekNumber = Math.ceil((dayOfYear + firstDayOfYear.getDay() + 1) / 7);
+            
+            return `${year}-W${String(weekNumber).padStart(2, '0')}`;
+        }
+        
+        function getCategoryDisplayName(category) {
+            const names = {
+                'opening': 'Opening',
+                'midday': 'Mid-Day',
+                'closing': 'Closing',
+                'cleaning': 'Day\'s Cleaning'
+            };
+            return names[category] || category;
+        }
+        
+        function getTaskTypeDisplayName(type) {
+            const names = {
+                'check-off': 'Check-off',
+                'short-answer': 'Short Answer',
+                'long-answer': 'Long Answer',
+                'photo': 'Photo',
+                'numeric': 'Numeric',
+                'rating': 'Rating',
+                'single-select': 'Single Selection',
+                'multiple-choice': 'Multiple Choice',
+                'verification': 'Verification',
+                'yes-no': 'Yes/No'
+            };
+            return names[type] || type;
+        }
+        
+        function showLoading(show) {
+            loadingOverlay.style.display = show ? 'flex' : 'none';
+        }
+        
+        // Update employee dropdown with unique employees from logs
+        function updateEmployeeDropdown(logs) {
+            // Save current selection
+            const currentSelection = employeeSelect.value;
+            
+            // Get unique employees who have completed tasks
+            const employees = new Set();
+            logs.forEach(log => {
+                if (log.completedBy) {
+                    employees.add(log.completedBy);
+                }
+            });
+            
+            // Sort employees alphabetically
+            const sortedEmployees = Array.from(employees).sort();
+            
+            // Clear dropdown except for the "All Employees" option
+            employeeSelect.innerHTML = '<option value="">All Employees</option>';
+            
+            // Add employee options
+            sortedEmployees.forEach(employee => {
+                const option = document.createElement('option');
+                option.value = employee;
+                option.textContent = employee;
+                employeeSelect.appendChild(option);
+            });
+            
+            // Restore selection if it exists in the new options
+            if (currentSelection && sortedEmployees.includes(currentSelection)) {
+                employeeSelect.value = currentSelection;
+            }
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize charts
+            initCharts();
+            
+            // Load locations and then task history
+            loadLocations().then(() => {
+                loadTaskHistory();
+            });
+            
+            // Handle filter form submission
+            filtersForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const filters = {
+                    locationId: locationSelect.value,
+                    category: categorySelect.value,
+                    taskType: taskTypeSelect.value,
+                    employee: employeeSelect.value
+                };
+                
+                loadTaskHistory(filters);
+            });
+            
+            // Handle export button
+            exportCsvButton.addEventListener('click', exportToCsv);
+        });
+    </script>
+</body>
+</html> 

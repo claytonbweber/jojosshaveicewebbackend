@@ -1,0 +1,3997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Project Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #FFD60A;
+        }
+        h1 {
+            color: #87CEEB;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .container {
+            background-color: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 8px;
+        }
+        .project {
+            margin-bottom: 5px;
+            padding: 8px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .section {
+            margin-left: 20px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            margin-bottom: 3px;
+            font-size: 0.9rem;
+        }
+        input, select, textarea {
+            padding: 6px;
+            font-size: 0.9rem;
+        }
+        button, .button {
+            background-color: #FF4040;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        button:hover, .button:hover {
+            background-color: #d93333;
+        }
+        .button.secondary {
+            background-color: #87CEEB;
+        }
+        .button.secondary:hover {
+            background-color: #5a9ac2;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        #status, #projectStatus, #sectionStatus {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .nav {
+            margin-bottom: 10px;
+            gap: 8px;
+        }
+        .nav-item {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+        .nav-item.active {
+            background-color: #FF4040;
+        }
+        #projectList, #sectionsList {
+            margin-top: 20px;
+        }
+        .toggle-btn {
+            background-color: transparent;
+            border: none;
+            color: #87CEEB;
+            font-weight: bold;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 0;
+        }
+        .hidden {
+            display: none;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+        }
+        .schedule-option {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .radio-group {
+            margin-top: 10px;
+        }
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .radio-item input[type="radio"] {
+            width: auto;
+        }
+        .selected-option {
+            background-color: #e9f5ff;
+            border-color: #87CEEB;
+        }
+        .task {
+            margin-left: 20px;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            background-color: white;
+            border-radius: 3px;
+            margin-bottom: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .task-list {
+            margin-top: 15px;
+        }
+        .task-completed {
+            text-decoration: line-through;
+            color: #777;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .view-tasks-btn {
+            background-color: #87CEEB;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .view-tasks-btn:hover {
+            background-color: #5a9ac2;
+        }
+        
+        /* Task styling */
+        #task-container {
+            margin-top: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 15px;
+        }
+        
+        #task-container h3 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 1.4rem;
+        }
+        
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .task-item {
+            background-color: white;
+            border: 1px solid #e9ecef;
+            border-radius: 0.25rem;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .task-item:hover {
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        
+        .task-item h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            color: #495057;
+        }
+        
+        .task-notes {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 0.25rem;
+            border-left: 3px solid #dee2e6;
+        }
+        
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+        
+        .task-due-date {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .task-completed {
+            opacity: 0.7;
+        }
+        
+        .task-completed h4 {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        
+        .badge {
+            padding: 0.5em 0.8em;
+            border-radius: 50rem;
+        }
+        
+        .bg-success {
+            background-color: #28a745 !important;
+        }
+        
+        .bg-warning {
+            background-color: #ffc107 !important;
+        }
+        
+        /* Section list styling */
+        #sections-list {
+            margin-bottom: 20px;
+        }
+        
+        .project-section-item {
+            cursor: pointer;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .project-section-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .project-section-item.active {
+            background-color: #e2f0fb;
+            border-left: 3px solid #007bff;
+        }
+        
+        #task-container {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .task-item {
+            background-color: white;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 3px solid #007bff;
+        }
+        
+        .task-item.task-completed {
+            opacity: 0.7;
+            border-left-color: #28a745;
+        }
+        
+        .task-item h4 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .task-notes {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            white-space: pre-line;
+        }
+        
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .task-due-date {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        
+        .task-list {
+            margin-top: 15px;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            background-color: #87CEEB;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .form-select, .form-control {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
+        
+        .d-none {
+            display: none !important;
+        }
+        
+        .d-flex {
+            display: flex !important;
+        }
+        
+        .justify-content-center {
+            justify-content: center !important;
+        }
+        
+        .spinner-border {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            vertical-align: text-bottom;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+        }
+        
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+        
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+        
+        .mt-4 {
+            margin-top: 1.5rem !important;
+        }
+        
+        .mb-3 {
+            margin-bottom: 1rem !important;
+        }
+        
+        .text-decoration-none {
+            text-decoration: none !important;
+        }
+        
+        .btn {
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 0.25rem;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .btn-primary {
+            color: #fff;
+            background-color: #FF4040;
+            border-color: #FF4040;
+        }
+        
+        .btn-primary:hover {
+            background-color: #d93333;
+            border-color: #d93333;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border-radius: 0.2rem;
+        }
+        
+        .btn-outline-primary {
+            color: #FF4040;
+            background-color: transparent;
+            background-image: none;
+            border-color: #FF4040;
+        }
+        
+        .btn-outline-primary:hover {
+            color: #fff;
+            background-color: #FF4040;
+            border-color: #FF4040;
+        }
+        
+        .alert {
+            position: relative;
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+        
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        /* Project Category Styling */
+        .project-category {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #87CEEB;
+        }
+        
+        .project-category h4 {
+            color: #495057;
+            margin-top: 0;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 1rem;
+        }
+        
+        #todo-projects {
+            border-left-color: #fd7e14; /* Orange */
+        }
+        
+        #parcomp-projects {
+            border-left-color: #6610f2; /* Purple */
+        }
+        
+        #oneoff-projects {
+            border-left-color: #20c997; /* Teal */
+        }
+        
+        #viewonly-projects {
+            border-left-color: #17a2b8; /* Cyan blue */
+        }
+        
+        .project-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .project {
+            background-color: white;
+            border-radius: 4px;
+            padding: 10px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            margin-bottom: 6px;
+            transition: transform 0.2s;
+        }
+        
+        .project:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 5px rgba(0,0,0,0.15);
+        }
+        
+        .project h4 {
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+        
+        .project p {
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+        }
+        
+        .category-description {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: -5px;
+            margin-bottom: 8px;
+        }
+        
+        .project-create-form {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+        
+        .project-create-form h3 {
+            margin-top: 0;
+            font-size: 1.1rem;
+        }
+        
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 6px;
+        }
+        
+        .button, .btn {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+        
+        .project-category-select {
+            margin-left: 5px;
+            padding: 3px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            max-width: 120px;
+        }
+        
+        .project-items p {
+            color: #6c757d;
+            font-style: italic;
+            padding: 5px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        
+        #projectStatus {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        
+        /* Add utility classes for flex layout */
+        .d-flex {
+            display: flex !important;
+        }
+        
+        .justify-content-between {
+            justify-content: space-between !important;
+        }
+        
+        .align-items-center {
+            align-items: center !important;
+        }
+        
+        /* Make existing elements more compact */
+        button#fetchProjects {
+            padding: 5px 10px;
+            font-size: 0.85rem;
+        }
+        
+        /* Project category containers - Grid layout */
+        #projectList {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        /* Make headers smaller */
+        #projectsContainer > h3 {
+            font-size: 1.1rem;
+            margin: 12px 0 8px 0;
+        }
+        
+        .w-48 {
+            width: 48% !important;
+        }
+        
+        /* Modal Overlay Styles - FIXED */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        
+        .modal-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 10;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: #495057;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .modal-close:hover {
+            color: #343a40;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            gap: 10px;
+            position: sticky;
+            bottom: 0;
+            background-color: white;
+            z-index: 10;
+        }
+        
+        /* Ensure proper scrolling inside modal */
+        #modal-task-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .task-list {
+            max-height: none;
+        }
+        
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+        .col-md-4 {
+            flex: 0 0 33.333333%;
+            max-width: 33.333333%;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+        .col-md-8 {
+            flex: 0 0 66.666667%;
+            max-width: 66.666667%;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .col-md-4, .col-md-8 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+        
+        /* Improved Section styling */
+        .section-schedule-item {
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+        }
+        
+        .section-header {
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #dee2e6;
+            font-size: 1rem;
+        }
+        
+        .section-day-selector {
+            padding-top: 5px;
+        }
+        
+        .small {
+            font-size: 0.875rem;
+        }
+        
+        /* Day selection styling */
+        .day-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        /* Fix modal width and padding */
+        .modal-container {
+            width: 95%;
+            max-width: 700px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>JoJo's Shave Ice - Admin</h1>
+    
+    <div class="nav">
+        <a href="locations.html" class="nav-item">Manage Locations</a>
+        <a href="projects.html" class="nav-item active">Manage Projects</a>
+    </div>
+    
+    <div class="container">
+        <h2>Asana Projects</h2>
+        <p>Connect projects with the app and organize them by category.</p>
+        
+        <div class="form-group">
+            <label for="locationSelect">Location:</label>
+            <select id="locationSelect">
+                <option value="">Loading locations...</option>
+            </select>
+        </div>
+        
+        <div id="locationInfo" class="hidden">
+            <div><strong>Selected:</strong> <span id="selectedLocationName"></span></div>
+            <div><strong>Asana ID:</strong> <span id="asanaUserId"></span></div>
+            <div><strong>PAT:</strong> <span id="asanaPAT"></span></div>
+        </div>
+        
+        <div id="projectsContainer" class="hidden">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3>Asana Projects</h3>
+                <button id="fetchProjects" class="button secondary">Refresh Projects</button>
+            </div>
+            <div id="projectStatus"></div>
+            
+            <div id="projectList">
+                <div class="project-category" id="uncategorized-projects">
+                    <h4>Uncategorized Projects</h4>
+                    <p class="category-description">Projects that haven't been assigned to a category yet.</p>
+                    <div class="project-items"></div>
+                </div>
+                
+                <div class="project-category" id="todo-projects">
+                    <h4>To Do's</h4>
+                    <p class="category-description">Projects with a to-do list structure.</p>
+                    <div class="project-items"></div>
+                </div>
+                
+                <div class="project-category" id="parcomp-projects">
+                    <h4>Par Comp's</h4>
+                    <p class="category-description">Projects with partial completion tracking.</p>
+                    <div class="project-items"></div>
+                </div>
+                
+                <div class="project-category" id="oneoff-projects">
+                    <h4>One Off's</h4>
+                    <p class="category-description">Projects without recurring tasks.</p>
+                    <div class="project-items"></div>
+                </div>
+                
+                <div class="project-category" id="viewonly-projects">
+                    <h4>View Only</h4>
+                    <p class="category-description">Projects visible for reference only.</p>
+                    <div class="project-items"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="project-details" class="container mt-4 d-none">
+            <div class="row mb-3">
+                <div class="col">
+                    <h3 id="project-name"></h3>
+                    <a href="#" id="back-to-projects" class="text-decoration-none">&larr; Back to Projects</a>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Project Sections</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="sections-list"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5>Schedule Configuration</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="schedule-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Schedule Type</label>
+                                    <div class="form-check">
+                                        <input type="radio" id="schedule-by-section" name="scheduleType" value="bySection" class="form-check-input">
+                                        <label for="schedule-by-section" class="form-check-label">By Section</label>
+                                        <small class="form-text text-muted d-block">Configure each section separately with its own schedule</small>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="radio" id="schedule-whole-project" name="scheduleType" value="wholeProject" class="form-check-input" checked>
+                                        <label for="schedule-whole-project" class="form-check-label">Whole Project</label>
+                                        <small class="form-text text-muted d-block">Apply the same schedule to the entire project</small>
+                                    </div>
+                                </div>
+                                
+                                <div id="section-schedule-container" class="mb-3 d-none">
+                                    <label class="form-label">Select a section to schedule</label>
+                                    <div id="section-schedule-list">
+                                        <!-- Section list will be populated here -->
+                                    </div>
+                                </div>
+                                
+                                <div id="whole-project-days" class="mb-3">
+                                    <label class="form-label">Select Days for Whole Project</label>
+                                    <div class="day-checkboxes">
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox" id="day-0" name="days" value="0" class="form-check-input project-day">
+                                            <label for="day-0" class="form-check-label">Sun</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox" id="day-1" name="days" value="1" class="form-check-input project-day">
+                                            <label for="day-1" class="form-check-label">Mon</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox" id="day-2" name="days" value="2" class="form-check-input project-day">
+                                            <label for="day-2" class="form-check-label">Tue</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox" id="day-3" name="days" value="3" class="form-check-input project-day">
+                                            <label for="day-3" class="form-check-label">Wed</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox" id="day-4" name="days" value="4" class="form-check-input project-day">
+                                            <label for="day-4" class="form-check-label">Thu</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox" id="day-5" name="days" value="5" class="form-check-input project-day">
+                                            <label for="day-5" class="form-check-label">Fri</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input type="checkbox" id="day-6" name="days" value="6" class="form-check-input project-day">
+                                            <label for="day-6" class="form-check-label">Sat</label>
+                                        </div>
+                                    </div>
+                                    <div id="days-error" class="invalid-feedback">
+                                        Please select at least one day
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Tasks Container -->
+                    <div id="modal-task-container">
+                        <h3>Select a section to view tasks</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Project Modal Overlay -->
+    <div id="project-config-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="modal-project-name">Configure Project</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            
+            <!-- Par Comp Field Mapping - Hidden by default, shown for parcomp projects -->
+            <div id="parcomp-config" class="modal-body d-none">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="m-0">Par Comp Field Mapping</h5>
+                        <button class="btn btn-sm btn-info" id="help-parcomp-mapping">?</button>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2 small">
+                            Map Asana task fields to Par Comp fields used in the app.
+                        </p>
+                        
+                        <div class="alert alert-info py-2 small">
+                            <strong>Note:</strong> For free Asana accounts, use task name or notes for these values.
+                            <div class="mt-2">Add these values to your task names or notes in a clear format such as:</div>
+                            <ul class="mb-0 mt-1">
+                                <li>High Par: 10</li>
+                                <li>Low Par: 5</li>
+                                <li>Unit: boxes</li>
+                            </ul>
+                            <div class="mt-2"><strong>Note:</strong> Current Count is managed by the native app - don't include it in Asana</div>
+                        </div>
+                        
+                        <div id="field-mappings-loading" class="text-center p-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading fields...</span>
+                            </div>
+                            <p class="mt-2">Loading available fields from Asana...</p>
+                        </div>
+                        
+                        <div id="field-mappings-container" class="d-none">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="field-mapping mb-2">
+                                        <label class="form-label fw-bold small">Item Name</label>
+                                        <select id="map-item-name" class="form-select form-select-sm">
+                                            <option value="">-- Select Field --</option>
+                                            <option value="name">Task Name</option>
+                                            <option value="notes">Notes</option>
+                                            <!-- Custom fields will be added dynamically -->
+                                        </select>
+                                        <small class="text-muted d-block small">The name of the inventory item</small>
+                                    </div>
+                                    
+                                    <div class="field-mapping mb-2">
+                                        <label class="form-label fw-bold small">Description</label>
+                                        <select id="map-description" class="form-select form-select-sm">
+                                            <option value="">-- Select Field --</option>
+                                            <option value="name">Task Name</option>
+                                            <option value="notes">Notes</option>
+                                            <!-- Custom fields will be added dynamically -->
+                                        </select>
+                                        <small class="text-muted d-block small">Detailed description of the item</small>
+                                    </div>
+                                    
+                                    <div class="field-mapping mb-2">
+                                        <label class="form-label fw-bold small">Unit of Measure</label>
+                                        <select id="map-uom" class="form-select form-select-sm">
+                                            <option value="">-- Select Field --</option>
+                                            <option value="name">Task Name</option>
+                                            <option value="notes">Notes</option>
+                                            <!-- Custom fields will be added dynamically -->
+                                        </select>
+                                        <small class="text-muted d-block small">How the item is measured (e.g., count, boxes, lbs)</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="field-mapping mb-2">
+                                        <label class="form-label fw-bold small">High Par</label>
+                                        <select id="map-high-par" class="form-select form-select-sm">
+                                            <option value="">-- Select Field --</option>
+                                            <option value="name">Task Name</option>
+                                            <option value="notes">Notes</option>
+                                            <!-- Custom fields will be added dynamically -->
+                                        </select>
+                                        <small class="text-muted d-block small">Maximum inventory level</small>
+                                    </div>
+                                    
+                                    <div class="field-mapping mb-2">
+                                        <label class="form-label fw-bold small">Low Par</label>
+                                        <select id="map-low-par" class="form-select form-select-sm">
+                                            <option value="">-- Select Field --</option>
+                                            <option value="name">Task Name</option>
+                                            <option value="notes">Notes</option>
+                                            <!-- Custom fields will be added dynamically -->
+                                        </select>
+                                        <small class="text-muted d-block small">Minimum inventory level before reorder</small>
+                                    </div>
+                                    
+                                    <div class="field-mapping mb-2">
+                                        <label class="form-label fw-bold small">Current Count</label>
+                                        <select id="map-current-count" class="form-select form-select-sm" disabled>
+                                            <option value="">-- Managed by App --</option>
+                                        </select>
+                                        <small class="text-muted d-block small"><strong>Note:</strong> Current Count is managed by the native app - no mapping needed</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
+                                <div class="text-muted small">Use task name or notes for free Asana accounts</div>
+                                <button id="save-parcomp-mappings" class="btn btn-primary">Submit</button>
+                            </div>
+                            
+                            <div id="parcomp-field-creation-status" class="alert alert-info d-none mt-3"></div>
+                            
+                            <hr class="my-3">
+                            
+                            <!-- Sample Data Viewer - Only show preview button, hide the rest initially -->
+                            <div class="mt-3">
+                                <button id="fetch-sample-data" class="btn btn-outline-primary btn-sm">Preview Sample Items</button>
+                                
+                                <div id="sample-data-container" class="d-none mt-2">
+                                    <div class="card">
+                                        <div class="card-header bg-light py-1 small">
+                                            Sample Items
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div id="sample-data-loading" class="text-center p-2 d-none">
+                                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p class="mt-2 small">Loading sample data...</p>
+                                            </div>
+                                            <div id="sample-data-error" class="alert alert-danger m-2 small d-none"></div>
+                                            <div id="sample-data-empty" class="alert alert-info m-2 small d-none">
+                                                No items found. Make sure you have tasks set up in your Asana project with the mapped fields.
+                                            </div>
+                                            <div id="sample-data-list" class="list-group list-group-flush"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Todo Field Mapping - Hidden by default, shown for todo projects -->
+            <div id="todo-config" class="modal-body d-none">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="m-0">To Do Field Mapping</h5>
+                        <button class="btn btn-sm btn-info" id="help-todo-mapping">?</button>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2 small">
+                            Task types are predefined in the app. You need to add one of these keywords in your task name or notes:
+                        </p>
+                        
+                        <div class="alert alert-info py-2 small">
+                            <strong>Available Task Types:</strong>
+                            <ul class="mb-0 mt-1">
+                                <li>Check Off - Simple checkbox tasks</li>
+                                <li>Long Form - Detailed text entry</li>
+                                <li>Short Form - Brief text responses</li>
+                                <li>Submit Video - Video uploads</li>
+                                <li>Submit File/Image - File or image uploads</li>
+                                <li>Signature - Digital signature</li>
+                                <li>Audio - Voice recordings</li>
+                                <li>Value - Numeric entry</li>
+                            </ul>
+                        </div>
+                        
+                        <div id="todo-mappings-loading" class="text-center p-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading fields...</span>
+                            </div>
+                            <p class="mt-2">Loading available fields from Asana...</p>
+                        </div>
+                        
+                        <div id="todo-mappings-container" class="d-none">
+                            <div class="field-mapping mb-3">
+                                <label class="form-label fw-bold">Task Type Field</label>
+                                <select id="map-task-type" class="form-select">
+                                    <option value="">-- Select Field --</option>
+                                    <option value="name">Task Name</option>
+                                    <option value="notes">Notes</option>
+                                    <!-- Custom fields will be added dynamically -->
+                                </select>
+                                <small class="text-muted d-block">The field that contains the task type keyword</small>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="text-muted small">Use task name or notes to specify task types</div>
+                                <button id="save-todo-mappings" class="btn btn-primary">Submit</button>
+                            </div>
+                            
+                            <div id="field-creation-status" class="alert alert-info d-none mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- One Off Field Mapping - Hidden by default, shown for oneoff projects -->
+            <div id="oneoff-config" class="modal-body d-none">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="m-0">One Off Field Mapping</h5>
+                        <button class="btn btn-sm btn-info" id="help-oneoff-mapping">?</button>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2 small">
+                            Task types are predefined in the app. You need to add one of these keywords in your task name or notes:
+                        </p>
+                        
+                        <div class="alert alert-info py-2 small">
+                            <strong>Available Task Types:</strong>
+                            <ul class="mb-0 mt-1">
+                                <li>Check Off - Simple checkbox tasks</li>
+                                <li>Long Form - Detailed text entry</li>
+                                <li>Short Form - Brief text responses</li>
+                                <li>Submit Video - Video uploads</li>
+                                <li>Submit File/Image - File or image uploads</li>
+                                <li>Signature - Digital signature</li>
+                                <li>Audio - Voice recordings</li>
+                                <li>Value - Numeric entry</li>
+                            </ul>
+                        </div>
+                        
+                        <div id="oneoff-mappings-loading" class="text-center p-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading fields...</span>
+                            </div>
+                            <p class="mt-2">Loading available fields from Asana...</p>
+                        </div>
+                        
+                        <div id="oneoff-mappings-container" class="d-none">
+                            <div class="field-mapping mb-3">
+                                <label class="form-label fw-bold">Task Type Field</label>
+                                <select id="map-oneoff-task-type" class="form-select">
+                                    <option value="">-- Select Field --</option>
+                                    <option value="name">Task Name</option>
+                                    <option value="notes">Notes</option>
+                                    <!-- Custom fields will be added dynamically -->
+                                </select>
+                                <small class="text-muted d-block">The field that contains the task type keyword</small>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="text-muted small">Use task name or notes to specify task types</div>
+                                <button id="save-oneoff-mappings" class="btn btn-primary">Submit</button>
+                            </div>
+                            
+                            <div id="oneoff-field-creation-status" class="alert alert-info d-none mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 1: Choose scheduling type -->
+            <div id="schedule-step-1" class="modal-body">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="m-0">How would you like to schedule this project?</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <button id="choose-whole-project" class="btn btn-outline-primary btn-lg w-48">
+                                Schedule Whole Project
+                                <div class="text-muted small">Apply the same schedule to all sections</div>
+                            </button>
+                            
+                            <button id="choose-by-section" class="btn btn-outline-primary btn-lg w-48">
+                                Schedule By Section
+                                <div class="text-muted small">Configure each section individually</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 2: Whole Project -->
+            <div id="schedule-whole-project-step" class="modal-body d-none">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Select Days for Entire Project</h5>
+                        <button class="btn btn-sm btn-secondary" id="back-to-step1-from-project">Back</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="day-selection-container">
+                            <div class="day-checkboxes d-flex flex-wrap justify-content-between py-3">
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="project-day-0" name="projectDays" value="0" class="form-check-input project-day">
+                                    <label for="project-day-0" class="form-check-label">Sunday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="project-day-1" name="projectDays" value="1" class="form-check-input project-day">
+                                    <label for="project-day-1" class="form-check-label">Monday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="project-day-2" name="projectDays" value="2" class="form-check-input project-day">
+                                    <label for="project-day-2" class="form-check-label">Tuesday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="project-day-3" name="projectDays" value="3" class="form-check-input project-day">
+                                    <label for="project-day-3" class="form-check-label">Wednesday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="project-day-4" name="projectDays" value="4" class="form-check-input project-day">
+                                    <label for="project-day-4" class="form-check-label">Thursday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="project-day-5" name="projectDays" value="5" class="form-check-input project-day">
+                                    <label for="project-day-5" class="form-check-label">Friday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="project-day-6" name="projectDays" value="6" class="form-check-input project-day">
+                                    <label for="project-day-6" class="form-check-label">Saturday</label>
+                                </div>
+                            </div>
+                            <div id="project-days-error" class="alert alert-danger d-none">
+                                Please select at least one day
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button id="save-project-schedule" class="btn btn-success w-100">Save Schedule</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 2: By Section -->
+            <div id="schedule-sections-step" class="modal-body d-none">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Schedule Section: <span id="current-section-name">Section Name</span></h5>
+                        <button class="btn btn-sm btn-secondary" id="back-to-step1-from-section">Back</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="day-selection-container">
+                            <div class="day-checkboxes d-flex flex-wrap justify-content-between py-3">
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="section-day-0" name="sectionDays" value="0" class="form-check-input section-day">
+                                    <label for="section-day-0" class="form-check-label">Sunday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="section-day-1" name="sectionDays" value="1" class="form-check-input section-day">
+                                    <label for="section-day-1" class="form-check-label">Monday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="section-day-2" name="sectionDays" value="2" class="form-check-input section-day">
+                                    <label for="section-day-2" class="form-check-label">Tuesday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="section-day-3" name="sectionDays" value="3" class="form-check-input section-day">
+                                    <label for="section-day-3" class="form-check-label">Wednesday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="section-day-4" name="sectionDays" value="4" class="form-check-input section-day">
+                                    <label for="section-day-4" class="form-check-label">Thursday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="section-day-5" name="sectionDays" value="5" class="form-check-input section-day">
+                                    <label for="section-day-5" class="form-check-label">Friday</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" id="section-day-6" name="sectionDays" value="6" class="form-check-input section-day">
+                                    <label for="section-day-6" class="form-check-label">Saturday</label>
+                                </div>
+                            </div>
+                            <div id="section-days-error" class="alert alert-danger d-none">
+                                Please select at least one day
+                            </div>
+                        </div>
+                        
+                        <div class="progress mt-4">
+                            <div id="section-progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <span id="section-progress-text">Section 0 of 0</span>
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <button id="prev-section" class="btn btn-secondary" disabled>Previous Section</button>
+                        <button id="next-section" class="btn btn-primary">Next Section</button>
+                        <button id="save-sections-schedule" class="btn btn-success d-none">Save All Sections</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.firebasestorage.app",
+            messagingSenderId: "344579778389",
+            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
+            measurementId: "G-VBP44WBTCP"
+        };
+
+        // Global variables - declare these only once
+        let db;
+        let selectedLocation = null;
+        let currentProjects = [];
+        let currentSections = [];
+        let currentProjectId = null;
+        let currentSectionIndex = 0;
+        let sectionSchedules = {};
+        
+        // Wait for the DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded, initializing app");
+            
+            // Initialize Firebase first
+            initializeFirebase();
+            
+            // Then set up event listeners
+            setupEventListeners();
+            
+            // Finally load data
+            loadLocations();
+        });
+        
+        // Initialize Firebase
+        function initializeFirebase() {
+            try {
+                console.log("Initializing Firebase");
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                console.log("Firebase initialized successfully", db);
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                alert("Failed to initialize Firebase. Please check the console for details.");
+            }
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            console.log("Setting up event listeners");
+            
+            // Location select change
+            const locationSelect = document.getElementById('locationSelect');
+            if (locationSelect) {
+                locationSelect.addEventListener('change', handleLocationChange);
+                console.log("Location select event listener added");
+            } else {
+                console.error("locationSelect element not found");
+            }
+            
+            // Fetch projects button
+            const fetchProjectsBtn = document.getElementById('fetchProjects');
+            if (fetchProjectsBtn) {
+                fetchProjectsBtn.addEventListener('click', fetchProjects);
+                console.log("Fetch projects button event listener added");
+            }
+            
+            // Modal close
+            const modal = document.getElementById('project-config-modal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) closeModal();
+                });
+            }
+            
+            // Modal close button (X)
+            const modalCloseBtn = document.querySelector('.modal-close');
+            if (modalCloseBtn) {
+                modalCloseBtn.addEventListener('click', closeModal);
+                console.log("Modal close button event listener added");
+            } else {
+                console.error("Modal close button not found");
+            }
+            
+            // Configure project buttons (will be added dynamically)
+        }
+        
+        // Handle location change
+        function handleLocationChange() {
+            console.log("Location selection changed");
+            const locationSelect = document.getElementById('locationSelect');
+            const locationInfo = document.getElementById('locationInfo');
+            const projectsContainer = document.getElementById('projectsContainer');
+            
+            if (!locationSelect) {
+                console.error("locationSelect not found in handleLocationChange");
+                return;
+            }
+            
+            const selectedOption = locationSelect.options[locationSelect.selectedIndex];
+            
+            if (!selectedOption.value) {
+                console.log("No location selected");
+                locationInfo.classList.add('hidden');
+                projectsContainer.classList.add('hidden');
+                return;
+            }
+            
+            console.log("Selected location:", selectedOption.textContent);
+            
+            selectedLocation = {
+                id: selectedOption.value,
+                name: selectedOption.textContent,
+                asanaUserId: selectedOption.dataset.asanaUserId,
+                asanaPAT: selectedOption.dataset.asanaPAT
+            };
+            
+            // Display location info
+            document.getElementById('selectedLocationName').textContent = selectedLocation.name;
+            document.getElementById('asanaUserId').textContent = selectedLocation.asanaUserId;
+            document.getElementById('asanaPAT').textContent = selectedLocation.asanaPAT;
+            
+            locationInfo.classList.remove('hidden');
+            projectsContainer.classList.remove('hidden');
+            
+            // Load projects automatically when a location is selected
+            fetchProjects();
+        }
+        
+        // Load locations from Firestore
+        function loadLocations() {
+            console.log("Loading locations from Firestore");
+            const locationSelect = document.getElementById('locationSelect');
+            
+            if (!locationSelect) {
+                console.error("locationSelect element not found in loadLocations");
+                return;
+            }
+            
+            // Show loading state
+            locationSelect.innerHTML = '<option value="">Loading locations...</option>';
+            
+            if (!db) {
+                console.error("Firestore database not initialized");
+                locationSelect.innerHTML = '<option value="">Error: Database not available</option>';
+                return;
+            }
+            
+            // Get locations from Firestore
+            db.collection('locations').get()
+                .then(snapshot => {
+                    console.log("Locations snapshot received:", snapshot);
+                    const locations = [];
+                    
+                    snapshot.forEach(doc => {
+                        console.log("Processing location:", doc.id);
+                        locations.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    console.log("Total locations found:", locations.length);
+                    
+                    if (locations.length === 0) {
+                        locationSelect.innerHTML = '<option value="">No locations found</option>';
+                        return;
+                    }
+                    
+                    // Update dropdown
+                    locationSelect.innerHTML = '<option value="">Select a location</option>';
+                    
+                    locations.forEach(location => {
+                        console.log("Adding location to dropdown:", location.locationName);
+                        const option = document.createElement('option');
+                        option.value = location.id;
+                        option.textContent = location.locationName;
+                        option.dataset.asanaUserId = location.asanaUserId;
+                        option.dataset.asanaPAT = location.asanaPAT;
+                        locationSelect.appendChild(option);
+                    });
+                    
+                    console.log("Locations loaded successfully");
+                })
+                .catch(error => {
+                    console.error("Error loading locations:", error);
+                    locationSelect.innerHTML = '<option value="">Error loading locations</option>';
+                    alert("Failed to load locations: " + error.message);
+                });
+        }
+        
+        // Display projects in categories
+        async function displayProjects(projects) {
+            console.log("Displaying projects:", projects.length);
+            
+            // Reset project containers
+            document.querySelector('#uncategorized-projects .project-items').innerHTML = '';
+            document.querySelector('#todo-projects .project-items').innerHTML = '';
+            document.querySelector('#parcomp-projects .project-items').innerHTML = '';
+            document.querySelector('#oneoff-projects .project-items').innerHTML = '';
+            document.querySelector('#viewonly-projects .project-items').innerHTML = '';
+            
+            // First fetch all project configurations for this location
+            const projectConfigs = {};
+            try {
+                console.log("Fetching project configurations for location:", selectedLocation.id);
+                const configsSnapshot = await db.collection('projectConfigurations')
+                    .where('locationId', '==', selectedLocation.id)
+                    .get();
+                
+                configsSnapshot.forEach(doc => {
+                    const config = doc.data();
+                    projectConfigs[config.projectId] = config;
+                });
+                console.log("Project configurations loaded:", Object.keys(projectConfigs).length);
+            } catch (error) {
+                console.error('Error loading project configurations:', error);
+            }
+            
+            // Categorize projects
+            const categorizedProjects = {
+                uncategorized: [],
+                todo: [],
+                parcomp: [],
+                oneoff: [],
+                viewonly: []
+            };
+            
+            projects.forEach(project => {
+                const config = projectConfigs[project.gid];
+                
+                // Only categorize if explicitly assigned
+                if (config && config.category && categorizedProjects[config.category]) {
+                    categorizedProjects[config.category].push(project);
+                } else {
+                    // If not categorized, put in uncategorized
+                    categorizedProjects.uncategorized.push(project);
+                }
+            });
+            
+            console.log("Projects categorized:", categorizedProjects);
+            
+            // Display projects by category
+            Object.keys(categorizedProjects).forEach(category => {
+                const container = document.querySelector(`#${category}-projects .project-items`);
+                const projectsInCategory = categorizedProjects[category];
+                
+                if (projectsInCategory.length === 0) {
+                    container.innerHTML = '<p>No projects in this category</p>';
+                    return;
+                }
+                
+                projectsInCategory.forEach(project => {
+                    const config = projectConfigs[project.gid];
+                    let scheduleInfo = 'Not scheduled';
+                    let scheduleClass = 'error';
+                    
+                    if (config) {
+                        if (config.frequency) {
+                            scheduleInfo = `${config.frequency}`;
+                            if (config.day && config.frequency !== 'daily') {
+                                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                scheduleInfo += ` on ${dayNames[config.day]}`;
+                            }
+                            scheduleClass = 'success';
+                        } else if (config.days && config.days.length > 0) {
+                            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                            scheduleInfo = `Days: ${config.days.map(d => dayNames[d]).join(', ')}`;
+                            scheduleClass = 'success';
+                        }
+                    }
+                    
+                    const projectDiv = document.createElement('div');
+                    projectDiv.className = 'project';
+                    projectDiv.innerHTML = `
+                        <h4>${project.name}</h4>
+                        <p class="${scheduleClass}"><small>${scheduleInfo}</small></p>
+                        <div class="actions">
+                            <button class="button view-project" data-id="${project.gid}" data-name="${project.name}">
+                                Configure
+                            </button>
+                            <select class="project-category-select" data-project-id="${project.gid}" data-original-value="${category}">
+                                <option value="">Uncategorized</option>
+                                <option value="todo" ${category === 'todo' ? 'selected' : ''}>To Do's</option>
+                                <option value="parcomp" ${category === 'parcomp' ? 'selected' : ''}>Par Comp's</option>
+                                <option value="oneoff" ${category === 'oneoff' ? 'selected' : ''}>One Off's</option>
+                                <option value="viewonly" ${category === 'viewonly' ? 'selected' : ''}>View Only</option>
+                            </select>
+                        </div>
+                    `;
+                    container.appendChild(projectDiv);
+                });
+            });
+            
+            // Add event listeners to view project buttons
+            document.querySelectorAll('.view-project').forEach(button => {
+                button.addEventListener('click', function() {
+                    const projectId = this.dataset.id;
+                    const projectName = this.dataset.name;
+                    viewProject(projectId, projectName);
+                });
+            });
+            
+            // Add event listeners to category selects
+            document.querySelectorAll('.project-category-select').forEach(select => {
+                select.addEventListener('change', async function() {
+                    const projectId = this.dataset.projectId;
+                    const newCategory = this.value;
+                    const originalSelect = this;
+                    const originalValue = select.getAttribute('data-original-value');
+                    const projectStatus = document.getElementById('projectStatus');
+                    
+                    try {
+                        projectStatus.innerHTML = '<p>Updating project category...</p>';
+                        
+                        // Update category in Firestore
+                        await db.collection('projectConfigurations').doc(projectId).set({
+                            category: newCategory,
+                            projectId: projectId,
+                            locationId: selectedLocation.id,
+                            updatedAt: new Date().toISOString()
+                        }, { merge: true });
+                        
+                        // Save current value as original
+                        originalSelect.setAttribute('data-original-value', newCategory);
+                        
+                        // Refresh projects display
+                        projectStatus.innerHTML = '<p class="success">Project category updated successfully!</p>';
+                        await fetchProjects();
+                    } catch (error) {
+                        console.error('Error updating project category:', error);
+                        projectStatus.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+                        
+                        // Reset to original value
+                        if (originalValue) {
+                            originalSelect.value = originalValue;
+                        }
+                        
+                        // Show detailed error
+                        if (error.code === 'permission-denied') {
+                            alert('Permission denied error: The security rules need to be updated to allow access to the projectConfigurations collection. Please check the console for details.');
+                        } else {
+                            alert(`Failed to update project category: ${error.message}. Please make sure you have the appropriate permissions.`);
+                        }
+                    }
+                });
+            });
+            
+            console.log("Projects display completed");
+        }
+        
+        // Fetch projects from Asana
+        async function fetchProjects() {
+            const projectStatus = document.getElementById('projectStatus');
+            
+            if (!selectedLocation || !selectedLocation.asanaPAT) {
+                projectStatus.innerHTML = '<p class="error">No location selected or missing Asana PAT</p>';
+                return;
+            }
+            
+            projectStatus.innerHTML = '<p>Fetching projects from Asana...</p>';
+            
+            try {
+                const asanaUrl = `https://app.asana.com/api/1.0/workspaces`;
+                const headers = {
+                    'Authorization': `Bearer ${selectedLocation.asanaPAT}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                // First get workspaces
+                const workspacesResponse = await fetch(asanaUrl, { headers });
+                if (!workspacesResponse.ok) {
+                    throw new Error(`Failed to fetch workspaces: ${workspacesResponse.statusText}`);
+                }
+                
+                const workspacesData = await workspacesResponse.json();
+                const workspaces = workspacesData.data;
+                
+                if (workspaces.length === 0) {
+                    projectStatus.innerHTML = '<p class="error">No workspaces found for this user</p>';
+                    document.querySelector('#uncategorized-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    document.querySelector('#todo-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    document.querySelector('#parcomp-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    document.querySelector('#oneoff-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    document.querySelector('#viewonly-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    return;
+                }
+                
+                // For simplicity, we'll use the first workspace
+                const workspaceId = workspaces[0].gid;
+                
+                // Now get projects in this workspace
+                const projectsUrl = `https://app.asana.com/api/1.0/workspaces/${workspaceId}/projects`;
+                const projectsResponse = await fetch(projectsUrl, { headers });
+                
+                if (!projectsResponse.ok) {
+                    throw new Error(`Failed to fetch projects: ${projectsResponse.statusText}`);
+                }
+                
+                const projectsData = await projectsResponse.json();
+                currentProjects = projectsData.data;
+                
+                if (currentProjects.length === 0) {
+                    projectStatus.innerHTML = '<p class="error">No projects found in workspace</p>';
+                    document.querySelector('#uncategorized-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    document.querySelector('#todo-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    document.querySelector('#parcomp-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    document.querySelector('#oneoff-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    document.querySelector('#viewonly-projects .project-items').innerHTML = '<p>No projects found</p>';
+                    return;
+                }
+                
+                // Display projects
+                projectStatus.innerHTML = '<p class="success">Projects loaded successfully!</p>';
+                await displayProjects(currentProjects);
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+                projectStatus.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        // View project - handles opening the modal and loading sections
+        async function viewProject(projectId, projectName) {
+            console.log("Opening configure modal for project:", projectName, projectId);
+            
+            if (!selectedLocation || !selectedLocation.asanaPAT) {
+                alert('No location selected or missing Asana credentials');
+                return;
+            }
+            
+            // Set current project
+            currentProjectId = projectId;
+            
+            // Update modal title
+            document.getElementById('modal-project-name').textContent = `Configure "${projectName}"`;
+            
+            // Open the modal
+            openModal();
+            
+            // Show loading indicator
+            const sectionElement = document.getElementById('section-schedule-list');
+            if (sectionElement) {
+                sectionElement.innerHTML = '<div class="d-flex justify-content-center mt-3"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading sections...</span></div></div>';
+            }
+            
+            // Fetch sections for the project
+            try {
+                console.log("Fetching sections for project:", projectId);
+                const sectionsUrl = `https://app.asana.com/api/1.0/projects/${projectId}/sections`;
+                const headers = {
+                    'Authorization': `Bearer ${selectedLocation.asanaPAT}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                const response = await fetch(sectionsUrl, { headers });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch sections: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                currentSections = data.data;
+                console.log("Sections loaded:", currentSections);
+                
+                // Reset section schedules
+                sectionSchedules = {};
+                
+                // Fetch custom fields for Par Comp projects
+                fetchCustomFields(projectId, headers);
+                
+                // Initialize project details view
+                initProjectDetails();
+            } catch (error) {
+                console.error('Error fetching sections:', error);
+                alert(`Error loading sections: ${error.message}`);
+                
+                if (sectionElement) {
+                    sectionElement.innerHTML = `<div class="alert alert-danger">Error loading sections: ${error.message}</div>`;
+                }
+            }
+        }
+
+        // Fetch custom fields from Asana
+        async function fetchCustomFields(projectId, headers) {
+            console.log("Fetching custom fields for project:", projectId);
+            
+            // Show loading indicator for field mappings
+            const loadingElement = document.getElementById('field-mappings-loading');
+            const containerElement = document.getElementById('field-mappings-container');
+            
+            if (loadingElement) loadingElement.classList.remove('d-none');
+            if (containerElement) containerElement.classList.add('d-none');
+            
+            try {
+                // First approach - get project custom fields
+                const projectUrl = `https://app.asana.com/api/1.0/projects/${projectId}?opt_fields=custom_field_settings,custom_field_settings.custom_field`;
+                const response = await fetch(projectUrl, { 
+                    headers,
+                    method: 'GET'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch project details: ${response.statusText}`);
+                }
+                
+                const projectData = await response.json();
+                console.log("Project data:", projectData);
+                
+                // Now try to get custom field settings for the project
+                if (projectData.data && projectData.data.custom_field_settings) {
+                    console.log("Custom field settings found directly in project data");
+                    updateFieldMappingDropdowns(projectData.data.custom_field_settings);
+                } else {
+                    // Fallback - try dedicated endpoint for custom field settings
+                    console.log("No custom field settings in project data, trying dedicated endpoint");
+                    const customFieldsUrl = `https://app.asana.com/api/1.0/projects/${projectId}/custom_field_settings`;
+                    const customFieldsResponse = await fetch(customFieldsUrl, { headers });
+                    
+                    if (!customFieldsResponse.ok) {
+                        throw new Error(`Failed to fetch custom fields: ${customFieldsResponse.statusText}`);
+                    }
+                    
+                    const customFieldsData = await customFieldsResponse.json();
+                    console.log("Custom fields data:", customFieldsData);
+                    
+                    // Process custom fields and update dropdowns
+                    if (customFieldsData.data) {
+                        updateFieldMappingDropdowns(customFieldsData.data);
+                    } else {
+                        console.log("No custom fields found via dedicated endpoint");
+                        // Still show the dropdowns even if no custom fields found
+                        if (loadingElement) loadingElement.classList.add('d-none');
+                        if (containerElement) containerElement.classList.remove('d-none');
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching custom fields:", error);
+                // Show an error message but still show the dropdowns
+                if (loadingElement) loadingElement.classList.add('d-none');
+                if (containerElement) containerElement.classList.remove('d-none');
+            }
+        }
+
+        // Update field mapping dropdowns with custom fields
+        function updateFieldMappingDropdowns(customFieldSettings) {
+            console.log("Updating dropdowns with custom fields");
+            
+            // Hide loading and show container
+            const loadingElement = document.getElementById('field-mappings-loading');
+            const containerElement = document.getElementById('field-mappings-container');
+            
+            if (loadingElement) loadingElement.classList.add('d-none');
+            if (containerElement) containerElement.classList.remove('d-none');
+            
+            // Get all mapping select elements
+            const selects = [
+                document.getElementById('map-item-name'),
+                document.getElementById('map-description'),
+                document.getElementById('map-uom'),
+                document.getElementById('map-high-par'),
+                document.getElementById('map-low-par'),
+                document.getElementById('map-current-count')
+            ];
+            
+            // Reset custom field options - keep only the default options
+            selects.forEach(select => {
+                if (select) {
+                    // Keep only the first 3 options (empty, name, notes)
+                    while (select.options.length > 3) {
+                        select.remove(3);
+                    }
+                }
+            });
+            
+            // Process each custom field
+            customFieldSettings.forEach(setting => {
+                if (!setting.custom_field) return;
+                
+                const field = setting.custom_field;
+                console.log("Processing custom field:", field.name, field);
+                
+                // Create a descriptive label based on field type
+                let fieldLabel = `Custom: ${field.name}`;
+                let fieldType = '';
+                
+                if (field.type === 'number') {
+                    fieldType = '(Number)';
+                } else if (field.type === 'text') {
+                    fieldType = '(Text)';
+                } else if (field.type === 'enum') {
+                    fieldType = '(Dropdown)';
+                }
+                
+                if (fieldType) {
+                    fieldLabel += ` ${fieldType}`;
+                }
+                
+                // Create option element with custom field ID
+                const fieldId = `custom:${field.gid}`;
+                const optionHTML = `<option value="${fieldId}">${fieldLabel}</option>`;
+                
+                // Add to appropriate dropdowns based on field type
+                selects.forEach(select => {
+                    if (!select) return;
+                    
+                    // For numeric fields only, add to high par, low par, and current count
+                    if (field.type === 'number') {
+                        if (select.id === 'map-high-par' || 
+                            select.id === 'map-low-par' || 
+                            select.id === 'map-current-count') {
+                            select.innerHTML += optionHTML;
+                        }
+                    } 
+                    // For text and enum fields, add to item name, description, and unit of measure
+                    else if (field.type === 'text' || field.type === 'enum') {
+                        if (select.id === 'map-item-name' || 
+                            select.id === 'map-description' || 
+                            select.id === 'map-uom') {
+                            select.innerHTML += optionHTML;
+                        }
+                    }
+                    // For all other field types, add to all dropdowns
+                    else {
+                        select.innerHTML += optionHTML;
+                    }
+                });
+            });
+            
+            console.log("Dropdowns updated with custom fields");
+            
+            // After updating the dropdowns, apply any stored mappings
+            if (window.storedFieldMappings) {
+                console.log("Applying stored field mappings:", window.storedFieldMappings);
+                applyStoredFieldMappings(window.storedFieldMappings);
+                window.storedFieldMappings = null; // Clear the stored mappings after applying
+            } else {
+                // If no stored mappings, try to load from localStorage
+                loadExistingFieldMappings();
+            }
+        }
+
+        // Apply stored field mappings after dropdowns are populated
+        function applyStoredFieldMappings(mappings) {
+            console.log("Applying stored field mappings");
+            
+            // Set dropdown values based on stored mappings
+            setSelectValue('map-item-name', mappings.itemName);
+            setSelectValue('map-description', mappings.description);
+            setSelectValue('map-uom', mappings.unitOfMeasure);
+            setSelectValue('map-high-par', mappings.highPar);
+            setSelectValue('map-low-par', mappings.lowPar);
+            setSelectValue('map-current-count', mappings.currentCount);
+            
+            console.log("Field mappings applied to dropdowns");
+        }
+
+        // Function to open modal
+        function openModal() {
+            const modal = document.getElementById('project-config-modal');
+            if (!modal) {
+                console.error("Modal element not found");
+                return;
+            }
+            
+            console.log("Opening modal");
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling of background
+        }
+
+        // Function to close modal
+        function closeModal() {
+            const modal = document.getElementById('project-config-modal');
+            if (!modal) {
+                console.error("Modal element not found");
+                return;
+            }
+            
+            console.log("Closing modal");
+            modal.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+
+        // Initialize project details view after fetching sections
+        function initProjectDetails() {
+            console.log("Initializing project details");
+            
+            // Clear any previous section data
+            sectionSchedules = {};
+            currentSectionIndex = 0;
+            
+            // Check if this is a Par Comp project and show the appropriate UI
+            checkAndShowParCompConfig();
+            
+            // Get modal elements
+            const chooseWholeProjectBtn = document.getElementById('choose-whole-project');
+            const chooseBySectionBtn = document.getElementById('choose-by-section');
+            const backToStep1FromProjectBtn = document.getElementById('back-to-step1-from-project');
+            const backToStep1FromSectionBtn = document.getElementById('back-to-step1-from-section');
+            const saveProjectScheduleBtn = document.getElementById('save-project-schedule');
+            const prevSectionBtn = document.getElementById('prev-section');
+            const nextSectionBtn = document.getElementById('next-section');
+            const saveSectionsScheduleBtn = document.getElementById('save-sections-schedule');
+            const saveParCompMappingsBtn = document.getElementById('save-parcomp-mappings');
+            const helpParCompMappingBtn = document.getElementById('help-parcomp-mapping');
+            const saveTodoMappingsBtn = document.getElementById('save-todo-mappings');
+            const helpTodoMappingBtn = document.getElementById('help-todo-mapping');
+            const saveOneOffMappingsBtn = document.getElementById('save-oneoff-mappings');
+            const helpOneOffMappingBtn = document.getElementById('help-oneoff-mapping');
+            const fetchSampleDataBtn = document.getElementById('fetch-sample-data');
+            
+            // Set up step 1 choice handlers
+            if (chooseWholeProjectBtn) {
+                chooseWholeProjectBtn.addEventListener('click', () => {
+                    showWholeProjectStep();
+                });
+            }
+            
+            if (chooseBySectionBtn) {
+                chooseBySectionBtn.addEventListener('click', () => {
+                    if (!currentSections || currentSections.length === 0) {
+                        alert('No sections found for this project. Please use Whole Project scheduling instead.');
+                        return;
+                    }
+                    showSectionStep();
+                });
+            }
+            
+            // Back button handlers
+            if (backToStep1FromProjectBtn) {
+                backToStep1FromProjectBtn.addEventListener('click', showStep1);
+            }
+            
+            if (backToStep1FromSectionBtn) {
+                backToStep1FromSectionBtn.addEventListener('click', showStep1);
+            }
+            
+            // Save button handlers
+            if (saveProjectScheduleBtn) {
+                saveProjectScheduleBtn.addEventListener('click', saveWholeProjectSchedule);
+            }
+            
+            if (saveSectionsScheduleBtn) {
+                saveSectionsScheduleBtn.addEventListener('click', saveSectionsSchedule);
+            }
+            
+            // Par Comp config handlers
+            if (saveParCompMappingsBtn) {
+                saveParCompMappingsBtn.addEventListener('click', saveParCompFieldMappings);
+            }
+            
+            if (helpParCompMappingBtn) {
+                helpParCompMappingBtn.addEventListener('click', showParCompMappingHelp);
+            }
+            
+            // Todo config handlers
+            if (saveTodoMappingsBtn) {
+                saveTodoMappingsBtn.addEventListener('click', saveTodoFieldMappings);
+            }
+            
+            if (helpTodoMappingBtn) {
+                helpTodoMappingBtn.addEventListener('click', showTodoMappingHelp);
+            }
+            
+            // One Off config handlers
+            if (saveOneOffMappingsBtn) {
+                saveOneOffMappingsBtn.addEventListener('click', saveOneOffFieldMappings);
+            }
+            
+            if (helpOneOffMappingBtn) {
+                helpOneOffMappingBtn.addEventListener('click', showOneOffMappingHelp);
+            }
+            
+            if (fetchSampleDataBtn) {
+                fetchSampleDataBtn.addEventListener('click', fetchAndDisplaySampleData);
+            }
+            
+            // Set up field mapping change listeners
+            setupFieldMappingChangeListeners();
+            
+            // Section navigation handlers
+            if (prevSectionBtn) {
+                prevSectionBtn.addEventListener('click', () => {
+                    saveSectionDays(currentSectionIndex);
+                    navigateSection(-1);
+                });
+            }
+            
+            if (nextSectionBtn) {
+                nextSectionBtn.addEventListener('click', () => {
+                    if (validateSectionDays()) {
+                        saveSectionDays(currentSectionIndex);
+                        navigateSection(1);
+                    }
+                });
+            }
+            
+            // Default to step 1
+            showStep1();
+            
+            // If we have existing config, pre-load it
+            loadExistingScheduleConfig();
+            
+            console.log("Project details initialized");
+        }
+
+        // Set up field mapping change listeners
+        function setupFieldMappingChangeListeners() {
+            const mappingSelects = [
+                'map-item-name', 
+                'map-description', 
+                'map-uom', 
+                'map-high-par', 
+                'map-low-par', 
+                'map-current-count'
+            ];
+            
+            mappingSelects.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.addEventListener('change', () => {
+                        // If sample data is already loaded, update the display
+                        const sampleDataList = document.getElementById('sample-data-list');
+                        if (sampleDataList && sampleDataList.children.length > 0 && window.sampleTaskData) {
+                            displaySampleData(window.sampleTaskData);
+                        }
+                    });
+                }
+            });
+        }
+
+        // Fetch and display sample data based on mappings
+        async function fetchAndDisplaySampleData() {
+            console.log("Fetching sample data for preview");
+            
+            if (!selectedLocation || !selectedLocation.asanaPAT || !currentProjectId) {
+                alert("No location or project selected");
+                return;
+            }
+            
+            // Show container and loading indicator
+            const container = document.getElementById('sample-data-container');
+            const loading = document.getElementById('sample-data-loading');
+            const error = document.getElementById('sample-data-error');
+            const empty = document.getElementById('sample-data-empty');
+            const list = document.getElementById('sample-data-list');
+            
+            if (container) container.classList.remove('d-none');
+            if (loading) loading.classList.remove('d-none');
+            if (error) error.classList.add('d-none');
+            if (empty) empty.classList.add('d-none');
+            if (list) list.innerHTML = '';
+            
+            try {
+                // Get up to 10 tasks from the project
+                const tasksUrl = `https://app.asana.com/api/1.0/projects/${currentProjectId}/tasks?limit=10&opt_fields=name,notes,custom_fields`;
+                const headers = {
+                    'Authorization': `Bearer ${selectedLocation.asanaPAT}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                const response = await fetch(tasksUrl, { headers });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch tasks: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log("Sample task data:", data);
+                
+                if (!data.data || data.data.length === 0) {
+                    if (empty) empty.classList.remove('d-none');
+                    if (loading) loading.classList.add('d-none');
+                    return;
+                }
+                
+                // Store task data for later use
+                window.sampleTaskData = data.data;
+                
+                // Display the data based on current mappings
+                displaySampleData(data.data);
+                
+            } catch (error) {
+                console.error("Error fetching sample data:", error);
+                if (loading) loading.classList.add('d-none');
+                if (error) {
+                    error.classList.remove('d-none');
+                    error.textContent = `Error: ${error.message}`;
+                }
+            }
+        }
+
+        // Display sample data based on current field mappings
+        function displaySampleData(tasks) {
+            console.log("Displaying sample data with current mappings");
+            
+            const loading = document.getElementById('sample-data-loading');
+            const error = document.getElementById('sample-data-error');
+            const empty = document.getElementById('sample-data-empty');
+            const list = document.getElementById('sample-data-list');
+            
+            if (loading) loading.classList.add('d-none');
+            if (error) error.classList.add('d-none');
+            if (empty) empty.classList.add('d-none');
+            if (list) list.innerHTML = '';
+            
+            if (!tasks || tasks.length === 0) {
+                if (empty) empty.classList.remove('d-none');
+                return;
+            }
+            
+            // Get current field mappings
+            const mappings = {
+                itemName: document.getElementById('map-item-name').value,
+                description: document.getElementById('map-description').value,
+                unitOfMeasure: document.getElementById('map-uom').value,
+                highPar: document.getElementById('map-high-par').value,
+                lowPar: document.getElementById('map-low-par').value,
+                currentCount: document.getElementById('map-current-count').value
+            };
+            
+            // Create HTML for each task
+            tasks.forEach(task => {
+                // Extract values based on mappings
+                const values = {
+                    itemName: getTaskValueByMapping(task, mappings.itemName) || task.name,
+                    description: getTaskValueByMapping(task, mappings.description) || '',
+                    unitOfMeasure: getTaskValueByMapping(task, mappings.unitOfMeasure) || '',
+                    highPar: getTaskValueByMapping(task, mappings.highPar) || '',
+                    lowPar: getTaskValueByMapping(task, mappings.lowPar) || '',
+                    currentCount: getTaskValueByMapping(task, mappings.currentCount) || '',
+                };
+                
+                // Create list item
+                const item = document.createElement('div');
+                item.className = 'list-group-item';
+                
+                // Create HTML for the item
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">${values.itemName}</h5>
+                        <span class="badge bg-primary">${values.unitOfMeasure || 'No Unit'}</span>
+                    </div>
+                    ${values.description ? `<p class="text-muted small mb-2">${values.description}</p>` : ''}
+                    <div class="d-flex justify-content-between mt-2">
+                        <div>
+                            <span class="badge bg-success">High: ${values.highPar || 'Not Set'}</span>
+                            <span class="badge bg-warning text-dark">Low: ${values.lowPar || 'Not Set'}</span>
+                        </div>
+                        <div>
+                            <span class="badge bg-info text-dark">Current: ${values.currentCount || '0'}</span>
+                        </div>
+                    </div>
+                `;
+                
+                // Add to list
+                if (list) list.appendChild(item);
+            });
+        }
+
+        // Helper to get value from task based on mapping
+        function getTaskValueByMapping(task, mapping) {
+            if (!mapping) return null;
+            
+            if (mapping === 'name') {
+                return task.name;
+            } else if (mapping === 'notes') {
+                return task.notes;
+            } else if (mapping.startsWith('custom:')) {
+                const customFieldId = mapping.substring(7); // Remove 'custom:' prefix
+                
+                if (!task.custom_fields) return null;
+                
+                const field = task.custom_fields.find(f => f.gid === customFieldId || f.name.toLowerCase() === customFieldId.toLowerCase());
+                if (!field) return null;
+                
+                // Different types of custom fields have values in different properties
+                if (field.number_value !== undefined) return field.number_value;
+                if (field.text_value !== undefined) return field.text_value;
+                if (field.enum_value) return field.enum_value.name;
+                
+                return null;
+            }
+            
+            return null;
+        }
+
+        // Check if a project is a Par Comp or Todo and show appropriate UI
+        async function checkAndShowParCompConfig() {
+            console.log("Checking project category");
+            
+            if (!currentProjectId) {
+                console.log("No current project ID");
+                return;
+            }
+            
+            try {
+                const projectConfigRef = db.collection('projectConfigurations').doc(currentProjectId);
+                const projectConfig = await projectConfigRef.get();
+                
+                if (projectConfig.exists) {
+                    const data = projectConfig.data();
+                    console.log("Project config:", data);
+                    
+                    // Hide all config sections by default
+                    const parCompConfig = document.getElementById('parcomp-config');
+                    const todoConfig = document.getElementById('todo-config');
+                    const oneoffConfig = document.getElementById('oneoff-config');
+                    const step1 = document.getElementById('schedule-step-1');
+                    
+                    if (parCompConfig) parCompConfig.classList.add('d-none');
+                    if (todoConfig) todoConfig.classList.add('d-none');
+                    if (oneoffConfig) oneoffConfig.classList.add('d-none');
+                    if (step1) step1.classList.add('d-none');
+                    
+                    if (data.category === 'parcomp') {
+                        console.log("This is a Par Comp project, showing field mapping UI");
+                        // Show Par Comp config
+                        if (parCompConfig) {
+                            parCompConfig.classList.remove('d-none');
+                        }
+                        
+                        // Load existing field mappings if any
+                        loadParCompFieldMappings(data);
+                    } 
+                    else if (data.category === 'todo') {
+                        console.log("This is a Todo project, showing task type field mapping UI");
+                        // Show Todo config
+                        if (todoConfig) {
+                            todoConfig.classList.remove('d-none');
+                        }
+                        
+                        // Load existing field mappings for Todo if any
+                        loadTodoFieldMappings(data);
+                    }
+                    else if (data.category === 'oneoff') {
+                        console.log("This is a One Off project, showing task type field mapping UI");
+                        // Show One Off config
+                        if (oneoffConfig) {
+                            oneoffConfig.classList.remove('d-none');
+                        }
+                        
+                        // Load existing field mappings for One Off if any
+                        loadOneOffFieldMappings(data);
+                    }
+                    else {
+                        console.log("Not a special category project");
+                        // Show scheduling options directly
+                        showStep1();
+                    }
+                } else {
+                    console.log("No project config found");
+                    // Default to showing scheduling options
+                    showStep1();
+                }
+            } catch (error) {
+                console.error("Error checking project category:", error);
+                // Default to showing scheduling options in case of error
+                showStep1();
+            }
+        }
+        
+        // Load existing Todo field mappings
+        function loadTodoFieldMappings(config) {
+            console.log("Loading Todo field mappings");
+            
+            if (!config || !config.todoFieldMappings) {
+                console.log("No Todo field mappings found");
+                
+                // Show container and hide loading
+                const loadingElement = document.getElementById('todo-mappings-loading');
+                const containerElement = document.getElementById('todo-mappings-container');
+                
+                if (loadingElement) loadingElement.classList.add('d-none');
+                if (containerElement) containerElement.classList.remove('d-none');
+                
+                // Fetch custom fields for the select
+                fetchCustomFieldsForTodo();
+                return;
+            }
+            
+            // Store the mappings temporarily - they will be applied after dropdowns are populated
+            window.storedTodoFieldMappings = config.todoFieldMappings;
+            console.log("Stored Todo field mappings for later application:", window.storedTodoFieldMappings);
+            
+            // Fetch custom fields
+            fetchCustomFieldsForTodo();
+        }
+        
+        // Fetch custom fields for Todo field mapping
+        async function fetchCustomFieldsForTodo() {
+            console.log("Fetching custom fields for Todo project:", currentProjectId);
+            
+            // Show loading indicator for field mappings
+            const loadingElement = document.getElementById('todo-mappings-loading');
+            const containerElement = document.getElementById('todo-mappings-container');
+            
+            if (loadingElement) loadingElement.classList.remove('d-none');
+            if (containerElement) containerElement.classList.add('d-none');
+            
+            try {
+                const headers = {
+                    'Authorization': `Bearer ${selectedLocation.asanaPAT}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                // Get project details to fetch custom fields
+                const projectUrl = `https://app.asana.com/api/1.0/projects/${currentProjectId}?opt_fields=custom_field_settings,custom_field_settings.custom_field`;
+                const response = await fetch(projectUrl, { 
+                    headers,
+                    method: 'GET'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch project details: ${response.statusText}`);
+                }
+                
+                const projectData = await response.json();
+                console.log("Project data for Todo:", projectData);
+                
+                // Now try to get custom field settings for the project
+                if (projectData.data && projectData.data.custom_field_settings) {
+                    console.log("Custom field settings found directly in project data");
+                    updateTodoFieldMappingDropdowns(projectData.data.custom_field_settings);
+                } else {
+                    // Fallback - try dedicated endpoint for custom field settings
+                    console.log("No custom field settings in project data, trying dedicated endpoint");
+                    const customFieldsUrl = `https://app.asana.com/api/1.0/projects/${currentProjectId}/custom_field_settings`;
+                    const customFieldsResponse = await fetch(customFieldsUrl, { headers });
+                    
+                    if (!customFieldsResponse.ok) {
+                        throw new Error(`Failed to fetch custom fields: ${customFieldsResponse.statusText}`);
+                    }
+                    
+                    const customFieldsData = await customFieldsResponse.json();
+                    console.log("Custom fields data for Todo:", customFieldsData);
+                    
+                    // Process custom fields and update dropdowns
+                    if (customFieldsData.data) {
+                        updateTodoFieldMappingDropdowns(customFieldsData.data);
+                    } else {
+                        console.log("No custom fields found via dedicated endpoint");
+                        // Still show the dropdowns even if no custom fields found
+                        if (loadingElement) loadingElement.classList.add('d-none');
+                        if (containerElement) containerElement.classList.remove('d-none');
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching custom fields for Todo:", error);
+                // Show an error message but still show the dropdowns
+                if (loadingElement) loadingElement.classList.add('d-none');
+                if (containerElement) containerElement.classList.remove('d-none');
+            }
+        }
+        
+        // Update Todo field mapping dropdown with custom fields
+        function updateTodoFieldMappingDropdowns(customFieldSettings) {
+            console.log("Updating Todo dropdown with custom fields");
+            
+            // Hide loading and show container
+            const loadingElement = document.getElementById('todo-mappings-loading');
+            const containerElement = document.getElementById('todo-mappings-container');
+            
+            if (loadingElement) loadingElement.classList.add('d-none');
+            if (containerElement) containerElement.classList.remove('d-none');
+            
+            // Get the task type select element
+            const taskTypeSelect = document.getElementById('map-task-type');
+            
+            if (!taskTypeSelect) {
+                console.error("Task type select element not found");
+                return;
+            }
+            
+            // Reset custom field options - keep only the default options
+            while (taskTypeSelect.options.length > 3) {
+                taskTypeSelect.remove(3);
+            }
+            
+            // Process each custom field
+            customFieldSettings.forEach(setting => {
+                if (!setting.custom_field) return;
+                
+                const field = setting.custom_field;
+                console.log("Processing custom field for Todo:", field.name, field);
+                
+                // Create a descriptive label based on field type
+                let fieldLabel = `Custom: ${field.name}`;
+                let fieldType = '';
+                
+                if (field.type === 'text') {
+                    fieldType = '(Text)';
+                } else if (field.type === 'enum') {
+                    fieldType = '(Dropdown)';
+                }
+                
+                if (fieldType) {
+                    fieldLabel += ` ${fieldType}`;
+                }
+                
+                // Create option element with custom field ID
+                const fieldId = `custom:${field.gid}`;
+                const optionHTML = `<option value="${fieldId}">${fieldLabel}</option>`;
+                
+                // Add to task type dropdown (only text and enum fields make sense for task type)
+                if (field.type === 'text' || field.type === 'enum') {
+                    taskTypeSelect.innerHTML += optionHTML;
+                }
+            });
+            
+            console.log("Todo dropdown updated with custom fields");
+            
+            // Apply any stored mappings
+            if (window.storedTodoFieldMappings) {
+                console.log("Applying stored Todo field mappings:", window.storedTodoFieldMappings);
+                applyStoredTodoFieldMappings(window.storedTodoFieldMappings);
+                window.storedTodoFieldMappings = null; // Clear the stored mappings after applying
+            }
+        }
+        
+        // Apply stored Todo field mappings
+        function applyStoredTodoFieldMappings(mappings) {
+            console.log("Applying stored Todo field mappings");
+            
+            // Set task type dropdown value
+            const taskTypeSelect = document.getElementById('map-task-type');
+            if (taskTypeSelect && mappings.taskType) {
+                taskTypeSelect.value = mappings.taskType;
+            }
+            
+            console.log("Todo field mappings applied to dropdown");
+        }
+        
+        // Save Todo field mappings
+        async function saveTodoFieldMappings() {
+            console.log("Saving Todo field mappings");
+            
+            if (!currentProjectId) {
+                alert("No project selected");
+                return;
+            }
+            
+            // Get task type field mapping value
+            const todoFieldMappings = {
+                taskType: document.getElementById('map-task-type').value
+            };
+            
+            // Validate - ensure task type is mapped
+            if (!todoFieldMappings.taskType) {
+                alert("Please select a field for Task Type");
+                return;
+            }
+            
+            try {
+                // Update stored mappings for next time the modal is opened
+                window.storedTodoFieldMappings = todoFieldMappings;
+                
+                // Save to Firestore
+                await db.collection('projectConfigurations').doc(currentProjectId).set({
+                    todoFieldMappings: todoFieldMappings,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+                
+                // Hide the Todo config section now that it's saved
+                const todoConfig = document.getElementById('todo-config');
+                if (todoConfig) {
+                    todoConfig.classList.add('d-none');
+                }
+                
+                // Show the scheduling section (Step 1)
+                showStep1();
+                
+                // Success message
+                alert("Task type field mapping saved successfully! Please continue with scheduling setup.");
+            } catch (error) {
+                console.error("Error saving Todo field mappings:", error);
+                alert(`Error saving field mapping: ${error.message}`);
+            }
+        }
+        
+        // Show help info for Todo mapping
+        function showTodoMappingHelp() {
+            alert(`To Do Field Mapping Help:
+
+Task types are predefined in the app. You need to add one of these keywords in your task name or notes:
+- Check Off - Simple checkbox tasks
+- Long Form - Detailed text entry
+- Short Form - Brief text responses
+- Submit Video - Video uploads
+- Submit File/Image - File or image uploads
+- Signature - Digital signature 
+- Audio - Voice recordings
+- Value - Numeric entry
+
+Select whether to look for these keywords in the task name or notes.`);
+        }
+
+        // Load existing Par Comp field mappings
+        function loadParCompFieldMappings(config) {
+            console.log("Loading Par Comp field mappings");
+            
+            if (!config || !config.fieldMappings) {
+                console.log("No field mappings found");
+                return;
+            }
+            
+            // Store the mappings temporarily - they will be applied after dropdowns are populated
+            window.storedFieldMappings = config.fieldMappings;
+            console.log("Stored field mappings for later application:", window.storedFieldMappings);
+        }
+
+        // Helper to set select dropdown value
+        function setSelectValue(selectId, value) {
+            const select = document.getElementById(selectId);
+            if (select && value) {
+                select.value = value;
+            }
+        }
+
+        // Save Par Comp field mappings
+        async function saveParCompFieldMappings() {
+            console.log("Saving Par Comp field mappings");
+            
+            if (!currentProjectId) {
+                alert("No project selected");
+                return;
+            }
+            
+            // Get all field mapping values
+            const fieldMappings = {
+                itemName: document.getElementById('map-item-name').value,
+                description: document.getElementById('map-description').value,
+                unitOfMeasure: document.getElementById('map-uom').value,
+                highPar: document.getElementById('map-high-par').value,
+                lowPar: document.getElementById('map-low-par').value,
+                currentCount: document.getElementById('map-current-count').value
+            };
+            
+            // Validate - ensure at least item name, high par and low par are mapped
+            if (!fieldMappings.itemName) {
+                alert("Please select a field mapping for Item Name");
+                return;
+            }
+            
+            if (!fieldMappings.highPar) {
+                alert("Please select a field mapping for High Par");
+                return;
+            }
+            
+            if (!fieldMappings.lowPar) {
+                alert("Please select a field mapping for Low Par");
+                return;
+            }
+            
+            try {
+                // Update stored mappings for next time the modal is opened
+                window.storedFieldMappings = fieldMappings;
+                
+                // Save to Firestore
+                await db.collection('projectConfigurations').doc(currentProjectId).set({
+                    fieldMappings: fieldMappings,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+                
+                // Hide the Par Comp config section now that it's saved
+                const parCompConfig = document.getElementById('parcomp-config');
+                if (parCompConfig) {
+                    parCompConfig.classList.add('d-none');
+                }
+                
+                // Show the scheduling section (Step 1)
+                showStep1();
+                
+                // Success message
+                alert("Field mappings saved successfully! Please continue with scheduling setup.");
+            } catch (error) {
+                console.error("Error saving field mappings:", error);
+                alert(`Error saving field mappings: ${error.message}`);
+            }
+        }
+
+        // Show help info for Par Comp mapping
+        function showParCompMappingHelp() {
+            alert(`Par Comp Field Mapping Help:
+
+For free Asana accounts, you'll need to include inventory information in your task name or notes.
+
+Format your Asana tasks with these values:
+- Item Name: The name of your inventory item
+- Description: Detailed description of the item
+- Unit of Measure: How the item is measured (e.g., count, boxes, lbs)
+- High Par: Maximum inventory level (should be a number)
+- Low Par: Minimum inventory level before reorder (should be a number)
+
+NOTE: Current Count is managed by the native app and should NOT be included in Asana.
+
+Example task notes format:
+High Par: 10
+Low Par: 5
+Unit: boxes`);
+        }
+
+        // Show step 1 (choose scheduling type)
+        function showStep1() {
+            console.log("Showing step 1");
+            const step1 = document.getElementById('schedule-step-1');
+            const wholeProjectStep = document.getElementById('schedule-whole-project-step');
+            const sectionsStep = document.getElementById('schedule-sections-step');
+            
+            if (step1) step1.classList.remove('d-none');
+            if (wholeProjectStep) wholeProjectStep.classList.add('d-none');
+            if (sectionsStep) sectionsStep.classList.add('d-none');
+        }
+
+        // Show whole project scheduling step
+        function showWholeProjectStep() {
+            console.log("Showing whole project step");
+            const step1 = document.getElementById('schedule-step-1');
+            const wholeProjectStep = document.getElementById('schedule-whole-project-step');
+            const sectionsStep = document.getElementById('schedule-sections-step');
+            
+            if (step1) step1.classList.add('d-none');
+            if (wholeProjectStep) wholeProjectStep.classList.remove('d-none');
+            if (sectionsStep) sectionsStep.classList.add('d-none');
+        }
+
+        // Show section scheduling step
+        function showSectionStep() {
+            console.log("Showing section step");
+            const step1 = document.getElementById('schedule-step-1');
+            const wholeProjectStep = document.getElementById('schedule-whole-project-step');
+            const sectionsStep = document.getElementById('schedule-sections-step');
+            
+            if (step1) step1.classList.add('d-none');
+            if (wholeProjectStep) wholeProjectStep.classList.add('d-none');
+            if (sectionsStep) sectionsStep.classList.remove('d-none');
+            
+            // Reset to first section and update UI
+            currentSectionIndex = 0;
+            updateSectionUI();
+        }
+
+        // Load existing schedule configuration from Firebase
+        async function loadExistingScheduleConfig() {
+            console.log("Loading existing schedule config for project:", currentProjectId);
+            
+            if (!currentProjectId) {
+                console.log("No project ID, skipping config load");
+                return;
+            }
+            
+            try {
+                const docRef = db.collection('projectConfigurations').doc(currentProjectId);
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    console.log("Found existing project config:", data);
+                    
+                    if (data.scheduleType === 'wholeProject' && data.days) {
+                        // Pre-set whole project days
+                        data.days.forEach(day => {
+                            const checkbox = document.getElementById(`project-day-${day}`);
+                            if (checkbox) checkbox.checked = true;
+                        });
+                    } else if (data.scheduleType === 'bySection' && data.sectionSchedules) {
+                        // Pre-load section schedules
+                        sectionSchedules = data.sectionSchedules;
+                    }
+                } else {
+                    console.log("No existing config found for project");
+                }
+            } catch (error) {
+                console.error('Error loading project schedule:', error);
+            }
+        }
+
+        // Update the section UI based on current section index
+        function updateSectionUI() {
+            console.log("Updating section UI for index:", currentSectionIndex);
+            
+            if (!currentSections || currentSections.length === 0) {
+                console.log("No sections to display");
+                return;
+            }
+            
+            // Get current section
+            const section = currentSections[currentSectionIndex];
+            console.log("Current section:", section);
+            
+            // Update section name
+            const sectionNameElement = document.getElementById('current-section-name');
+            if (sectionNameElement) sectionNameElement.textContent = section.name;
+            
+            // Update progress
+            const progressPercent = currentSections.length <= 1 ? 100 : Math.round((currentSectionIndex / (currentSections.length - 1)) * 100);
+            const progressBar = document.getElementById('section-progress-bar');
+            if (progressBar) progressBar.style.width = `${progressPercent}%`;
+            
+            const progressText = document.getElementById('section-progress-text');
+            if (progressText) progressText.textContent = `Section ${currentSectionIndex + 1} of ${currentSections.length}`;
+            
+            // Update button states
+            const prevButton = document.getElementById('prev-section');
+            if (prevButton) prevButton.disabled = currentSectionIndex === 0;
+            
+            const nextButton = document.getElementById('next-section');
+            const saveButton = document.getElementById('save-sections-schedule');
+            
+            // Show save button on last section, otherwise show next button
+            if (currentSectionIndex === currentSections.length - 1) {
+                if (nextButton) nextButton.classList.add('d-none');
+                if (saveButton) saveButton.classList.remove('d-none');
+            } else {
+                if (nextButton) nextButton.classList.remove('d-none');
+                if (saveButton) saveButton.classList.add('d-none');
+            }
+            
+            // Clear all checkboxes
+            document.querySelectorAll('.section-day').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Set checkboxes from saved data
+            if (sectionSchedules[section.gid] && sectionSchedules[section.gid].days) {
+                sectionSchedules[section.gid].days.forEach(day => {
+                    const checkbox = document.getElementById(`section-day-${day}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+        }
+
+        // Navigate between sections
+        function navigateSection(direction) {
+            currentSectionIndex += direction;
+            
+            // Bounds check
+            if (currentSectionIndex < 0) {
+                currentSectionIndex = 0;
+            } else if (currentSectionIndex >= currentSections.length) {
+                currentSectionIndex = currentSections.length - 1;
+            }
+            
+            updateSectionUI();
+        }
+
+        // Save section days to the sectionSchedules object
+        function saveSectionDays(index) {
+            if (!currentSections || index >= currentSections.length) {
+                return;
+            }
+            
+            const section = currentSections[index];
+            const selectedDays = [];
+            
+            // Get all checked days
+            document.querySelectorAll('.section-day:checked').forEach(checkbox => {
+                selectedDays.push(parseInt(checkbox.value));
+            });
+            
+            // Save to section schedules
+            if (!sectionSchedules[section.gid]) {
+                sectionSchedules[section.gid] = {};
+            }
+            
+            sectionSchedules[section.gid].days = selectedDays;
+        }
+
+        // Validate section days (at least one selected)
+        function validateSectionDays() {
+            const anyChecked = document.querySelectorAll('.section-day:checked').length > 0;
+            
+            if (!anyChecked) {
+                const errorElement = document.getElementById('section-days-error');
+                if (errorElement) errorElement.classList.remove('d-none');
+                return false;
+            } else {
+                const errorElement = document.getElementById('section-days-error');
+                if (errorElement) errorElement.classList.add('d-none');
+                return true;
+            }
+        }
+
+        // Save whole project schedule
+        async function saveWholeProjectSchedule() {
+            console.log("Saving whole project schedule");
+            
+            if (!currentProjectId) {
+                alert('No project selected');
+                return;
+            }
+            
+            // Validate at least one day is selected
+            const projectDays = [];
+            document.querySelectorAll('.project-day:checked').forEach(checkbox => {
+                projectDays.push(parseInt(checkbox.value));
+            });
+            
+            if (projectDays.length === 0) {
+                const errorElement = document.getElementById('project-days-error');
+                if (errorElement) errorElement.classList.remove('d-none');
+                return;
+            } else {
+                const errorElement = document.getElementById('project-days-error');
+                if (errorElement) errorElement.classList.add('d-none');
+            }
+            
+            try {
+                // Save to Firestore
+                await db.collection('projectConfigurations').doc(currentProjectId).set({
+                    scheduleType: 'wholeProject',
+                    days: projectDays,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+                
+                alert('All settings saved successfully!');
+                closeModal();
+            } catch (error) {
+                console.error('Error saving schedule:', error);
+                alert(`Error saving schedule: ${error.message}`);
+            }
+        }
+
+        // Save sections schedule
+        async function saveSectionsSchedule() {
+            console.log("Saving section schedules");
+            
+            if (!currentProjectId) {
+                alert('No project selected');
+                return;
+            }
+            
+            // Validate and save current section first
+            if (!validateSectionDays()) {
+                return;
+            }
+            
+            saveSectionDays(currentSectionIndex);
+            
+            // Validate all sections have at least one day
+            let allValid = true;
+            let missingSections = [];
+            
+            currentSections.forEach(section => {
+                if (!sectionSchedules[section.gid] || 
+                    !sectionSchedules[section.gid].days || 
+                    sectionSchedules[section.gid].days.length === 0) {
+                    allValid = false;
+                    missingSections.push(section.name);
+                }
+            });
+            
+            if (!allValid) {
+                alert(`The following sections are missing days: ${missingSections.join(', ')}`);
+                return;
+            }
+            
+            try {
+                // Save to Firestore
+                await db.collection('projectConfigurations').doc(currentProjectId).set({
+                    scheduleType: 'bySection',
+                    sectionSchedules: sectionSchedules,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+                
+                alert('All settings saved successfully!');
+                closeModal();
+            } catch (error) {
+                console.error('Error saving section schedules:', error);
+                alert(`Error saving section schedules: ${error.message}`);
+            }
+        }
+
+        // Function to load existing field mappings if they exist
+        function loadExistingFieldMappings() {
+            console.log("Loading existing field mappings");
+            
+            if (!currentProjectId) {
+                console.log("No current project ID, can't load existing mappings");
+                return;
+            }
+            
+            // Try to get existing mappings from localStorage
+            const storageKey = `asana_project_${currentProjectId}_field_mappings`;
+            const savedMappings = localStorage.getItem(storageKey);
+            
+            if (savedMappings) {
+                try {
+                    const mappings = JSON.parse(savedMappings);
+                    console.log("Found saved mappings:", mappings);
+                    
+                    // Set values in the dropdowns
+                    if (mappings.itemName) {
+                        document.getElementById('map-item-name').value = mappings.itemName;
+                    }
+                    if (mappings.description) {
+                        document.getElementById('map-description').value = mappings.description;
+                    }
+                    if (mappings.uom) {
+                        document.getElementById('map-uom').value = mappings.uom;
+                    }
+                    if (mappings.highPar) {
+                        document.getElementById('map-high-par').value = mappings.highPar;
+                    }
+                    if (mappings.lowPar) {
+                        document.getElementById('map-low-par').value = mappings.lowPar;
+                    }
+                    if (mappings.currentCount) {
+                        document.getElementById('map-current-count').value = mappings.currentCount;
+                    }
+                } catch (error) {
+                    console.error("Error parsing saved mappings:", error);
+                }
+            } else {
+                console.log("No saved mappings found");
+            }
+        }
+
+        // Function to save field mappings
+        function saveFieldMappings() {
+            console.log("Saving field mappings");
+            
+            if (!currentProjectId) {
+                console.log("No current project ID, can't save mappings");
+                return;
+            }
+            
+            const mappings = {
+                itemName: document.getElementById('map-item-name').value,
+                description: document.getElementById('map-description').value,
+                uom: document.getElementById('map-uom').value,
+                highPar: document.getElementById('map-high-par').value,
+                lowPar: document.getElementById('map-low-par').value,
+                currentCount: document.getElementById('map-current-count').value
+            };
+            
+            // Save to localStorage
+            const storageKey = `asana_project_${currentProjectId}_field_mappings`;
+            localStorage.setItem(storageKey, JSON.stringify(mappings));
+            console.log("Mappings saved:", mappings);
+            
+            return mappings;
+        }
+
+        // Load existing One Off field mappings
+        function loadOneOffFieldMappings(config) {
+            console.log("Loading One Off field mappings");
+            
+            if (!config || !config.oneoffFieldMappings) {
+                console.log("No One Off field mappings found");
+                
+                // Show container and hide loading
+                const loadingElement = document.getElementById('oneoff-mappings-loading');
+                const containerElement = document.getElementById('oneoff-mappings-container');
+                
+                if (loadingElement) loadingElement.classList.add('d-none');
+                if (containerElement) containerElement.classList.remove('d-none');
+                
+                // Fetch custom fields for the select
+                fetchCustomFieldsForOneOff();
+                return;
+            }
+            
+            // Store the mappings temporarily - they will be applied after dropdowns are populated
+            window.storedOneOffFieldMappings = config.oneoffFieldMappings;
+            console.log("Stored One Off field mappings for later application:", window.storedOneOffFieldMappings);
+            
+            // Fetch custom fields
+            fetchCustomFieldsForOneOff();
+        }
+        
+        // Fetch custom fields for One Off field mapping
+        async function fetchCustomFieldsForOneOff() {
+            console.log("Fetching custom fields for One Off project:", currentProjectId);
+            
+            // Show loading indicator for field mappings
+            const loadingElement = document.getElementById('oneoff-mappings-loading');
+            const containerElement = document.getElementById('oneoff-mappings-container');
+            
+            if (loadingElement) loadingElement.classList.remove('d-none');
+            if (containerElement) containerElement.classList.add('d-none');
+            
+            try {
+                const headers = {
+                    'Authorization': `Bearer ${selectedLocation.asanaPAT}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                // Get project details to fetch custom fields
+                const projectUrl = `https://app.asana.com/api/1.0/projects/${currentProjectId}?opt_fields=custom_field_settings,custom_field_settings.custom_field`;
+                const response = await fetch(projectUrl, { 
+                    headers,
+                    method: 'GET'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch project details: ${response.statusText}`);
+                }
+                
+                const projectData = await response.json();
+                console.log("Project data for One Off:", projectData);
+                
+                // Now try to get custom field settings for the project
+                if (projectData.data && projectData.data.custom_field_settings) {
+                    console.log("Custom field settings found directly in project data");
+                    updateOneOffFieldMappingDropdowns(projectData.data.custom_field_settings);
+                } else {
+                    // Fallback - try dedicated endpoint for custom field settings
+                    console.log("No custom field settings in project data, trying dedicated endpoint");
+                    const customFieldsUrl = `https://app.asana.com/api/1.0/projects/${currentProjectId}/custom_field_settings`;
+                    const customFieldsResponse = await fetch(customFieldsUrl, { headers });
+                    
+                    if (!customFieldsResponse.ok) {
+                        throw new Error(`Failed to fetch custom fields: ${customFieldsResponse.statusText}`);
+                    }
+                    
+                    const customFieldsData = await customFieldsResponse.json();
+                    console.log("Custom fields data for One Off:", customFieldsData);
+                    
+                    // Process custom fields and update dropdowns
+                    if (customFieldsData.data) {
+                        updateOneOffFieldMappingDropdowns(customFieldsData.data);
+                    } else {
+                        console.log("No custom fields found via dedicated endpoint");
+                        // Still show the dropdowns even if no custom fields found
+                        if (loadingElement) loadingElement.classList.add('d-none');
+                        if (containerElement) containerElement.classList.remove('d-none');
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching custom fields for One Off:", error);
+                // Show an error message but still show the dropdowns
+                if (loadingElement) loadingElement.classList.add('d-none');
+                if (containerElement) containerElement.classList.remove('d-none');
+            }
+        }
+        
+        // Update One Off field mapping dropdown with custom fields
+        function updateOneOffFieldMappingDropdowns(customFieldSettings) {
+            console.log("Updating One Off dropdown with custom fields");
+            
+            // Hide loading and show container
+            const loadingElement = document.getElementById('oneoff-mappings-loading');
+            const containerElement = document.getElementById('oneoff-mappings-container');
+            
+            if (loadingElement) loadingElement.classList.add('d-none');
+            if (containerElement) containerElement.classList.remove('d-none');
+            
+            // Get the task type select element
+            const taskTypeSelect = document.getElementById('map-oneoff-task-type');
+            
+            if (!taskTypeSelect) {
+                console.error("One Off task type select element not found");
+                return;
+            }
+            
+            // Reset custom field options - keep only the default options
+            while (taskTypeSelect.options.length > 3) {
+                taskTypeSelect.remove(3);
+            }
+            
+            // Process each custom field
+            customFieldSettings.forEach(setting => {
+                if (!setting.custom_field) return;
+                
+                const field = setting.custom_field;
+                console.log("Processing custom field for One Off:", field.name, field);
+                
+                // Create a descriptive label based on field type
+                let fieldLabel = `Custom: ${field.name}`;
+                let fieldType = '';
+                
+                if (field.type === 'text') {
+                    fieldType = '(Text)';
+                } else if (field.type === 'enum') {
+                    fieldType = '(Dropdown)';
+                }
+                
+                if (fieldType) {
+                    fieldLabel += ` ${fieldType}`;
+                }
+                
+                // Create option element with custom field ID
+                const fieldId = `custom:${field.gid}`;
+                const optionHTML = `<option value="${fieldId}">${fieldLabel}</option>`;
+                
+                // Add to task type dropdown (only text and enum fields make sense for task type)
+                if (field.type === 'text' || field.type === 'enum') {
+                    taskTypeSelect.innerHTML += optionHTML;
+                }
+            });
+            
+            console.log("One Off dropdown updated with custom fields");
+            
+            // Apply any stored mappings
+            if (window.storedOneOffFieldMappings) {
+                console.log("Applying stored One Off field mappings:", window.storedOneOffFieldMappings);
+                applyStoredOneOffFieldMappings(window.storedOneOffFieldMappings);
+                window.storedOneOffFieldMappings = null; // Clear the stored mappings after applying
+            }
+        }
+        
+        // Apply stored One Off field mappings
+        function applyStoredOneOffFieldMappings(mappings) {
+            console.log("Applying stored One Off field mappings");
+            
+            // Set task type dropdown value
+            const taskTypeSelect = document.getElementById('map-oneoff-task-type');
+            if (taskTypeSelect && mappings.taskType) {
+                taskTypeSelect.value = mappings.taskType;
+            }
+            
+            console.log("One Off field mappings applied to dropdown");
+        }
+        
+        // Save One Off field mappings
+        async function saveOneOffFieldMappings() {
+            console.log("Saving One Off field mappings");
+            
+            if (!currentProjectId) {
+                alert("No project selected");
+                return;
+            }
+            
+            // Get task type field mapping value
+            const oneoffFieldMappings = {
+                taskType: document.getElementById('map-oneoff-task-type').value
+            };
+            
+            // Validate - ensure task type is mapped
+            if (!oneoffFieldMappings.taskType) {
+                alert("Please select a field for Task Type");
+                return;
+            }
+            
+            try {
+                // Update stored mappings for next time the modal is opened
+                window.storedOneOffFieldMappings = oneoffFieldMappings;
+                
+                // Save to Firestore
+                await db.collection('projectConfigurations').doc(currentProjectId).set({
+                    oneoffFieldMappings: oneoffFieldMappings,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+                
+                // Hide the One Off config section now that it's saved
+                const oneoffConfig = document.getElementById('oneoff-config');
+                if (oneoffConfig) {
+                    oneoffConfig.classList.add('d-none');
+                }
+                
+                // Show the scheduling section (Step 1)
+                showStep1();
+                
+                // Success message
+                alert("Task type field mapping saved successfully! Please continue with scheduling setup.");
+            } catch (error) {
+                console.error("Error saving One Off field mappings:", error);
+                alert(`Error saving field mapping: ${error.message}`);
+            }
+        }
+        
+        // Show help info for One Off mapping
+        function showOneOffMappingHelp() {
+            alert(`One Off Field Mapping Help:
+
+Task types are predefined in the app. You need to add one of these keywords in your task name or notes:
+- Check Off - Simple checkbox tasks
+- Long Form - Detailed text entry
+- Short Form - Brief text responses
+- Submit Video - Video uploads
+- Submit File/Image - File or image uploads
+- Signature - Digital signature
+- Audio - Voice recordings
+- Value - Numeric entry
+
+Select whether to look for these keywords in the task name or notes.`);
+        }
+
+        // Field creation buttons
+        const createTaskTypeFieldBtn = document.getElementById('create-task-type-field');
+        if (createTaskTypeFieldBtn) {
+            createTaskTypeFieldBtn.addEventListener('click', createTaskTypeField);
+        }
+        
+        const createOneOffTaskTypeFieldBtn = document.getElementById('create-oneoff-task-type-field');
+        if (createOneOffTaskTypeFieldBtn) {
+            createOneOffTaskTypeFieldBtn.addEventListener('click', createOneOffTaskTypeField);
+        }
+        
+        // Par Fields creation removed - not available in free Asana accounts
+        // const createParFieldsBtn = document.getElementById('create-par-fields');
+        // if (createParFieldsBtn) {
+        //     createParFieldsBtn.addEventListener('click', createParFields);
+        // }
+
+        // Create a Task Type field for Todo projects
+        async function createTaskTypeField() {
+            console.log("Creating Task Type field for Todo project");
+            
+            if (!currentProjectId || !selectedLocation || !selectedLocation.asanaPAT) {
+                alert("No project selected or missing Asana PAT");
+                return;
+            }
+            
+            const statusElement = document.getElementById('field-creation-status');
+            
+            try {
+                // First, update status
+                statusElement.textContent = "Fetching workspace information...";
+                statusElement.classList.remove('d-none', 'alert-danger');
+                statusElement.classList.add('alert-info');
+                
+                const headers = {
+                    'Authorization': `Bearer ${selectedLocation.asanaPAT}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                // First, get the project to find its workspace
+                const projectUrl = `https://app.asana.com/api/1.0/projects/${currentProjectId}?opt_fields=workspace,name`;
+                const projectResponse = await fetch(projectUrl, { 
+                    headers,
+                    method: 'GET'
+                });
+                
+                if (!projectResponse.ok) {
+                    const errorText = await projectResponse.text();
+                    console.error("Error fetching project details:", errorText);
+                    throw new Error(`Failed to fetch project details: ${projectResponse.status} ${projectResponse.statusText}`);
+                }
+                
+                const projectData = await projectResponse.json();
+                console.log("Project data:", projectData);
+                
+                if (!projectData.data.workspace || !projectData.data.workspace.gid) {
+                    throw new Error("Could not determine workspace for this project");
+                }
+                
+                const workspaceId = projectData.data.workspace.gid;
+                statusElement.textContent = `Creating Task Type field in workspace ${workspaceId}...`;
+                
+                // Prepare request to create custom field
+                const endpoint = 'https://app.asana.com/api/1.0/custom_fields';
+                
+                // Task Type field with predefined options
+                const fieldData = {
+                    data: {
+                        resource_subtype: "enum",
+                        name: "Task Type",
+                        description: "Type of task for JoJo's app",
+                        enum_options: [
+                            { name: "Prep" },
+                            { name: "Clean" },
+                            { name: "Setup" },
+                            { name: "Order" },
+                            { name: "Other" }
+                        ],
+                        workspace: workspaceId,
+                        enabled: true,
+                        format: "string"
+                    }
+                };
+                
+                // Create the custom field
+                const createResponse = await fetch(endpoint, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(fieldData)
+                });
+                
+                if (!createResponse.ok) {
+                    // Get detailed error information
+                    const errorText = await createResponse.text();
+                    console.error("Asana API error response:", errorText);
+                    
+                    let errorMessage = `Failed to create custom field: ${createResponse.status} ${createResponse.statusText}`;
+                    try {
+                        // Try to parse error JSON if possible
+                        const errorJson = JSON.parse(errorText);
+                        if (errorJson.errors && errorJson.errors.length > 0) {
+                            errorMessage += `. ${errorJson.errors[0].message}`;
+                        }
+                    } catch (e) {
+                        // If can't parse JSON, use raw text
+                        if (errorText) {
+                            errorMessage += `. Response: ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}`;
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+                const createdField = await createResponse.json();
+                console.log("Created Task Type field:", createdField);
+                
+                // Now add this field to the project
+                const addToProjectEndpoint = `https://app.asana.com/api/1.0/projects/${currentProjectId}/addCustomFieldSetting`;
+                const addData = {
+                    data: {
+                        custom_field: createdField.data.gid,
+                        is_important: true
+                    }
+                };
+                
+                const addResponse = await fetch(addToProjectEndpoint, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(addData)
+                });
+                
+                if (!addResponse.ok) {
+                    // Get detailed error information
+                    const errorText = await addResponse.text();
+                    console.error("Asana API error response (adding field to project):", errorText);
+                    
+                    let errorMessage = `Failed to add field to project: ${addResponse.status} ${addResponse.statusText}`;
+                    try {
+                        // Try to parse error JSON if possible
+                        const errorJson = JSON.parse(errorText);
+                        if (errorJson.errors && errorJson.errors.length > 0) {
+                            errorMessage += `. ${errorJson.errors[0].message}`;
+                        }
+                    } catch (e) {
+                        // If can't parse JSON, use raw text
+                        if (errorText) {
+                            errorMessage += `. Response: ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}`;
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+                console.log("Added Task Type field to project");
+                
+                // Update status
+                statusElement.textContent = "Task Type field created successfully! Refreshing fields...";
+                statusElement.classList.remove('alert-info', 'alert-danger');
+                statusElement.classList.add('alert-success');
+                
+                // Refresh the custom fields
+                await fetchCustomFieldsForTodo();
+                
+                // Automatically select the newly created field
+                setTimeout(() => {
+                    const taskTypeSelect = document.getElementById('map-task-type');
+                    const fieldId = `custom:${createdField.data.gid}`;
+                    
+                    if (taskTypeSelect) {
+                        for (let i = 0; i < taskTypeSelect.options.length; i++) {
+                            if (taskTypeSelect.options[i].value === fieldId) {
+                                taskTypeSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error("Error creating Task Type field:", error);
+                
+                // Update status with detailed error
+                statusElement.textContent = `Error: ${error.message}`;
+                statusElement.classList.remove('alert-info', 'alert-success');
+                statusElement.classList.add('alert-danger', 'd-none');
+                statusElement.classList.remove('d-none');
+                
+                // Additional troubleshooting guidance
+                statusElement.innerHTML += `<div class="mt-2 small">
+                    <p>Troubleshooting tips:</p>
+                    <ul>
+                        <li>Verify your Asana Personal Access Token has sufficient permissions</li>
+                        <li>Check if you've reached Asana API rate limits</li>
+                        <li>Ensure your browser isn't blocking the API requests</li>
+                        <li>Try again in a few moments</li>
+                    </ul>
+                </div>`;
+            }
+        }
+        
+        // Create a Task Type field for One Off projects
+        async function createOneOffTaskTypeField() {
+            console.log("Creating Task Type field for One Off project");
+            
+            if (!currentProjectId || !selectedLocation || !selectedLocation.asanaPAT) {
+                alert("No project selected or missing Asana PAT");
+                return;
+            }
+            
+            const statusElement = document.getElementById('oneoff-field-creation-status');
+            
+            try {
+                // First, update status
+                statusElement.textContent = "Fetching workspace information...";
+                statusElement.classList.remove('d-none', 'alert-danger');
+                statusElement.classList.add('alert-info');
+                
+                const headers = {
+                    'Authorization': `Bearer ${selectedLocation.asanaPAT}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                // First, get the project to find its workspace
+                const projectUrl = `https://app.asana.com/api/1.0/projects/${currentProjectId}?opt_fields=workspace,name`;
+                const projectResponse = await fetch(projectUrl, { 
+                    headers,
+                    method: 'GET'
+                });
+                
+                if (!projectResponse.ok) {
+                    const errorText = await projectResponse.text();
+                    console.error("Error fetching project details:", errorText);
+                    throw new Error(`Failed to fetch project details: ${projectResponse.status} ${projectResponse.statusText}`);
+                }
+                
+                const projectData = await projectResponse.json();
+                console.log("Project data:", projectData);
+                
+                if (!projectData.data.workspace || !projectData.data.workspace.gid) {
+                    throw new Error("Could not determine workspace for this project");
+                }
+                
+                const workspaceId = projectData.data.workspace.gid;
+                statusElement.textContent = `Creating Task Type field in workspace ${workspaceId}...`;
+                
+                // Prepare request to create custom field
+                const endpoint = 'https://app.asana.com/api/1.0/custom_fields';
+                
+                // Task Type field with predefined options
+                const fieldData = {
+                    data: {
+                        resource_subtype: "enum",
+                        name: "Task Type",
+                        description: "Type of task for JoJo's app",
+                        enum_options: [
+                            { name: "Task" },
+                            { name: "Event" },
+                            { name: "Meeting" },
+                            { name: "Special" },
+                            { name: "Other" }
+                        ],
+                        workspace: workspaceId,
+                        enabled: true,
+                        format: "string"
+                    }
+                };
+                
+                // Create the custom field
+                const createResponse = await fetch(endpoint, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(fieldData)
+                });
+                
+                if (!createResponse.ok) {
+                    // Get detailed error information
+                    const errorText = await createResponse.text();
+                    console.error("Asana API error response:", errorText);
+                    
+                    let errorMessage = `Failed to create custom field: ${createResponse.status} ${createResponse.statusText}`;
+                    try {
+                        // Try to parse error JSON if possible
+                        const errorJson = JSON.parse(errorText);
+                        if (errorJson.errors && errorJson.errors.length > 0) {
+                            errorMessage += `. ${errorJson.errors[0].message}`;
+                        }
+                    } catch (e) {
+                        // If can't parse JSON, use raw text
+                        if (errorText) {
+                            errorMessage += `. Response: ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}`;
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+                const createdField = await createResponse.json();
+                console.log("Created Task Type field:", createdField);
+                
+                // Now add this field to the project
+                const addToProjectEndpoint = `https://app.asana.com/api/1.0/projects/${currentProjectId}/addCustomFieldSetting`;
+                const addData = {
+                    data: {
+                        custom_field: createdField.data.gid,
+                        is_important: true
+                    }
+                };
+                
+                const addResponse = await fetch(addToProjectEndpoint, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(addData)
+                });
+                
+                if (!addResponse.ok) {
+                    // Get detailed error information
+                    const errorText = await addResponse.text();
+                    console.error("Asana API error response (adding field to project):", errorText);
+                    
+                    let errorMessage = `Failed to add field to project: ${addResponse.status} ${addResponse.statusText}`;
+                    try {
+                        // Try to parse error JSON if possible
+                        const errorJson = JSON.parse(errorText);
+                        if (errorJson.errors && errorJson.errors.length > 0) {
+                            errorMessage += `. ${errorJson.errors[0].message}`;
+                        }
+                    } catch (e) {
+                        // If can't parse JSON, use raw text
+                        if (errorText) {
+                            errorMessage += `. Response: ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}`;
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+                console.log("Added Task Type field to project");
+                
+                // Update status
+                statusElement.textContent = "Task Type field created successfully! Refreshing fields...";
+                statusElement.classList.remove('alert-info', 'alert-danger');
+                statusElement.classList.add('alert-success');
+                
+                // Refresh the custom fields
+                await fetchCustomFieldsForOneOff();
+                
+                // Automatically select the newly created field
+                setTimeout(() => {
+                    const taskTypeSelect = document.getElementById('map-oneoff-task-type');
+                    const fieldId = `custom:${createdField.data.gid}`;
+                    
+                    if (taskTypeSelect) {
+                        for (let i = 0; i < taskTypeSelect.options.length; i++) {
+                            if (taskTypeSelect.options[i].value === fieldId) {
+                                taskTypeSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error("Error creating Task Type field:", error);
+                
+                // Update status with detailed error
+                statusElement.textContent = `Error: ${error.message}`;
+                statusElement.classList.remove('alert-info', 'alert-success');
+                statusElement.classList.add('alert-danger', 'd-none');
+                statusElement.classList.remove('d-none');
+                
+                // Additional troubleshooting guidance
+                statusElement.innerHTML += `<div class="mt-2 small">
+                    <p>Troubleshooting tips:</p>
+                    <ul>
+                        <li>Verify your Asana Personal Access Token has sufficient permissions</li>
+                        <li>Check if you've reached Asana API rate limits</li>
+                        <li>Ensure your browser isn't blocking the API requests</li>
+                        <li>Try again in a few moments</li>
+                    </ul>
+                </div>`;
+            }
+        }
+        
+        // Create Par Comp fields (High Par, Low Par, Current Count)
+        async function createParFields() {
+            console.log("Creating Par Comp fields");
+            
+            if (!currentProjectId || !selectedLocation || !selectedLocation.asanaPAT) {
+                alert("No project selected or missing Asana PAT");
+                return;
+            }
+            
+            const statusElement = document.getElementById('parcomp-field-creation-status');
+            
+            try {
+                // First, update status
+                statusElement.textContent = "Fetching workspace information...";
+                statusElement.classList.remove('d-none', 'alert-danger');
+                statusElement.classList.add('alert-info');
+                
+                const headers = {
+                    'Authorization': `Bearer ${selectedLocation.asanaPAT}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                // First, get the project to find its workspace
+                const projectUrl = `https://app.asana.com/api/1.0/projects/${currentProjectId}?opt_fields=workspace,name`;
+                const projectResponse = await fetch(projectUrl, { 
+                    headers,
+                    method: 'GET'
+                });
+                
+                if (!projectResponse.ok) {
+                    const errorText = await projectResponse.text();
+                    console.error("Error fetching project details:", errorText);
+                    throw new Error(`Failed to fetch project details: ${projectResponse.status} ${projectResponse.statusText}`);
+                }
+                
+                const projectData = await projectResponse.json();
+                console.log("Project data:", projectData);
+                
+                if (!projectData.data.workspace || !projectData.data.workspace.gid) {
+                    throw new Error("Could not determine workspace for this project");
+                }
+                
+                const workspaceId = projectData.data.workspace.gid;
+                statusElement.textContent = `Creating Par Comp fields in workspace ${workspaceId}...`;
+                
+                // Prepare request to create custom fields
+                const endpoint = 'https://app.asana.com/api/1.0/custom_fields';
+                
+                // Fields to create
+                const fieldsToCreate = [
+                    {
+                        resource_subtype: "number",
+                        name: "High Par",
+                        description: "Maximum inventory level for JoJo's app",
+                        precision: 0,
+                        workspace: workspaceId,
+                        enabled: true,
+                        format: "none"
+                    },
+                    {
+                        resource_subtype: "number",
+                        name: "Low Par",
+                        description: "Minimum inventory level for JoJo's app",
+                        precision: 0,
+                        workspace: workspaceId,
+                        enabled: true,
+                        format: "none"
+                    },
+                    {
+                        resource_subtype: "number",
+                        name: "Current Count",
+                        description: "Current inventory count for JoJo's app",
+                        precision: 0,
+                        workspace: workspaceId,
+                        enabled: true,
+                        format: "none"
+                    },
+                    {
+                        resource_subtype: "text",
+                        name: "Unit of Measure",
+                        description: "How the item is measured (e.g., count, boxes) for JoJo's app",
+                        workspace: workspaceId,
+                        enabled: true,
+                        format: "string"
+                    }
+                ];
+                
+                // Loop through the fields to create
+                let createdFields = [];
+                let failedFields = [];
+                let errorDetails = [];
+                let completedFields = 0;
+
+                for (const fieldData of fieldsToCreate) {
+                    try {
+                        statusElement.textContent = `Creating ${fieldData.name} field...`;
+                        console.log(`Creating ${fieldData.name} field`);
+                        
+                        const createResponse = await fetch(endpoint, {
+                            method: 'POST',
+                            headers,
+                            body: JSON.stringify({ data: fieldData })
+                        });
+                        
+                        // Add a small delay to avoid hitting rate limits
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        if (!createResponse.ok) {
+                            // Get detailed error information
+                            const errorText = await createResponse.text();
+                            console.error(`Asana API error creating ${fieldData.name}:`, errorText);
+                            
+                            let errorMessage = `Failed to create ${fieldData.name}: ${createResponse.status} ${createResponse.statusText}`;
+                            try {
+                                // Try to parse error JSON if possible
+                                const errorJson = JSON.parse(errorText);
+                                if (errorJson.errors && errorJson.errors.length > 0) {
+                                    errorMessage += `. ${errorJson.errors[0].message}`;
+                                }
+                            } catch (e) {
+                                // If can't parse JSON, use raw text
+                                if (errorText) {
+                                    errorMessage += `. Response: ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}`;
+                                }
+                            }
+                            
+                            errorDetails.push(errorMessage);
+                            failedFields.push(fieldData.name);
+                            throw new Error(errorMessage);
+                        }
+                        
+                        const createdField = await createResponse.json();
+                        console.log(`Created ${fieldData.name} field:`, createdField);
+                        
+                        // Add field to the created fields list
+                        createdFields.push({
+                            name: fieldData.name,
+                            gid: createdField.data.gid
+                        });
+                        
+                        // Now add this field to the project
+                        const addToProjectEndpoint = `https://app.asana.com/api/1.0/projects/${currentProjectId}/addCustomFieldSetting`;
+                        const addData = {
+                            data: {
+                                custom_field: createdField.data.gid,
+                                is_important: true
+                            }
+                        };
+                        
+                        const addResponse = await fetch(addToProjectEndpoint, {
+                            method: 'POST',
+                            headers,
+                            body: JSON.stringify(addData)
+                        });
+                        
+                        if (!addResponse.ok) {
+                            // Get detailed error information
+                            const errorText = await addResponse.text();
+                            console.error(`Asana API error adding ${fieldData.name} to project:`, errorText);
+                            
+                            let errorMessage = `Failed to add ${fieldData.name} to project: ${addResponse.status} ${addResponse.statusText}`;
+                            try {
+                                // Try to parse error JSON if possible
+                                const errorJson = JSON.parse(errorText);
+                                if (errorJson.errors && errorJson.errors.length > 0) {
+                                    errorMessage += `. ${errorJson.errors[0].message}`;
+                                }
+                            } catch (e) {
+                                // If can't parse JSON, use raw text
+                                if (errorText) {
+                                    errorMessage += `. Response: ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}`;
+                                }
+                            }
+                            
+                            errorDetails.push(errorMessage);
+                            throw new Error(errorMessage);
+                        }
+                        
+                        console.log(`Added ${fieldData.name} field to project`);
+                        completedFields++;
+                        
+                    } catch (error) {
+                        console.error(`Error creating ${fieldData.name} field:`, error);
+                        failedFields.push(fieldData.name);
+                        errorDetails.push(error.message);
+                    }
+                    
+                    // Add slight delay between requests to avoid rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // Update status
+                if (completedFields === fieldsToCreate.length) {
+                    statusElement.textContent = "All Par Comp fields created successfully! Refreshing fields...";
+                    statusElement.classList.remove('alert-info', 'alert-danger');
+                    statusElement.classList.add('alert-success');
+                } else {
+                    statusElement.textContent = `Created ${completedFields} of ${fieldsToCreate.length} fields. Refreshing...`;
+                    statusElement.classList.remove('alert-info');
+                    statusElement.classList.add('alert-warning');
+                    
+                    // Show error details if any errors occurred
+                    if (errorDetails.length > 0) {
+                        const errorList = errorDetails.map(err => `<li>${err}</li>`).join('');
+                        statusElement.innerHTML += `<div class="mt-2 small">
+                            <p>Error details:</p>
+                            <ul>${errorList}</ul>
+                        </div>`;
+                    }
+                }
+                
+                // Refresh the custom fields if at least one was created
+                if (completedFields > 0) {
+                    try {
+                        await fetchCustomFields(currentProjectId, headers);
+                        
+                        // Automatically select the newly created fields after a short delay
+                        setTimeout(() => {
+                            for (const field of createdFields) {
+                                const fieldId = `custom:${field.gid}`;
+                                let selectElement;
+                                
+                                switch(field.name) {
+                                    case "High Par":
+                                        selectElement = document.getElementById('map-high-par');
+                                        break;
+                                    case "Low Par":
+                                        selectElement = document.getElementById('map-low-par');
+                                        break;
+                                    case "Current Count":
+                                        selectElement = document.getElementById('map-current-count');
+                                        break;
+                                    case "Unit of Measure":
+                                        selectElement = document.getElementById('map-uom');
+                                        break;
+                                }
+                                
+                                if (selectElement) {
+                                    for (let i = 0; i < selectElement.options.length; i++) {
+                                        if (selectElement.options[i].value === fieldId) {
+                                            selectElement.selectedIndex = i;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }, 1000);
+                    } catch (error) {
+                        console.error("Error refreshing fields:", error);
+                        statusElement.innerHTML += `<div class="mt-2 small">Error refreshing fields: ${error.message}</div>`;
+                    }
+                }
+                
+                // Additional guidance
+                if (completedFields < fieldsToCreate.length) {
+                    statusElement.innerHTML += `<div class="mt-2 small">
+                        <p>Troubleshooting tips:</p>
+                        <ul>
+                            <li>Verify your Asana Personal Access Token has sufficient permissions</li>
+                            <li>Check if you've reached Asana API rate limits</li>
+                            <li>Some fields may have been created successfully - check Asana before trying again</li>
+                            <li>Try again after a few minutes</li>
+                        </ul>
+                    </div>`;
+                }
+                
+            } catch (error) {
+                console.error("Error creating Par fields:", error);
+                
+                // Update status with error
+                statusElement.textContent = `Error: ${error.message}`;
+                statusElement.classList.remove('alert-info', 'alert-success');
+                statusElement.classList.add('alert-danger', 'd-none');
+                statusElement.classList.remove('d-none');
+                
+                // Additional troubleshooting guidance
+                statusElement.innerHTML += `<div class="mt-2 small">
+                    <p>Troubleshooting tips:</p>
+                    <ul>
+                        <li>Verify your Asana Personal Access Token has sufficient permissions</li>
+                        <li>Check if you've reached Asana API rate limits</li>
+                        <li>Ensure your browser isn't blocking the API requests</li>
+                        <li>Try again in a few moments</li>
+                        <li>Check Asana for any fields that may have been created</li>
+                    </ul>
+                </div>`;
+            }
+        }
+    </script>
+</body>
+</html> 

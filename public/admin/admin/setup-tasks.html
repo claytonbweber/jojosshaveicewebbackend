@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Task Setup</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <style>
+        .setup-status {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .location-card {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>JoJo's Shave Ice - Task Setup</h1>
+        
+        <div class="alert alert-info">
+            <p><strong>Important:</strong> This tool creates sample tasks for your locations.</p>
+            <p>Click "Sign In Anonymously" to access Firestore and create tasks.</p>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                Authentication
+            </div>
+            <div class="card-body">
+                <div id="auth-status" class="mb-3">
+                    Checking authentication status...
+                </div>
+                <div id="auth-controls">
+                    <div id="login-form" class="text-center mb-3">
+                        <button class="btn btn-primary" id="anon-sign-in">Sign In Anonymously</button>
+                    </div>
+                    <button class="btn btn-secondary d-none" id="logout-button">Sign Out</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Locations
+                    </div>
+                    <div class="card-body">
+                        <div id="locations-list">
+                            <p class="text-center">Loading locations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Status Log
+                    </div>
+                    <div class="card-body setup-status">
+                        <div id="setup-status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.appspot.com",
+            messagingSenderId: "344579778389",
+            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
+            measurementId: "G-VBP44WBTCP"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // DOM elements
+        const setupStatusDiv = document.getElementById('setup-status');
+        const locationsList = document.getElementById('locations-list');
+        const authStatusDiv = document.getElementById('auth-status');
+        const loginForm = document.getElementById('login-form');
+        const anonSignInButton = document.getElementById('anon-sign-in');
+        const logoutButton = document.getElementById('logout-button');
+
+        // Add status message
+        function addStatus(message, isError = false) {
+            const statusItem = document.createElement('div');
+            statusItem.className = isError ? 'alert alert-danger' : 'alert alert-info';
+            statusItem.textContent = message;
+            setupStatusDiv.appendChild(statusItem);
+            console.log(message);
+        }
+
+        // Auth state change listener
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                // User is signed in
+                const displayName = user.isAnonymous ? 'Anonymous User' : (user.email || user.displayName);
+                authStatusDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        Signed in as ${displayName}
+                    </div>
+                `;
+                loginForm.classList.add('d-none');
+                logoutButton.classList.remove('d-none');
+                
+                // Load locations after successful authentication
+                loadLocations();
+            } else {
+                // User is signed out
+                authStatusDiv.innerHTML = `
+                    <div class="alert alert-warning">
+                        Not signed in. Please sign in to access full functionality.
+                    </div>
+                `;
+                loginForm.classList.remove('d-none');
+                logoutButton.classList.add('d-none');
+                
+                // Show a message in the locations list
+                locationsList.innerHTML = `
+                    <div class="alert alert-info">
+                        Please sign in to view and manage locations.
+                    </div>
+                `;
+            }
+        });
+
+        // Anonymous Sign In functionality
+        anonSignInButton.addEventListener('click', function() {
+            addStatus("Signing in anonymously...");
+            authStatusDiv.innerHTML = `
+                <div class="alert alert-info">
+                    Signing in...
+                </div>
+            `;
+            
+            auth.signInAnonymously()
+                .then(() => {
+                    addStatus("Anonymous sign in successful!");
+                })
+                .catch((error) => {
+                    authStatusDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            Sign in failed: ${error.message}
+                        </div>
+                    `;
+                    addStatus(`Anonymous sign in failed: ${error.message}`, true);
+                    console.error("Sign in error:", error);
+                });
+        });
+
+        // Logout functionality
+        logoutButton.addEventListener('click', function() {
+            auth.signOut()
+                .then(() => {
+                    addStatus("Signed out successfully");
+                })
+                .catch((error) => {
+                    addStatus(`Sign out failed: ${error.message}`, true);
+                });
+        });
+
+        // Create sample tasks for a location
+        async function createSampleTasks(groupId, locationId, locationName) {
+            try {
+                addStatus(`Checking if user is authenticated...`);
+                
+                // Verify authentication
+                const user = auth.currentUser;
+                if (!user) {
+                    addStatus(`You must be logged in to create tasks`, true);
+                    return {
+                        success: false,
+                        message: "Authentication required"
+                    };
+                }
+                
+                const userIdentifier = user.isAnonymous ? 'Anonymous User' : (user.email || user.displayName);
+                addStatus(`Creating tasks for ${locationName} as ${userIdentifier}...`);
+                
+                // First check if tasks already exist for this location
+                const existingTasks = await db.collection('tasks')
+                    .where('locationId', '==', locationId)
+                    .limit(1)
+                    .get();
+                
+                if (!existingTasks.empty) {
+                    addStatus(`Tasks already exist for ${locationName}. Skipping task creation.`);
+                    return {
+                        success: true,
+                        message: `Tasks already exist for ${locationName}`,
+                        tasksCount: existingTasks.size
+                    };
+                }
+
+                // Create tasks if none exist
+                const batch = db.batch();
+                let taskCount = 0;
+                
+                // Opening Tasks
+                const openingTasks = [
+                    { 
+                        name: "Check refrigerator temperature", 
+                        details: "Ensure refrigerator temperature is between 34°F and 40°F", 
+                        category: "Opening Tasks", 
+                        type: "numeric" 
+                    },
+                    { 
+                        name: "Turn on all equipment", 
+                        details: "Turn on freezers, ice shavers, and refrigerators", 
+                        category: "Opening Tasks", 
+                        type: "checkbox" 
+                    },
+                    { 
+                        name: "Sanitize work surfaces", 
+                        details: "Clean all counter surfaces with approved sanitizer", 
+                        category: "Opening Tasks", 
+                        type: "checkbox" 
+                    }
+                ];
+                
+                // Midday Tasks
+                const middayTasks = [
+                    { 
+                        name: "Clean ice shaver", 
+                        details: "Remove any ice buildup and clean the blade housing", 
+                        category: "Midday Tasks", 
+                        type: "checkbox" 
+                    },
+                    { 
+                        name: "Restock cups and utensils", 
+                        details: "Check and refill serving stations with cups, spoons, and napkins", 
+                        category: "Midday Tasks", 
+                        type: "checkbox" 
+                    }
+                ];
+                
+                // Closing Tasks
+                const closingTasks = [
+                    { 
+                        name: "Clean all equipment", 
+                        details: "Thoroughly clean ice shavers, dispensers, and other equipment", 
+                        category: "Closing Tasks", 
+                        type: "checkbox" 
+                    },
+                    { 
+                        name: "Inventory check", 
+                        details: "Count remaining inventory of cups, syrups, and supplies", 
+                        category: "Closing Tasks", 
+                        type: "short-answer" 
+                    }
+                ];
+                
+                // Combine all tasks
+                const allTasks = [
+                    ...openingTasks, 
+                    ...middayTasks, 
+                    ...closingTasks
+                ];
+                
+                // Add tasks to batch
+                let order = 0;
+                allTasks.forEach(task => {
+                    task.order = order++;
+                    task.groupId = groupId;
+                    task.locationId = locationId;
+                    
+                    // Create a new document reference
+                    const taskRef = db.collection('tasks').doc();
+                    batch.set(taskRef, {
+                        ...task,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        createdBy: userIdentifier,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedBy: userIdentifier
+                    });
+                    taskCount++;
+                });
+                
+                // Commit the batch
+                await batch.commit();
+                addStatus(`Successfully created ${taskCount} tasks for ${locationName}`);
+                
+                return {
+                    success: true,
+                    message: `Created ${taskCount} tasks for ${locationName}`,
+                    tasksCount: taskCount
+                };
+            } catch (error) {
+                // Handle security rules error specifically
+                if (error.code === 'permission-denied') {
+                    addStatus(`Permission denied: You don't have access to create tasks. Please check your access rights.`, true);
+                    console.error("Permission denied error:", error);
+                } else {
+                    addStatus(`Error creating tasks: ${error.message}`, true);
+                    console.error("Detailed error:", error);
+                }
+                
+                return {
+                    success: false,
+                    message: error.message
+                };
+            }
+        }
+
+        // Load and display locations
+        async function loadLocations() {
+            try {
+                addStatus("Loading locations...");
+                
+                // Get all locations from the locations collection
+                const locationsSnapshot = await db.collection('locations').get();
+                
+                if (locationsSnapshot.empty) {
+                    locationsList.innerHTML = `
+                        <div class="alert alert-warning">
+                            No locations found in the Firestore database.
+                        </div>
+                    `;
+                    addStatus("No locations found in the 'locations' collection", true);
+                    return;
+                }
+                
+                // Group locations by business group
+                const groupedLocations = {};
+                
+                locationsSnapshot.forEach(doc => {
+                    const location = doc.data();
+                    const locationId = doc.id;
+                    
+                    // Group locations by groupName if available
+                    const groupName = location.groupName || 'Ungrouped Locations';
+                    const groupCode = location.groupCode || '';
+                    
+                    if (!groupedLocations[groupName]) {
+                        groupedLocations[groupName] = {
+                            code: groupCode,
+                            locations: []
+                        };
+                    }
+                    
+                    // Only add if it has a locationName (to filter out pure group documents)
+                    if (location.locationName) {
+                        groupedLocations[groupName].locations.push({
+                            id: locationId,
+                            data: location
+                        });
+                    }
+                });
+                
+                // Build a card for each business group with its locations
+                let locationsHtml = '';
+                
+                for (const groupName in groupedLocations) {
+                    const group = groupedLocations[groupName];
+                    const groupId = group.code || groupName.toLowerCase().replace(/\s+/g, '-');
+                    
+                    // Create a card for this group
+                    locationsHtml += `
+                        <div class="card location-card">
+                            <div class="card-header">
+                                ${groupName}
+                                ${group.code ? `<span class="badge bg-secondary">${group.code}</span>` : ''}
+                                <span class="badge bg-info">${group.locations.length} locations</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                    `;
+                    
+                    // Add each location in this group
+                    if (group.locations.length === 0) {
+                        locationsHtml += `
+                            <div class="list-group-item">
+                                <em>No locations found for this group</em>
+                            </div>
+                        `;
+                    } else {
+                        group.locations.forEach(location => {
+                            const locationData = location.data;
+                            const locationId = location.id;
+                            
+                            locationsHtml += `
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="mb-1">${locationData.locationName || 'Unnamed Location'}</h5>
+                                            <small>${locationData.address || 'No address'}</small>
+                                        </div>
+                                        <div>
+                                            <button class="btn btn-sm btn-primary setup-tasks" 
+                                                data-group-id="${groupId}" 
+                                                data-location-id="${locationId}" 
+                                                data-name="${locationData.locationName || 'Unnamed Location'}">
+                                                Setup Tasks
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    // Close the group card
+                    locationsHtml += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // If no valid groups found
+                if (locationsHtml === '') {
+                    locationsList.innerHTML = `
+                        <div class="alert alert-warning">
+                            No valid locations found in the database.
+                        </div>
+                    `;
+                    addStatus("No valid locations found with locationName field", true);
+                } else {
+                    locationsList.innerHTML = locationsHtml;
+                    addStatus(`Found ${Object.keys(groupedLocations).length} business groups with locations`);
+                    
+                    // Add event listeners to setup task buttons
+                    document.querySelectorAll('.setup-tasks').forEach(button => {
+                        button.addEventListener('click', async function() {
+                            const groupId = this.getAttribute('data-group-id');
+                            const locationId = this.getAttribute('data-location-id');
+                            const locationName = this.getAttribute('data-name');
+                            
+                            try {
+                                button.disabled = true;
+                                button.textContent = 'Setting up...';
+                                
+                                const result = await createSampleTasks(groupId, locationId, locationName);
+                                
+                                if (result.success) {
+                                    button.textContent = 'Done!';
+                                    button.classList.remove('btn-primary', 'btn-warning');
+                                    button.classList.add('btn-success');
+                                    
+                                    setTimeout(() => {
+                                        button.textContent = 'Update Tasks';
+                                        button.disabled = false;
+                                    }, 2000);
+                                } else {
+                                    button.textContent = 'Error';
+                                    button.classList.remove('btn-primary', 'btn-success');
+                                    button.classList.add('btn-danger');
+                                    
+                                    setTimeout(() => {
+                                        button.textContent = 'Retry Setup';
+                                        button.disabled = false;
+                                        button.classList.remove('btn-danger');
+                                        button.classList.add('btn-warning');
+                                    }, 2000);
+                                }
+                            } catch (error) {
+                                console.error("Error setting up tasks:", error);
+                                button.textContent = 'Error';
+                                button.classList.remove('btn-primary', 'btn-success');
+                                button.classList.add('btn-danger');
+                                
+                                setTimeout(() => {
+                                    button.textContent = 'Retry Setup';
+                                    button.disabled = false;
+                                    button.classList.remove('btn-danger');
+                                    button.classList.add('btn-warning');
+                                }, 2000);
+                            }
+                        });
+                    });
+                }
+            } catch (error) {
+                addStatus(`Error loading locations: ${error.message}`, true);
+                console.error("Detailed error:", error);
+                locationsList.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p>Error loading locations: ${error.message}</p>
+                        <p>Check browser console for more details.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize page on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+            addStatus("Welcome to the JoJo's Shave Ice Task Setup. Initializing...");
+            
+            // Auth state is handled by the auth.onAuthStateChanged listener
+            // which will trigger loadLocations() if the user is authenticated
+        });
+    </script>
+</body>
+</html> 

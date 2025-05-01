@@ -1,0 +1,6 @@
+Place the following files in this directory:
+
+1. logo.png - JoJo's Shave Ice logo (around 200x40px)
+2. favicon.png - Favicon image (32x32px)
+
+For proper branding, use the official JoJo's Shave Ice logo and brand colors. 

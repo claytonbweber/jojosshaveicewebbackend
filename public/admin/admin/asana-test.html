@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Asana API Test</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #FFD60A;
+        }
+        h1 {
+            color: #87CEEB;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .btn-primary {
+            background-color: #FF4040;
+            border-color: #FF4040;
+        }
+        .btn-primary:hover {
+            background-color: #d93333;
+            border-color: #d93333;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #87CEEB;
+            color: white;
+            font-weight: bold;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status-log {
+            height: 200px;
+            overflow-y: auto;
+        }
+        .project-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .project-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .project-item:last-child {
+            border-bottom: none;
+        }
+        .auto-refresh-controls {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .task-container {
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .task-header {
+            background-color: #f1f1f1;
+            padding: 10px;
+            font-weight: bold;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+        }
+        .task-header .queue-status {
+            font-size: 0.8em;
+            font-weight: normal;
+            color: #666;
+        }
+        .task-body {
+            padding: 15px;
+        }
+        .refresh-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        .refresh-active {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        .refresh-inactive {
+            background-color: #dc3545;
+        }
+        .task-row {
+            transition: background-color 1s ease;
+        }
+        .task-row.new-task {
+            background-color: #d4edda !important;
+        }
+        .task-row.updated-task {
+            background-color: #fff3cd !important;
+        }
+        .task-row.completed-task {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        .queue-progress-bar {
+            height: 5px;
+            margin-top: 5px;
+        }
+        .refresh-time {
+            font-size: 0.75em;
+            color: #6c757d;
+        }
+        .changes-only-control {
+            margin-top: 10px;
+        }
+        .changes-badge {
+            margin-left: 5px;
+            font-size: 0.75em;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        .queue-status-badge {
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>JoJo's Shave Ice - Asana Task Monitor</h1>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <p>This page monitors your Asana tasks and shows changes as they happen.</p>
+                    <p>Projects are refreshed in sequence with a delay between each to avoid API limits.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                Asana API Connection
+            </div>
+            <div class="card-body">
+                <form id="test-form">
+                    <div class="mb-3">
+                        <label for="personalAccessToken" class="form-label">Personal Access Token</label>
+                        <input type="password" class="form-control" id="personalAccessToken" placeholder="Enter your Asana Personal Access Token" value="2/1197204311503364/1210043043896048:5faf6a28df07dfa88eea3309969e23db">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Connect to Asana</button>
+                </form>
+                <div id="test-result" class="mt-3"></div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                Asana Workspaces
+            </div>
+            <div class="card-body">
+                <button id="load-workspaces-btn" class="btn btn-primary mb-3" disabled>Load Workspaces</button>
+                <div id="workspaces-result"></div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                Asana Projects
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="workspaceSelect" class="form-label">Select Workspace</label>
+                    <select class="form-control" id="workspaceSelect" disabled>
+                        <option value="">-- Select a workspace --</option>
+                    </select>
+                </div>
+                <button id="load-projects-btn" class="btn btn-primary mb-3" disabled>Load Projects</button>
+                <div id="projects-result"></div>
+                
+                <div id="project-selection" class="mt-4" style="display: none;">
+                    <h5>Projects Being Monitored</h5>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="select-all-projects" checked>
+                        <label class="form-check-label" for="select-all-projects">
+                            Select/Deselect All
+                        </label>
+                    </div>
+                    <div class="project-list" id="project-checkbox-list">
+                        <!-- Project checkboxes will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4" id="tasks-card" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Asana Tasks</span>
+                <div>
+                    <span id="refresh-status">Auto-refresh: Off</span>
+                    <span class="refresh-indicator refresh-inactive" id="refresh-indicator"></span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="auto-refresh-controls">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto-refresh-toggle">
+                                <label class="form-check-label" for="auto-refresh-toggle">Enable Auto-refresh</label>
+                            </div>
+                            <div class="form-check form-switch changes-only-control">
+                                <input class="form-check-input" type="checkbox" id="changes-only-toggle" checked>
+                                <label class="form-check-label" for="changes-only-toggle">Show changes only</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <label class="input-group-text" for="refresh-interval">Queue Interval</label>
+                                <select class="form-select" id="refresh-interval">
+                                    <option value="120000" selected>2 minutes</option>
+                                    <option value="300000">5 minutes</option>
+                                    <option value="600000">10 minutes</option>
+                                    <option value="1800000">30 minutes</option>
+                                    <option value="3600000">1 hour</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <button id="load-tasks-btn" class="btn btn-primary w-100">Load Tasks Now</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="queue-status" class="alert alert-info" style="display: none;">
+                    <div><strong>Refresh Queue Status:</strong> <span id="queue-status-text">Idle</span></div>
+                    <div class="progress queue-progress-bar">
+                        <div id="queue-progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="mt-2"><small>Projects are refreshed sequentially with a 2-minute delay between each to avoid API limits.</small></div>
+                </div>
+                
+                <div id="tasks-container">
+                    <!-- Tasks will be inserted here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Log -->
+        <div class="card mt-4">
+            <div class="card-header">
+                Status Log
+            </div>
+            <div class="card-body status-log">
+                <div id="status-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // DOM elements
+        const testForm = document.getElementById('test-form');
+        const testResultDiv = document.getElementById('test-result');
+        const loadWorkspacesBtn = document.getElementById('load-workspaces-btn');
+        const workspacesResultDiv = document.getElementById('workspaces-result');
+        const workspaceSelect = document.getElementById('workspaceSelect');
+        const loadProjectsBtn = document.getElementById('load-projects-btn');
+        const projectsResultDiv = document.getElementById('projects-result');
+        const projectSelectionDiv = document.getElementById('project-selection');
+        const projectCheckboxList = document.getElementById('project-checkbox-list');
+        const selectAllProjectsCheckbox = document.getElementById('select-all-projects');
+        const tasksCard = document.getElementById('tasks-card');
+        const loadTasksBtn = document.getElementById('load-tasks-btn');
+        const tasksContainer = document.getElementById('tasks-container');
+        const statusLogDiv = document.getElementById('status-log');
+        const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+        const changesOnlyToggle = document.getElementById('changes-only-toggle');
+        const refreshInterval = document.getElementById('refresh-interval');
+        const refreshStatus = document.getElementById('refresh-status');
+        const refreshIndicator = document.getElementById('refresh-indicator');
+        const queueStatus = document.getElementById('queue-status');
+        const queueStatusText = document.getElementById('queue-status-text');
+        const queueProgress = document.getElementById('queue-progress');
+        
+        // Global variables
+        let personalAccessToken = null;
+        let projects = [];
+        let refreshIntervalId = null;
+        let projectQueue = [];
+        let isProcessingQueue = false;
+        let currentWorkspaceId = null;
+        let projectCheckInterval = null;
+        let taskCache = {}; // Store previous state of tasks
+        
+        // Add status message
+        function addStatus(message, isError = false) {
+            const statusItem = document.createElement('div');
+            statusItem.className = isError ? 'alert alert-danger' : 'alert alert-info';
+            statusItem.textContent = message;
+            statusLogDiv.appendChild(statusItem);
+            statusLogDiv.scrollTop = statusLogDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        // Make authenticated request to Asana API
+        async function makeAsanaRequest(endpoint, options = {}) {
+            const defaultOptions = {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${personalAccessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            const url = `https://app.asana.com/api/1.0${endpoint}`;
+            const fetchOptions = { ...defaultOptions, ...options };
+            
+            try {
+                const response = await fetch(url, fetchOptions);
+                
+                if (!response.ok) {
+                    let errorMessage = `HTTP error ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = `Asana API error: ${response.status} - ${JSON.stringify(errorData)}`;
+                    } catch (e) {
+                        // If parsing JSON fails, use the default message
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error(`Error making Asana request to ${endpoint}:`, error);
+                throw error;
+            }
+        }
+        
+        // Test connection with Asana API
+        async function testConnection(patToken) {
+            try {
+                personalAccessToken = patToken;
+                
+                // Try to get user info
+                const response = await makeAsanaRequest('/users/me');
+                
+                return {
+                    success: true,
+                    userData: response.data,
+                    message: `Successfully connected as ${response.data.name}`
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message,
+                    message: 'Connection failed: Invalid Personal Access Token or network issue'
+                };
+            }
+        }
+        
+        // Get all workspaces
+        async function getWorkspaces() {
+            try {
+                const response = await makeAsanaRequest('/workspaces');
+                return response.data;
+            } catch (error) {
+                throw error;
+            }
+        }
+        
+        // Get all projects in a workspace
+        async function getProjects(workspaceGid) {
+            try {
+                const queryParams = new URLSearchParams({
+                    opt_fields: 'name,owner,created_at,modified_at,public,archived,completed,color,due_date,notes'
+                }).toString();
+                
+                const response = await makeAsanaRequest(`/workspaces/${workspaceGid}/projects?${queryParams}`);
+                return response.data;
+            } catch (error) {
+                throw error;
+            }
+        }
+        
+        // Get tasks in a project
+        async function getProjectTasks(projectGid, limit = 50) {
+            try {
+                const queryParams = new URLSearchParams({
+                    limit: limit,
+                    opt_fields: 'name,assignee,completed,due_on,due_at,notes,html_notes,created_at,modified_at,completed_at,tags'
+                }).toString();
+                
+                const response = await makeAsanaRequest(`/projects/${projectGid}/tasks?${queryParams}`);
+                return response.data;
+            } catch (error) {
+                throw error;
+            }
+        }
+        
+        // Format object as JSON with indentation
+        function formatJSON(obj) {
+            return JSON.stringify(obj, null, 2);
+        }
+        
+        // Format date for display
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            return new Date(dateString).toLocaleString();
+        }
+        
+        // Get selected project IDs
+        function getSelectedProjectIds() {
+            const checkboxes = document.querySelectorAll('#project-checkbox-list input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(checkbox => checkbox.value);
+        }
+        
+        // Task comparison to detect changes
+        function compareTasksForChanges(newTask, oldTask) {
+            if (!oldTask) return { isNew: true };
+            
+            const changes = {
+                isNew: false,
+                isModified: false,
+                completionChanged: newTask.completed !== oldTask.completed,
+                nameChanged: newTask.name !== oldTask.name,
+                dueChanged: newTask.due_on !== oldTask.due_on || newTask.due_at !== oldTask.due_at,
+                assigneeChanged: (!newTask.assignee && oldTask.assignee) || 
+                               (newTask.assignee && !oldTask.assignee) || 
+                               (newTask.assignee && oldTask.assignee && newTask.assignee.gid !== oldTask.assignee.gid)
+            };
+            
+            changes.isModified = changes.completionChanged || changes.nameChanged || 
+                              changes.dueChanged || changes.assigneeChanged;
+            
+            return changes;
+        }
+        
+        // Create task cache key
+        function taskCacheKey(projectId, taskId) {
+            return `${projectId}_${taskId}`;
+        }
+        
+        // Check if there are new projects
+        async function checkForNewProjects() {
+            if (!currentWorkspaceId) return;
+            
+            try {
+                // Fetch latest projects
+                const latestProjects = await getProjects(currentWorkspaceId);
+                
+                // Check for new projects
+                const newProjects = latestProjects.filter(newProject => 
+                    !projects.some(existingProject => existingProject.gid === newProject.gid)
+                );
+                
+                if (newProjects.length > 0) {
+                    addStatus(`Found ${newProjects.length} new projects in the workspace!`);
+                    
+                    // Add new projects to our list
+                    projects = [...projects, ...newProjects];
+                    
+                    // Update the project checkboxes
+                    updateProjectCheckboxes();
+                    
+                    // If we're currently in the queue processing, add these to the queue
+                    if (isProcessingQueue) {
+                        newProjects.forEach(project => {
+                            if (!project.archived && !project.completed) {
+                                projectQueue.push(project.gid);
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                addStatus(`Error checking for new projects: ${error.message}`, true);
+            }
+        }
+        
+        // Update project checkboxes in the UI
+        function updateProjectCheckboxes() {
+            // Save currently selected projects
+            const selectedProjects = getSelectedProjectIds();
+            
+            // Clear current list
+            projectCheckboxList.innerHTML = '';
+            
+            // Add all projects to the list
+            projects.forEach(project => {
+                if (project.archived || project.completed) return; // Skip archived or completed projects
+                
+                const projectItem = document.createElement('div');
+                projectItem.className = 'project-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'form-check-input me-2';
+                checkbox.id = `project-${project.gid}`;
+                checkbox.value = project.gid;
+                
+                // Check if it was previously selected or if select all is checked
+                checkbox.checked = selectAllProjectsCheckbox.checked || selectedProjects.includes(project.gid);
+                
+                const label = document.createElement('label');
+                label.className = 'form-check-label';
+                label.htmlFor = `project-${project.gid}`;
+                label.textContent = project.name;
+                
+                projectItem.appendChild(checkbox);
+                projectItem.appendChild(label);
+                projectCheckboxList.appendChild(projectItem);
+            });
+        }
+        
+        // Process project queue
+        async function processProjectQueue() {
+            if (projectQueue.length === 0 || isProcessingQueue) {
+                return;
+            }
+            
+            isProcessingQueue = true;
+            queueStatus.style.display = 'block';
+            
+            addStatus(`Starting to process ${projectQueue.length} projects in queue...`);
+            
+            // Clone queue to avoid changes during iteration
+            const queueToProcess = [...projectQueue];
+            projectQueue = [];
+            
+            const interval = parseInt(refreshInterval.value);
+            const totalProjects = queueToProcess.length;
+            let processedCount = 0;
+            
+            // Process each project in the queue with delay
+            for (const projectId of queueToProcess) {
+                if (!document.getElementById(`project-${projectId}`).checked) {
+                    // Skip if not checked anymore
+                    processedCount++;
+                    queueProgress.style.width = `${(processedCount / totalProjects) * 100}%`;
+                    continue;
+                }
+                
+                const projectName = projects.find(p => p.gid === projectId)?.name || projectId;
+                queueStatusText.textContent = `Refreshing ${projectName} (${processedCount + 1}/${totalProjects})`;
+                
+                try {
+                    await refreshProjectTasks(projectId);
+                } catch (error) {
+                    addStatus(`Error refreshing project ${projectName}: ${error.message}`, true);
+                }
+                
+                processedCount++;
+                queueProgress.style.width = `${(processedCount / totalProjects) * 100}%`;
+                
+                // If this is not the last project, wait before processing the next one
+                if (processedCount < totalProjects) {
+                    addStatus(`Waiting ${interval / 1000} seconds before refreshing next project...`);
+                    await new Promise(resolve => setTimeout(resolve, interval));
+                }
+            }
+            
+            queueStatusText.textContent = 'Idle';
+            queueProgress.style.width = '0%';
+            
+            isProcessingQueue = false;
+            
+            // Check if a new queue has formed during processing
+            if (projectQueue.length > 0) {
+                processProjectQueue();
+            } else {
+                addStatus('Finished processing all projects in queue.');
+            }
+        }
+        
+        // Refresh tasks for a single project
+        async function refreshProjectTasks(projectId) {
+            const project = projects.find(p => p.gid === projectId);
+            if (!project) return;
+            
+            const projectContainer = document.getElementById(`project-${projectId}`);
+            let projectBody;
+            
+            // If the project container doesn't exist yet, create it
+            if (!projectContainer) {
+                const newProjectContainer = document.createElement('div');
+                newProjectContainer.className = 'task-container';
+                newProjectContainer.id = `project-${projectId}`;
+                
+                const projectHeader = document.createElement('div');
+                projectHeader.className = 'task-header';
+                projectHeader.innerHTML = `
+                    <span>${project.name}</span>
+                    <span class="queue-status">Last updated: Never</span>
+                `;
+                
+                projectBody = document.createElement('div');
+                projectBody.className = 'task-body';
+                projectBody.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+                
+                newProjectContainer.appendChild(projectHeader);
+                newProjectContainer.appendChild(projectBody);
+                tasksContainer.appendChild(newProjectContainer);
+            } else {
+                projectBody = projectContainer.querySelector('.task-body');
+                projectBody.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+                
+                // Update header to show currently refreshing
+                const queueStatus = projectContainer.querySelector('.queue-status');
+                queueStatus.innerHTML = '<span class="badge bg-info">Refreshing...</span>';
+            }
+            
+            let tasks;
+            try {
+                tasks = await getProjectTasks(projectId, 100);
+                
+                // Update project header with last refresh time
+                const projectHeader = document.querySelector(`#project-${projectId} .task-header`);
+                const refreshTime = new Date().toLocaleString();
+                projectHeader.querySelector('.queue-status').textContent = `Last updated: ${refreshTime}`;
+                
+                // Check for changes
+                const changesOnly = changesOnlyToggle.checked;
+                let newTasks = 0;
+                let modifiedTasks = 0;
+                let completedTasks = 0;
+                
+                if (tasks.length === 0) {
+                    projectBody.innerHTML = '<div class="alert alert-warning">No tasks found in this project.</div>';
+                } else {
+                    let tableHTML = `
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Assignee</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th>Last Modified</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    // Process tasks and identify changes
+                    const displayedTasks = [];
+                    
+                    for (const task of tasks) {
+                        const key = taskCacheKey(projectId, task.gid);
+                        const previousTask = taskCache[key];
+                        const changes = compareTasksForChanges(task, previousTask);
+                        
+                        // Skip unchanged tasks if "changes only" is enabled
+                        if (changesOnly && !changes.isNew && !changes.isModified) {
+                            continue;
+                        }
+                        
+                        // Track stats
+                        if (changes.isNew) newTasks++;
+                        else if (changes.isModified) modifiedTasks++;
+                        if (changes.completionChanged && task.completed) completedTasks++;
+                        
+                        // Store task for display
+                        displayedTasks.push({
+                            task: task,
+                            changes: changes
+                        });
+                        
+                        // Update cache
+                        taskCache[key] = JSON.parse(JSON.stringify(task));
+                    }
+                    
+                    // Sort tasks - new first, then modified, then others
+                    displayedTasks.sort((a, b) => {
+                        if (a.changes.isNew && !b.changes.isNew) return -1;
+                        if (!a.changes.isNew && b.changes.isNew) return 1;
+                        if (a.changes.isModified && !b.changes.isModified) return -1;
+                        if (!a.changes.isModified && b.changes.isModified) return 1;
+                        return 0;
+                    });
+                    
+                    // Generate table rows
+                    displayedTasks.forEach(({ task, changes }) => {
+                        let rowClass = '';
+                        if (changes.isNew) rowClass = 'new-task';
+                        else if (changes.isModified) rowClass = 'updated-task';
+                        if (task.completed) rowClass += ' completed-task';
+                        
+                        tableHTML += `
+                            <tr class="task-row ${rowClass}">
+                                <td>${task.name}</td>
+                                <td>${task.assignee ? task.assignee.name : 'Unassigned'}</td>
+                                <td>${task.due_on || (task.due_at ? new Date(task.due_at).toLocaleDateString() : 'N/A')}</td>
+                                <td>${task.completed ? 
+                                    '<span class="badge bg-success">Completed</span>' : 
+                                    '<span class="badge bg-warning">Incomplete</span>'}</td>
+                                <td>${task.modified_at ? new Date(task.modified_at).toLocaleString() : 'N/A'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    tableHTML += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    // Add summary of changes
+                    if (newTasks > 0 || modifiedTasks > 0 || completedTasks > 0) {
+                        tableHTML += `
+                            <div class="mt-2 alert alert-info">
+                                <strong>Changes detected:</strong> 
+                                ${newTasks > 0 ? `<span class="badge bg-success changes-badge">${newTasks} new tasks</span>` : ''}
+                                ${modifiedTasks > 0 ? `<span class="badge bg-warning changes-badge">${modifiedTasks} modified tasks</span>` : ''}
+                                ${completedTasks > 0 ? `<span class="badge bg-info changes-badge">${completedTasks} newly completed</span>` : ''}
+                            </div>
+                        `;
+                    }
+                    
+                    // Add refresh time info
+                    tableHTML += `
+                        <div class="mt-2">
+                            <small class="text-muted">Last updated: ${refreshTime}</small>
+                            ${changesOnly ? 
+                                `<small class="text-muted ms-3">(Showing changes only - ${displayedTasks.length} of ${tasks.length} tasks)</small>` : 
+                                ''}
+                        </div>
+                    `;
+                    
+                    // Set the table HTML
+                    projectBody.innerHTML = tableHTML;
+                    
+                    // If there are changes, briefly highlight the project header
+                    if (newTasks > 0 || modifiedTasks > 0) {
+                        const projectContainer = document.getElementById(`project-${projectId}`);
+                        projectContainer.classList.add('task-container-highlight');
+                        setTimeout(() => {
+                            projectContainer.classList.remove('task-container-highlight');
+                        }, 3000);
+                    }
+                }
+                
+                addStatus(`Refreshed ${project.name}: ${tasks.length} tasks total, ${newTasks} new, ${modifiedTasks} modified`);
+                
+            } catch (error) {
+                projectBody.innerHTML = `<div class="alert alert-danger">Error loading tasks: ${error.message}</div>`;
+                addStatus(`Error loading tasks for project ${project.name}: ${error.message}`, true);
+            }
+        }
+        
+        // Load tasks for selected projects
+        function loadTasksForSelectedProjects() {
+            const selectedProjectIds = getSelectedProjectIds();
+            
+            if (selectedProjectIds.length === 0) {
+                alert('Please select at least one project');
+                return;
+            }
+            
+            tasksContainer.innerHTML = '<div class="alert alert-info">Loading tasks from selected projects...</div>';
+            addStatus(`Adding ${selectedProjectIds.length} projects to refresh queue...`);
+            
+            // Set tasks card to be visible
+            tasksCard.style.display = 'block';
+            
+            // Empty the tasks container
+            tasksContainer.innerHTML = '';
+            
+            // Add all selected projects to the queue
+            projectQueue = [...projectQueue, ...selectedProjectIds];
+            
+            // Start processing the queue
+            processProjectQueue();
+        }
+        
+        // Start auto-refresh process
+        function startAutoRefresh() {
+            if (refreshIntervalId) {
+                clearInterval(refreshIntervalId);
+            }
+            
+            const masterInterval = parseInt(refreshInterval.value) * getSelectedProjectIds().length;
+            refreshIntervalId = setInterval(() => {
+                // Only add to queue if not already processing
+                if (!isProcessingQueue) {
+                    loadTasksForSelectedProjects();
+                }
+            }, masterInterval);
+            
+            refreshStatus.textContent = `Auto-refresh: On (Every ${refreshInterval.options[refreshInterval.selectedIndex].text} per project)`;
+            refreshIndicator.classList.remove('refresh-inactive');
+            refreshIndicator.classList.add('refresh-active');
+            
+            addStatus(`Auto-refresh enabled. Will queue all projects every cycle.`);
+            
+            // Start checking for new projects periodically
+            if (projectCheckInterval) {
+                clearInterval(projectCheckInterval);
+            }
+            projectCheckInterval = setInterval(checkForNewProjects, 5 * 60 * 1000); // Check every 5 minutes
+        }
+        
+        // Stop auto-refresh
+        function stopAutoRefresh() {
+            if (refreshIntervalId) {
+                clearInterval(refreshIntervalId);
+                refreshIntervalId = null;
+            }
+            
+            if (projectCheckInterval) {
+                clearInterval(projectCheckInterval);
+                projectCheckInterval = null;
+            }
+            
+            refreshStatus.textContent = 'Auto-refresh: Off';
+            refreshIndicator.classList.remove('refresh-active');
+            refreshIndicator.classList.add('refresh-inactive');
+            
+            addStatus('Auto-refresh disabled.');
+        }
+        
+        // Test form submission
+        testForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const patToken = document.getElementById('personalAccessToken').value.trim();
+            
+            if (!patToken) {
+                testResultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Please enter a Personal Access Token.
+                    </div>
+                `;
+                return;
+            }
+            
+            testResultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    Testing connection to Asana API...
+                </div>
+            `;
+            
+            addStatus('Testing connection to Asana API...');
+            
+            try {
+                const result = await testConnection(patToken);
+                
+                if (result.success) {
+                    testResultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <p>${result.message}</p>
+                        </div>
+                        <h5>User Information:</h5>
+                        <pre>${formatJSON(result.userData)}</pre>
+                    `;
+                    
+                    // Enable workspace button
+                    loadWorkspacesBtn.disabled = false;
+                    
+                    addStatus(`Connection successful! Logged in as ${result.userData.name}`);
+                } else {
+                    testResultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <p>${result.message}</p>
+                            <p>Error: ${result.error}</p>
+                        </div>
+                    `;
+                    
+                    // Disable buttons
+                    loadWorkspacesBtn.disabled = true;
+                    loadProjectsBtn.disabled = true;
+                    
+                    addStatus(`Connection failed: ${result.error}`, true);
+                }
+            } catch (error) {
+                testResultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p>An unexpected error occurred:</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                
+                addStatus(`Error: ${error.message}`, true);
+            }
+        });
+        
+        // Load workspaces button
+        loadWorkspacesBtn.addEventListener('click', async function() {
+            workspacesResultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    Loading workspaces...
+                </div>
+            `;
+            
+            addStatus('Loading workspaces...');
+            
+            try {
+                const workspaces = await getWorkspaces();
+                
+                if (workspaces.length === 0) {
+                    workspacesResultDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            No workspaces found.
+                        </div>
+                    `;
+                    
+                    addStatus('No workspaces found.');
+                } else {
+                    workspacesResultDiv.innerHTML = `
+                        <h5>Workspaces (${workspaces.length}):</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${workspaces.map(workspace => `
+                                        <tr>
+                                            <td>${workspace.name}</td>
+                                            <td><code>${workspace.gid}</code></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    // Populate workspace selector
+                    workspaceSelect.innerHTML = '<option value="">-- Select a workspace --</option>';
+                    workspaces.forEach(workspace => {
+                        const option = document.createElement('option');
+                        option.value = workspace.gid;
+                        option.textContent = workspace.name;
+                        workspaceSelect.appendChild(option);
+                    });
+                    
+                    // Enable workspace selector
+                    workspaceSelect.disabled = false;
+                    
+                    addStatus(`Loaded ${workspaces.length} workspaces.`);
+                }
+            } catch (error) {
+                workspacesResultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p>Error loading workspaces:</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                
+                addStatus(`Error loading workspaces: ${error.message}`, true);
+            }
+        });
+        
+        // Workspace selector change
+        workspaceSelect.addEventListener('change', function() {
+            loadProjectsBtn.disabled = !this.value;
+            projectSelectionDiv.style.display = 'none';
+            tasksCard.style.display = 'none';
+            
+            // Store the current workspace ID
+            currentWorkspaceId = this.value;
+        });
+        
+        // Load projects button
+        loadProjectsBtn.addEventListener('click', async function() {
+            const workspaceGid = workspaceSelect.value;
+            
+            if (!workspaceGid) {
+                projectsResultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Please select a workspace.
+                    </div>
+                `;
+                return;
+            }
+            
+            projectsResultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    Loading projects from workspace...
+                </div>
+            `;
+            
+            addStatus(`Loading projects from workspace ${workspaceGid}...`);
+            
+            try {
+                projects = await getProjects(workspaceGid);
+                
+                if (projects.length === 0) {
+                    projectsResultDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            No projects found in this workspace.
+                        </div>
+                    `;
+                    
+                    projectSelectionDiv.style.display = 'none';
+                    addStatus('No projects found in this workspace.');
+                } else {
+                    projectsResultDiv.innerHTML = `
+                        <h5>Projects (${projects.length}):</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${projects.map(project => `
+                                        <tr>
+                                            <td>${project.name}</td>
+                                            <td>${project.due_date || 'N/A'}</td>
+                                            <td>${project.completed ? 'Completed' : (project.archived ? 'Archived' : 'Active')}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    // Populate project checkboxes - select ALL by default
+                    updateProjectCheckboxes();
+                    
+                    // Show project selection
+                    projectSelectionDiv.style.display = 'block';
+                    
+                    // Show tasks card
+                    tasksCard.style.display = 'block';
+                    
+                    // Start checking for new projects
+                    if (projectCheckInterval) {
+                        clearInterval(projectCheckInterval);
+                    }
+                    projectCheckInterval = setInterval(checkForNewProjects, 5 * 60 * 1000); // Check every 5 minutes
+                    
+                    addStatus(`Loaded ${projects.length} projects. All projects are selected by default.`);
+                }
+            } catch (error) {
+                projectsResultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p>Error loading projects:</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                
+                addStatus(`Error loading projects: ${error.message}`, true);
+            }
+        });
+        
+        // Select all projects checkbox
+        selectAllProjectsCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#project-checkbox-list input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+        
+        // Load tasks button
+        loadTasksBtn.addEventListener('click', loadTasksForSelectedProjects);
+        
+        // Auto-refresh toggle
+        autoRefreshToggle.addEventListener('change', function() {
+            if (this.checked) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+        
+        // Refresh interval change
+        refreshInterval.addEventListener('change', function() {
+            if (autoRefreshToggle.checked) {
+                startAutoRefresh();
+            }
+        });
+        
+        // Changes-only toggle
+        changesOnlyToggle.addEventListener('change', function() {
+            addStatus(`Changed view mode to: ${this.checked ? 'Show changes only' : 'Show all tasks'}`);
+            loadTasksForSelectedProjects();
+        });
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            addStatus('Asana Task Monitor loaded. Connect to your Asana account to begin.');
+        });
+    </script>
+</body>
+</html> 

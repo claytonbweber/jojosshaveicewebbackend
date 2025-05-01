@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Sling Integration</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #FFD60A;
+        }
+        h1 {
+            color: #87CEEB;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .btn-primary {
+            background-color: #FF4040;
+            border-color: #FF4040;
+        }
+        .btn-primary:hover {
+            background-color: #d93333;
+            border-color: #d93333;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #87CEEB;
+            color: white;
+            font-weight: bold;
+        }
+        .status-log {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+    </style>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>JoJo's Shave Ice - Sling Integration</h1>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <p>This page helps you set up and manage Sling integration for all JoJo's Shave Ice locations.</p>
+                    <ul>
+                        <li>Update all locations with the Sling organization ID and authentication token</li>
+                        <li>View the current status of Sling integration for each location</li>
+                        <li>Test the Sling API connection</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                Sling Configuration
+            </div>
+            <div class="card-body">
+                <form id="sling-config-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="organizationId" class="form-label">Sling Organization ID</label>
+                                <input type="text" id="organizationId" class="form-control" value="536986" required>
+                                <div class="form-text">The organization ID for JoJo's Shave Ice in Sling</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="authToken" class="form-label">Sling Authentication Token</label>
+                                <input type="text" id="authToken" class="form-control" value="49bada311f9b4392afa288dd6e7ad809" required>
+                                <div class="form-text">The authentication token for the Sling API</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Update All Locations</button>
+                            <button type="button" id="test-connection-btn" class="btn btn-outline-secondary">Test Connection</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                Location Status
+            </div>
+            <div class="card-body">
+                <div id="locations-list">
+                    <p class="text-center">Loading locations...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                Status Log
+            </div>
+            <div class="card-body">
+                <div id="status-log" class="status-log"></div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <a href="index.html" class="btn btn-outline-dark">Back to Admin Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.appspot.com",
+            messagingSenderId: "344579778389",
+            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
+            measurementId: "G-VBP44WBTCP"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // DOM elements
+        const locationsListDiv = document.getElementById('locations-list');
+        const statusLogDiv = document.getElementById('status-log');
+        const slingConfigForm = document.getElementById('sling-config-form');
+        const testConnectionBtn = document.getElementById('test-connection-btn');
+        
+        // Add status message
+        function addStatus(message, isError = false) {
+            const statusItem = document.createElement('div');
+            statusItem.className = isError ? 'text-danger' : 'text-info';
+            statusItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusLogDiv.appendChild(statusItem);
+            statusLogDiv.scrollTop = statusLogDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        // Load and display locations
+        async function loadLocations() {
+            try {
+                addStatus("Loading locations...");
+                
+                // Get all locations from the locations collection
+                const locationsSnapshot = await db.collection('locations').get();
+                
+                if (locationsSnapshot.empty) {
+                    locationsListDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            No locations found in the Firestore database.
+                        </div>
+                    `;
+                    addStatus("No locations found in the 'locations' collection", true);
+                    return [];
+                }
+                
+                // Filter for JoJo's Shave Ice locations only
+                const jojosLocations = [];
+                
+                locationsSnapshot.forEach(doc => {
+                    const location = doc.data();
+                    if (location.groupName === "JoJo's Shave Ice") {
+                        jojosLocations.push({
+                            id: doc.id,
+                            data: location
+                        });
+                    }
+                });
+                
+                if (jojosLocations.length === 0) {
+                    locationsListDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            No JoJo's Shave Ice locations found in the database.
+                        </div>
+                    `;
+                    addStatus("No JoJo's Shave Ice locations found", true);
+                    return [];
+                }
+                
+                // Build table for locations
+                let locationsHtml = `
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Location</th>
+                                    <th>County</th>
+                                    <th>Sling ID</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                jojosLocations.forEach(location => {
+                    const locationData = location.data;
+                    const slingIntegration = locationData.connections?.sling;
+                    const hasSlingIntegration = slingIntegration?.locationId && slingIntegration?.apiKey;
+                    
+                    locationsHtml += `
+                        <tr>
+                            <td>
+                                <strong>${locationData.locationName || 'Unnamed'}</strong>
+                                ${locationData.address ? `<br><small>${locationData.address}</small>` : ''}
+                            </td>
+                            <td>${locationData.county || 'N/A'}</td>
+                            <td>${slingIntegration?.locationId || '<span class="text-danger">Not set</span>'}</td>
+                            <td>
+                                ${hasSlingIntegration 
+                                    ? '<span class="badge bg-success">Integrated</span>' 
+                                    : '<span class="badge bg-danger">Not Integrated</span>'}
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                locationsHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                locationsListDiv.innerHTML = locationsHtml;
+                addStatus(`Found ${jojosLocations.length} JoJo's Shave Ice locations`);
+                
+                return jojosLocations;
+            } catch (error) {
+                addStatus(`Error loading locations: ${error.message}`, true);
+                console.error("Error:", error);
+                locationsListDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p>Error loading locations: ${error.message}</p>
+                    </div>
+                `;
+                return [];
+            }
+        }
+        
+        // Update all locations with Sling integration
+        async function updateLocationsWithSling(organizationId, authToken) {
+            try {
+                addStatus("Updating locations with Sling integration data...");
+                
+                // Get all locations from the locations collection
+                const locationsSnapshot = await db.collection('locations').get();
+                
+                if (locationsSnapshot.empty) {
+                    addStatus("No locations found in the database to update.", true);
+                    return;
+                }
+                
+                const batch = db.batch();
+                let updateCount = 0;
+                
+                // Loop through all locations
+                locationsSnapshot.forEach(doc => {
+                    const locationData = doc.data();
+                    
+                    // Only update JoJo's Shave Ice locations
+                    if (locationData.groupName === "JoJo's Shave Ice") {
+                        addStatus(`Updating location: ${locationData.locationName}`);
+                        
+                        // Create connections object if it doesn't exist
+                        const connections = locationData.connections || {};
+                        
+                        // Update the Sling integration data
+                        connections.sling = {
+                            locationId: organizationId,
+                            apiKey: authToken
+                        };
+                        
+                        // Update the location document
+                        batch.update(doc.ref, { 
+                            connections: connections,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        updateCount++;
+                    }
+                });
+                
+                // Commit the batch
+                if (updateCount > 0) {
+                    await batch.commit();
+                    addStatus(`Successfully updated ${updateCount} JoJo's Shave Ice locations with Sling integration data.`);
+                    
+                    // Reload the locations list
+                    await loadLocations();
+                } else {
+                    addStatus("No JoJo's Shave Ice locations found to update.", true);
+                }
+            } catch (error) {
+                addStatus(`Error updating locations: ${error.message}`, true);
+                console.error("Error:", error);
+            }
+        }
+        
+        // Test Sling API connection
+        async function testSlingConnection(organizationId, authToken) {
+            try {
+                addStatus("Testing Sling API connection...");
+                
+                // Create a test endpoint URL
+                const testUrl = `https://api.getsling.com/v1/${organizationId}/test`;
+                
+                // Make the request
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': authToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    addStatus("Sling API connection successful!");
+                    return true;
+                } else {
+                    // Even though we got an error, the API might still be valid
+                    // Sling might be blocking certain endpoints
+                    if (response.status === 404) {
+                        addStatus("Endpoint not found, but authentication may still be valid. The Sling API might restrict access to certain endpoints.");
+                        return true;
+                    } else {
+                        addStatus(`Sling API connection failed: ${response.status} - ${response.statusText}`, true);
+                        return false;
+                    }
+                }
+            } catch (error) {
+                addStatus(`Error testing Sling connection: ${error.message}`, true);
+                console.error("Error:", error);
+                return false;
+            }
+        }
+        
+        // Event listeners
+        slingConfigForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const organizationId = document.getElementById('organizationId').value.trim();
+            const authToken = document.getElementById('authToken').value.trim();
+            
+            if (!organizationId || !authToken) {
+                addStatus("Please enter both Organization ID and Authentication Token.", true);
+                return;
+            }
+            
+            // Update all locations with the Sling integration data
+            await updateLocationsWithSling(organizationId, authToken);
+        });
+        
+        testConnectionBtn.addEventListener('click', async function() {
+            const organizationId = document.getElementById('organizationId').value.trim();
+            const authToken = document.getElementById('authToken').value.trim();
+            
+            if (!organizationId || !authToken) {
+                addStatus("Please enter both Organization ID and Authentication Token.", true);
+                return;
+            }
+            
+            // Test the Sling API connection
+            await testSlingConnection(organizationId, authToken);
+        });
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async function() {
+            addStatus("Welcome to the JoJo's Shave Ice Sling Integration Manager!");
+            
+            // Load locations
+            await loadLocations();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Task Setup</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .setup-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #f0f9ff 0%, #a1d8ff 100%);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .setup-status {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .group-info {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        .accordion-button {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container setup-container py-4">
+        <div class="header">
+            <h1>JoJo's Shave Ice - Task Setup System</h1>
+            <p class="lead">Set up daily tasks for your locations</p>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>Welcome!</strong> This utility manages tasks for your business groups and locations.
+            <p class="mb-0 mt-2">Tasks are organized with this structure:</p>
+            <ul class="mb-0">
+                <li><strong>Business Groups</strong> (e.g., "Chicken in a Barrel", "JoJo's Shave Ice")</li>
+                <li><strong>Locations</strong> within each group (e.g., "Waimea", "Coconut Marketplace")</li>
+                <li><strong>Tasks</strong> for each location</li>
+            </ul>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h3>Business Groups & Locations</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="locations-list">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h4>Data Structure</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="group-info">
+                            <h5>Business Groups</h5>
+                            <p>Each business group (e.g., Chicken in a Barrel) can have:</p>
+                            <ul class="small">
+                                <li><strong>groupName</strong>: Display name</li>
+                                <li><strong>groupCode</strong>: Short code</li>
+                                <li><strong>toastApiKey</strong>: For POS integration</li>
+                                <li><strong>active</strong>: Status flag</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="group-info">
+                            <h5>Locations</h5>
+                            <p>Each location (e.g., Waimea) within a group has:</p>
+                            <ul class="small">
+                                <li><strong>locationName</strong>: Display name</li>
+                                <li><strong>locationCode</strong>: Short code</li>
+                                <li><strong>address</strong>: Physical address</li>
+                                <li><strong>locationEmail</strong>: For authentication</li>
+                                <li><strong>active</strong>: Status flag</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="group-info">
+                            <h5>Tasks</h5>
+                            <p>Tasks are linked to specific locations within groups:</p>
+                            <ul class="small">
+                                <li><strong>groupId</strong>: References the business group</li>
+                                <li><strong>locationId</strong>: References the specific location</li>
+                                <li><strong>category, type, name, details</strong>: Task attributes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm mt-3">
+                    <div class="card-header">
+                        <h4>Setup Status</h4>
+                    </div>
+                    <div class="card-body setup-status">
+                        <div id="setup-status">
+                            <!-- Status messages will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Next Steps</h4>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li>Create business groups and locations using the buttons above (if they don't exist)</li>
+                            <li>Click "Setup Tasks" for any location to create standard tasks</li>
+                            <li>Go to the <a href="daily-tasks.html">Daily Tasks</a> page to manage tasks</li>
+                            <li>View task history in the <a href="task-history.html">Task History</a> page</li>
+                        </ol>
+                        
+                        <div class="mt-3 d-flex justify-content-end">
+                            <a href="index.html" class="btn btn-outline-secondary me-2">Back to Dashboard</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom Script -->
+    <script src="js/setupFirestore.js"></script>
+</body>
+</html> 

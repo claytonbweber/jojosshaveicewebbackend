@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Location Manager</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #FFD60A;
+        }
+        h1 {
+            color: #87CEEB;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .btn-primary {
+            background-color: #FF4040;
+            border-color: #FF4040;
+        }
+        .btn-primary:hover {
+            background-color: #d93333;
+            border-color: #d93333;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #87CEEB;
+            color: white;
+            font-weight: bold;
+        }
+        .location-card {
+            margin-bottom: 1rem;
+        }
+        .setup-status {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status-log {
+            height: 200px;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .info-text {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+    </style>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>JoJo's Shave Ice - Location Manager</h1>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <p>This page allows you to manage all location-related operations:</p>
+                    <ul>
+                        <li>View and manage all locations</li>
+                        <li>Add new locations</li>
+                        <li>Each location has a unique ID generated automatically</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <ul class="nav nav-tabs mb-4" id="managementTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="locations-tab" data-bs-toggle="tab" data-bs-target="#locations-content" type="button" role="tab">
+                    Location List
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="add-location-tab" data-bs-toggle="tab" data-bs-target="#add-location-content" type="button" role="tab">
+                    Add Location
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="managementTabsContent">
+            <!-- Location List Tab -->
+            <div class="tab-pane fade show active" id="locations-content" role="tabpanel">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <button id="delete-all-locations" class="btn btn-danger">Delete All Locations</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        Locations
+                    </div>
+                    <div class="card-body">
+                        <div id="locations-list">
+                            <p class="text-center">Loading locations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Add Location Tab -->
+            <div class="tab-pane fade" id="add-location-content" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        Add New Location
+                    </div>
+                    <div class="card-body">
+                        <form id="add-location-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="businessGroup">Business Group</label>
+                                        <select class="form-control" id="businessGroup" required>
+                                            <option value="">Select Business Group</option>
+                                            <option value="JoJo's Shave Ice">JoJo's Shave Ice</option>
+                                            <option value="Barrel">Barrel</option>
+                                            <option value="custom">Add New Group...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" id="customGroupContainer" style="display: none;">
+                                        <label for="customGroupName">New Group Name</label>
+                                        <input type="text" class="form-control" id="customGroupName" placeholder="Enter new group name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="groupCode">Group Code</label>
+                                        <input type="text" class="form-control" id="groupCode" placeholder="e.g., JOJO" readonly>
+                                        <small class="info-text">Auto-generated from Business Group</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="locationName">Location Name</label>
+                                        <input type="text" class="form-control" id="locationName" placeholder="e.g., Waimea" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="locationCode">Location Code</label>
+                                        <input type="text" class="form-control" id="locationCode" placeholder="e.g., WM" readonly>
+                                        <small class="info-text">Auto-generated from Location Name</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="county">County</label>
+                                        <select class="form-control" id="county" required>
+                                            <option value="Kauai">Kauai</option>
+                                            <option value="Oahu">Oahu</option>
+                                            <option value="Maui">Maui</option>
+                                            <option value="Hawaii">Hawaii Island</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="countyCode">County Code</label>
+                                        <input type="text" class="form-control" id="countyCode" placeholder="e.g., KAU" readonly>
+                                        <small class="info-text">Auto-generated from County</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="address">Address</label>
+                                        <input type="text" class="form-control" id="address" placeholder="Full address">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="locationEmail">Email</label>
+                                        <input type="email" class="form-control" id="locationEmail" placeholder="location@example.com">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Optional Connection Settings</label>
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <!-- Asana Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Asana Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="asanaUserId" class="form-label">Asana User ID</label>
+                                                            <input type="text" id="asanaUserId" class="form-control" placeholder="Asana User ID for location manager">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="asanaPAT" class="form-label">Asana Personal Access Token</label>
+                                                            <input type="text" id="asanaPAT" class="form-control" placeholder="Asana Personal Access Token">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- QuickBooks Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">QuickBooks Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="quickbooksClass" class="form-label">QuickBooks Class</label>
+                                                            <input type="text" id="quickbooksClass" class="form-control" placeholder="Enter QuickBooks Class name">
+                                                            <div class="form-text">The class name used to identify this location in QuickBooks</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="quickbooksClientId" class="form-label">QuickBooks Client ID</label>
+                                                            <input type="text" id="quickbooksClientId" class="form-control" placeholder="Enter QuickBooks Client ID">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Reviews Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Reviews Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="googleReviewsUrl" class="form-label">Google Reviews URL</label>
+                                                            <input type="url" id="googleReviewsUrl" class="form-control" placeholder="Enter Google Reviews page URL">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="yelpReviewsUrl" class="form-label">Yelp Reviews URL</label>
+                                                            <input type="url" id="yelpReviewsUrl" class="form-control" placeholder="Enter Yelp page URL">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Toast POS Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Toast POS Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="toastLocationId" class="form-label">Toast Location ID</label>
+                                                            <input type="text" id="toastLocationId" class="form-control" placeholder="Enter Toast Location ID">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="toastApiKey" class="form-label">Toast API Key</label>
+                                                            <input type="text" id="toastApiKey" class="form-control" placeholder="Enter Toast API Key">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Sling Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Sling Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="slingLocationId" class="form-label">Sling Location ID</label>
+                                                            <input type="text" id="slingLocationId" class="form-control" placeholder="Enter Sling Location ID">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="slingApiKey" class="form-label">Sling API Key</label>
+                                                            <input type="text" id="slingApiKey" class="form-control" placeholder="Enter Sling API Key">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Twilio Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Twilio Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="twilioSid" class="form-label">Twilio SID</label>
+                                                            <input type="text" id="twilioSid" class="form-control" placeholder="Enter Twilio SID">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="twilioAuthToken" class="form-label">Twilio Auth Token</label>
+                                                            <input type="text" id="twilioAuthToken" class="form-control" placeholder="Enter Twilio Auth Token">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="active" checked>
+                                    <label class="form-check-label" for="active">
+                                        Active Location
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="notes">Notes</label>
+                                <textarea class="form-control" id="notes" rows="3" placeholder="Additional notes"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Create Location</button>
+                        </form>
+                        <div id="add-location-status" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Log -->
+        <div class="card mt-4">
+            <div class="card-header">
+                Status Log
+            </div>
+            <div class="card-body status-log">
+                <div id="status-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Location Modal -->
+    <div class="modal fade" id="editLocationModal" tabindex="-1" aria-labelledby="editLocationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editLocationModalLabel">Edit Location</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-location-form">
+                        <input type="hidden" id="edit-location-id">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="edit-businessGroup">Business Group</label>
+                                    <select class="form-control" id="edit-businessGroup" required>
+                                        <option value="">Select Business Group</option>
+                                        <option value="JoJo's Shave Ice">JoJo's Shave Ice</option>
+                                        <option value="Barrel">Barrel</option>
+                                        <option value="custom">Add New Group...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mb-3" id="edit-customGroupContainer" style="display: none;">
+                                    <label for="edit-customGroupName">New Group Name</label>
+                                    <input type="text" class="form-control" id="edit-customGroupName" placeholder="Enter new group name">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="edit-groupCode">Group Code</label>
+                                    <input type="text" class="form-control" id="edit-groupCode" placeholder="e.g., JOJO">
+                                    <small class="info-text">Auto-generated from Business Group</small>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="edit-locationName">Location Name</label>
+                                    <input type="text" class="form-control" id="edit-locationName" placeholder="e.g., Waimea" required>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="edit-locationCode">Location Code</label>
+                                    <input type="text" class="form-control" id="edit-locationCode" placeholder="e.g., WM">
+                                    <small class="info-text">Auto-generated from Location Name</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="edit-county">County</label>
+                                    <select class="form-control" id="edit-county" required>
+                                        <option value="Kauai">Kauai</option>
+                                        <option value="Oahu">Oahu</option>
+                                        <option value="Maui">Maui</option>
+                                        <option value="Hawaii">Hawaii Island</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="edit-countyCode">County Code</label>
+                                    <input type="text" class="form-control" id="edit-countyCode" placeholder="e.g., KAU">
+                                    <small class="info-text">Auto-generated from County</small>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="edit-address">Address</label>
+                                    <input type="text" class="form-control" id="edit-address" placeholder="Full address">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="edit-locationEmail">Email</label>
+                                    <input type="email" class="form-control" id="edit-locationEmail" placeholder="location@example.com">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="accordion" id="editConnectionsAccordion">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="headingConnections">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                    data-bs-target="#collapseConnections" aria-expanded="false" 
+                                                    aria-controls="collapseConnections">
+                                                Connection Settings
+                                            </button>
+                                        </h2>
+                                        <div id="collapseConnections" class="accordion-collapse collapse" 
+                                            aria-labelledby="headingConnections" data-bs-parent="#editConnectionsAccordion">
+                                            <div class="accordion-body">
+                                                <!-- Asana Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Asana Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-asanaUserId" class="form-label">Asana User ID</label>
+                                                            <input type="text" id="edit-asanaUserId" class="form-control" placeholder="Asana User ID for location manager">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-asanaPAT" class="form-label">Asana Personal Access Token</label>
+                                                            <input type="text" id="edit-asanaPAT" class="form-control" placeholder="Asana Personal Access Token">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- QuickBooks Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">QuickBooks Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-quickbooksClass" class="form-label">QuickBooks Class</label>
+                                                            <input type="text" id="edit-quickbooksClass" class="form-control" placeholder="Enter QuickBooks Class name">
+                                                            <div class="form-text">The class name used to identify this location in QuickBooks</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-quickbooksClientId" class="form-label">QuickBooks Client ID</label>
+                                                            <input type="text" id="edit-quickbooksClientId" class="form-control" placeholder="Enter QuickBooks Client ID">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Reviews Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Reviews Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-googleReviewsUrl" class="form-label">Google Reviews URL</label>
+                                                            <input type="url" id="edit-googleReviewsUrl" class="form-control" placeholder="Enter Google Reviews page URL">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-yelpReviewsUrl" class="form-label">Yelp Reviews URL</label>
+                                                            <input type="url" id="edit-yelpReviewsUrl" class="form-control" placeholder="Enter Yelp page URL">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Toast POS Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Toast POS Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-toastLocationId" class="form-label">Toast Location ID</label>
+                                                            <input type="text" id="edit-toastLocationId" class="form-control" placeholder="Enter Toast Location ID">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-toastApiKey" class="form-label">Toast API Key</label>
+                                                            <input type="text" id="edit-toastApiKey" class="form-control" placeholder="Enter Toast API Key">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Sling Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Sling Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-slingLocationId" class="form-label">Sling Location ID</label>
+                                                            <input type="text" id="edit-slingLocationId" class="form-control" placeholder="Enter Sling Location ID">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-slingApiKey" class="form-label">Sling API Key</label>
+                                                            <input type="text" id="edit-slingApiKey" class="form-control" placeholder="Enter Sling API Key">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Twilio Integration -->
+                                                <div class="mb-4">
+                                                    <h6 class="mb-3">Twilio Integration</h6>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-twilioPhoneNumber" class="form-label">Twilio Phone Number</label>
+                                                            <input type="text" id="edit-twilioPhoneNumber" class="form-control" placeholder="Enter Twilio Phone Number (e.g., +18081234567)">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-twilioSid" class="form-label">Twilio SID</label>
+                                                            <input type="text" id="edit-twilioSid" class="form-control" placeholder="Enter Twilio SID">
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col">
+                                                            <label for="edit-twilioAuthToken" class="form-label">Twilio Auth Token</label>
+                                                            <input type="text" id="edit-twilioAuthToken" class="form-control" placeholder="Enter Twilio Auth Token">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mt-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit-active">
+                                <label class="form-check-label" for="edit-active">
+                                    Active Location
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label for="edit-notes">Notes</label>
+                            <textarea class="form-control" id="edit-notes" rows="3" placeholder="Additional notes"></textarea>
+                        </div>
+                    </form>
+                    <div id="edit-location-status" class="mt-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-location-btn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Include Sling Integration Helper Functions -->
+    <script src="js/sling-integration.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.appspot.com",
+            messagingSenderId: "344579778389",
+            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
+            measurementId: "G-VBP44WBTCP"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // DOM elements
+        const locationsListDiv = document.getElementById('locations-list');
+        const addLocationForm = document.getElementById('add-location-form');
+        const addLocationStatusDiv = document.getElementById('add-location-status');
+        const deleteAllLocationsBtn = document.getElementById('delete-all-locations');
+        const statusLogDiv = document.getElementById('status-log');
+        const businessGroupSelect = document.getElementById('businessGroup');
+        const customGroupContainer = document.getElementById('customGroupContainer');
+        const customGroupNameInput = document.getElementById('customGroupName');
+        const groupCodeInput = document.getElementById('groupCode');
+        const locationNameInput = document.getElementById('locationName');
+        const locationCodeInput = document.getElementById('locationCode');
+        const countySelect = document.getElementById('county');
+        const countyCodeInput = document.getElementById('countyCode');
+
+        // Add status message
+        function addStatus(message, isError = false) {
+            const statusItem = document.createElement('div');
+            statusItem.className = isError ? 'alert alert-danger' : 'alert alert-info';
+            statusItem.textContent = message;
+            statusLogDiv.appendChild(statusItem);
+            statusLogDiv.scrollTop = statusLogDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Generate a location ID
+        function generateLocationId(location) {
+            // Use the group code + county code + location code if available
+            if (location.groupCode && location.countyCode && location.locationCode) {
+                return `${location.groupCode}-${location.countyCode}-${location.locationCode}`.toLowerCase();
+            }
+            
+            // Otherwise use a random ID
+            return `loc-${Math.random().toString(36).substring(2, 8)}`;
+        }
+
+        // Generate code from text
+        function generateCodeFromText(text) {
+            if (!text) return '';
+            
+            if (text.includes(' ')) {
+                // If multiple words, use first letter of each word
+                return text.split(' ')
+                    .map(word => word.charAt(0).toUpperCase())
+                    .join('');
+            } else {
+                // If single word, use first 2-4 characters
+                return text.substring(0, Math.min(4, text.length)).toUpperCase();
+            }
+        }
+
+        // Get county code
+        function getCountyCode(county) {
+            const countyCodes = {
+                'Kauai': 'KAU',
+                'Oahu': 'OAH',
+                'Maui': 'MAU',
+                'Hawaii': 'HAW',
+                'Hawaii Island': 'HAW'
+            };
+            
+            return countyCodes[county] || county.substring(0, 3).toUpperCase();
+        }
+
+        // Business group change handler
+        businessGroupSelect.addEventListener('change', function() {
+            const selectedValue = this.value;
+            
+            if (selectedValue === 'custom') {
+                customGroupContainer.style.display = 'block';
+                groupCodeInput.value = '';
+                customGroupNameInput.focus();
+            } else {
+                customGroupContainer.style.display = 'none';
+                groupCodeInput.value = generateCodeFromText(selectedValue);
+            }
+        });
+
+        // Custom group name change handler
+        customGroupNameInput.addEventListener('input', function() {
+            groupCodeInput.value = generateCodeFromText(this.value);
+        });
+
+        // Location name change handler
+        locationNameInput.addEventListener('input', function() {
+            locationCodeInput.value = generateCodeFromText(this.value);
+        });
+
+        // County change handler
+        countySelect.addEventListener('change', function() {
+            countyCodeInput.value = getCountyCode(this.value);
+        });
+
+        // Set initial county code
+        countyCodeInput.value = getCountyCode(countySelect.value);
+
+        // Load and display locations
+        async function loadLocations() {
+            try {
+                addStatus("Loading locations...");
+                
+                // Get all locations from the locations collection
+                const locationsSnapshot = await db.collection('locations').get();
+                
+                if (locationsSnapshot.empty) {
+                    locationsListDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            No locations found in the Firestore database.
+                        </div>
+                    `;
+                    addStatus("No locations found in the 'locations' collection", true);
+                    return [];
+                }
+                
+                // Group locations by business group
+                const groupedLocations = {};
+                const allLocations = [];
+                
+                locationsSnapshot.forEach(doc => {
+                    const location = doc.data();
+                    const locationId = doc.id;
+                    
+                    // Save location for later use
+                    allLocations.push({
+                        id: locationId,
+                        data: location
+                    });
+                    
+                    // Group locations by groupName if available
+                    const groupName = location.groupName || location.businessGroup || 'Ungrouped Locations';
+                    const groupCode = location.groupCode || '';
+                    
+                    if (!groupedLocations[groupName]) {
+                        groupedLocations[groupName] = {
+                            code: groupCode,
+                            locations: []
+                        };
+                    }
+                    
+                    // Only add if it has a locationName
+                    if (location.locationName) {
+                        groupedLocations[groupName].locations.push({
+                            id: locationId,
+                            data: location
+                        });
+                    }
+                });
+                
+                // Build accordion for location list tab
+                let locationsHtml = '<div class="accordion" id="locationsAccordion">';
+                let groupIndex = 0;
+                
+                for (const groupName in groupedLocations) {
+                    const group = groupedLocations[groupName];
+                    
+                    // Create a card for this group
+                    locationsHtml += `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading-${groupIndex}">
+                                <button class="accordion-button ${groupIndex > 0 ? 'collapsed' : ''}" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#collapse-${groupIndex}" 
+                                    aria-expanded="${groupIndex === 0 ? 'true' : 'false'}" aria-controls="collapse-${groupIndex}">
+                                    ${groupName}
+                                    ${group.code ? `<span class="badge bg-secondary ms-2">${group.code}</span>` : ''}
+                                    <span class="badge bg-info ms-2">${group.locations.length} locations</span>
+                                </button>
+                            </h2>
+                            <div id="collapse-${groupIndex}" class="accordion-collapse collapse ${groupIndex === 0 ? 'show' : ''}" 
+                                aria-labelledby="heading-${groupIndex}" data-bs-parent="#locationsAccordion">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Location</th>
+                                                    <th>County</th>
+                                                    <th>Location ID</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                    `;
+                    
+                    // Add each location in this group
+                    if (group.locations.length === 0) {
+                        locationsHtml += `
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <em>No locations found for this group</em>
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        group.locations.forEach(location => {
+                            const locationData = location.data;
+                            const documentId = location.id;
+                            const locationId = locationData.locationId || '';
+                            
+                            locationsHtml += `
+                                <tr>
+                                    <td>
+                                        <strong>${locationData.locationName || 'Unnamed'}</strong>
+                                        ${locationData.address ? `<br><small>${locationData.address}</small>` : ''}
+                                    </td>
+                                    <td>${locationData.county || 'N/A'} ${locationData.countyCode ? `(${locationData.countyCode})` : ''}</td>
+                                    <td>${locationId ? locationId : '<span class="text-danger">Not set</span>'}</td>
+                                    <td>${locationData.active ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary edit-location" 
+                                            data-id="${documentId}" data-bs-toggle="modal" data-bs-target="#editLocationModal">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger delete-location" 
+                                            data-id="${documentId}" data-name="${locationData.locationName || 'this location'}">Delete</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    }
+                    
+                    // Close the group card
+                    locationsHtml += `
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    groupIndex++;
+                }
+                
+                locationsHtml += '</div>';
+                
+                // If no valid groups found
+                if (Object.keys(groupedLocations).length === 0) {
+                    locationsListDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            No locations found in the database.
+                        </div>
+                    `;
+                    addStatus("No valid locations found", true);
+                } else {
+                    locationsListDiv.innerHTML = locationsHtml;
+                    addStatus(`Found ${allLocations.length} locations in ${Object.keys(groupedLocations).length} business groups`);
+                    
+                    // Add event listeners for edit and delete buttons
+                    document.querySelectorAll('.edit-location').forEach(button => {
+                        button.addEventListener('click', async () => {
+                            const locationId = button.getAttribute('data-id');
+                            await loadLocationForEditing(locationId);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.delete-location').forEach(button => {
+                        button.addEventListener('click', async () => {
+                            const locationId = button.getAttribute('data-id');
+                            const locationName = button.getAttribute('data-name');
+                            
+                            if (confirm(`Are you sure you want to delete ${locationName}? This cannot be undone.`)) {
+                                try {
+                                    await db.collection('locations').doc(locationId).delete();
+                                    addStatus(`Successfully deleted location: ${locationName}`);
+                                    
+                                    // Refresh the locations list
+                                    loadLocations();
+                                } catch (error) {
+                                    addStatus(`Error deleting location: ${error.message}`, true);
+                                }
+                            }
+                        });
+                    });
+                }
+                
+                return allLocations;
+            } catch (error) {
+                addStatus(`Error loading locations: ${error.message}`, true);
+                console.error("Error:", error);
+                locationsListDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p>Error loading locations: ${error.message}</p>
+                    </div>
+                `;
+                return [];
+            }
+        }
+
+        // Delete all locations handler
+        deleteAllLocationsBtn.addEventListener('click', async function() {
+            if (confirm('Are you sure you want to delete ALL locations? This action cannot be undone!')) {
+                try {
+                    addStatus("Deleting all locations...");
+                    const locationsSnapshot = await db.collection('locations').get();
+                    
+                    if (locationsSnapshot.empty) {
+                        addStatus("No locations to delete.");
+                        return;
+                    }
+                    
+                    // Delete each location document
+                    const batch = db.batch();
+                    locationsSnapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    
+                    await batch.commit();
+                    addStatus(`Successfully deleted ${locationsSnapshot.size} locations.`);
+                    
+                    // Refresh locations list
+                    loadLocations();
+                } catch (error) {
+                    addStatus(`Error deleting locations: ${error.message}`, true);
+                    console.error("Error:", error);
+                }
+            }
+        });
+
+        // Add location form submit handler
+        addLocationForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                // Get form values
+                let businessGroup = businessGroupSelect.value;
+                if (businessGroup === 'custom') {
+                    businessGroup = customGroupNameInput.value.trim();
+                    if (!businessGroup) {
+                        addLocationStatusDiv.innerHTML = `
+                            <div class="alert alert-danger">
+                                Please enter a custom business group name
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+                
+                const groupCode = groupCodeInput.value.trim();
+                const locationName = locationNameInput.value.trim();
+                const locationCode = locationCodeInput.value.trim();
+                const county = countySelect.value;
+                const countyCode = countyCodeInput.value.trim();
+                const address = document.getElementById('address').value.trim();
+                const locationEmail = document.getElementById('locationEmail').value.trim();
+                const asanaUserId = document.getElementById('asanaUserId').value.trim();
+                const asanaPAT = document.getElementById('asanaPAT').value.trim();
+                const active = document.getElementById('active').checked;
+                const notes = document.getElementById('notes').value.trim();
+                
+                // Get the newly added connection fields
+                const quickbooksClass = document.getElementById('quickbooksClass').value.trim();
+                const quickbooksClientId = document.getElementById('quickbooksClientId').value.trim();
+                const googleReviewsUrl = document.getElementById('googleReviewsUrl').value.trim();
+                const yelpReviewsUrl = document.getElementById('yelpReviewsUrl').value.trim();
+                const toastLocationId = document.getElementById('toastLocationId').value.trim();
+                const toastApiKey = document.getElementById('toastApiKey').value.trim();
+                const slingLocationId = document.getElementById('slingLocationId').value.trim();
+                const slingApiKey = document.getElementById('slingApiKey').value.trim();
+                const twilioSid = document.getElementById('twilioSid').value.trim();
+                const twilioAuthToken = document.getElementById('twilioAuthToken').value.trim();
+                
+                // Create location object
+                const location = {
+                    groupName: businessGroup,
+                    groupCode: groupCode,
+                    locationName: locationName,
+                    locationCode: locationCode,
+                    county: county,
+                    countyCode: countyCode,
+                    address: address,
+                    locationEmail: locationEmail,
+                    asanaUserId: asanaUserId,
+                    asanaPAT: asanaPAT,
+                    active: active,
+                    notes: notes,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    // Add the new connection data
+                    connections: {
+                        quickbooks: {
+                            class: quickbooksClass,
+                            clientId: quickbooksClientId
+                        },
+                        reviews: {
+                            google: googleReviewsUrl,
+                            yelp: yelpReviewsUrl
+                        },
+                        toast: {
+                            locationId: toastLocationId,
+                            apiKey: toastApiKey
+                        },
+                        sling: {
+                            locationId: slingLocationId,
+                            apiKey: slingApiKey
+                        },
+                        twilio: {
+                            sid: twilioSid,
+                            authToken: twilioAuthToken
+                        }
+                    }
+                };
+                
+                // Generate location ID
+                const locationId = generateLocationId(location);
+                location.locationId = locationId;
+                
+                // Create a unique document ID based on the location ID
+                const docId = locationId;
+                
+                // Add to Firestore
+                await db.collection('locations').doc(docId).set(location);
+                
+                // Show success message
+                addLocationStatusDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        Location "${locationName}" created successfully with ID: ${locationId}
+                    </div>
+                `;
+                
+                // Reset form
+                addLocationForm.reset();
+                businessGroupSelect.value = '';
+                groupCodeInput.value = '';
+                locationCodeInput.value = '';
+                countySelect.value = 'Kauai';
+                countyCodeInput.value = 'KAU';
+                customGroupContainer.style.display = 'none';
+                
+                // Add status message
+                addStatus(`Added new location: ${locationName} with ID: ${locationId}`);
+                
+                // Reload locations
+                loadLocations();
+            } catch (error) {
+                addLocationStatusDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error creating location: ${error.message}
+                    </div>
+                `;
+                addStatus(`Error creating location: ${error.message}`, true);
+            }
+        });
+
+        // Function to load location data for editing
+        async function loadLocationForEditing(locationId) {
+            try {
+                addStatus(`Loading location ${locationId} for editing...`);
+                
+                // Get the location document
+                const locationDoc = await db.collection('locations').doc(locationId).get();
+                
+                if (!locationDoc.exists) {
+                    addStatus(`Location with ID ${locationId} not found!`, true);
+                    return;
+                }
+                
+                const locationData = locationDoc.data();
+                
+                // Set the edit form fields
+                document.getElementById('edit-location-id').value = locationId;
+                
+                // Set business group
+                const editBusinessGroupSelect = document.getElementById('edit-businessGroup');
+                const editCustomGroupContainer = document.getElementById('edit-customGroupContainer');
+                const editCustomGroupNameInput = document.getElementById('edit-customGroupName');
+                
+                if (['JoJo\'s Shave Ice', 'Barrel'].includes(locationData.groupName)) {
+                    editBusinessGroupSelect.value = locationData.groupName;
+                    editCustomGroupContainer.style.display = 'none';
+                } else {
+                    editBusinessGroupSelect.value = 'custom';
+                    editCustomGroupContainer.style.display = 'block';
+                    editCustomGroupNameInput.value = locationData.groupName || '';
+                }
+                
+                // Set other basic fields
+                document.getElementById('edit-groupCode').value = locationData.groupCode || '';
+                document.getElementById('edit-locationName').value = locationData.locationName || '';
+                document.getElementById('edit-locationCode').value = locationData.locationCode || '';
+                document.getElementById('edit-county').value = locationData.county || 'Kauai';
+                document.getElementById('edit-countyCode').value = locationData.countyCode || '';
+                document.getElementById('edit-address').value = locationData.address || '';
+                document.getElementById('edit-locationEmail').value = locationData.locationEmail || '';
+                document.getElementById('edit-active').checked = locationData.active !== false;
+                document.getElementById('edit-notes').value = locationData.notes || '';
+                
+                // Set Asana fields
+                document.getElementById('edit-asanaUserId').value = locationData.asanaUserId || '';
+                document.getElementById('edit-asanaPAT').value = locationData.asanaPAT || '';
+                
+                // Set connection fields
+                const connections = locationData.connections || {};
+                
+                // Set Sling fields
+                if (connections.sling) {
+                    document.getElementById('edit-slingLocationId').value = connections.sling.locationId || '';
+                    document.getElementById('edit-slingApiKey').value = connections.sling.apiKey || '';
+                } else {
+                    document.getElementById('edit-slingLocationId').value = '';
+                    document.getElementById('edit-slingApiKey').value = '';
+                }
+                
+                // Set QuickBooks fields
+                if (connections.quickbooks) {
+                    document.getElementById('edit-quickbooksClass').value = connections.quickbooks.class || '';
+                    document.getElementById('edit-quickbooksClientId').value = connections.quickbooks.clientId || '';
+                } else {
+                    document.getElementById('edit-quickbooksClass').value = '';
+                    document.getElementById('edit-quickbooksClientId').value = '';
+                }
+                
+                // Set Reviews fields
+                if (connections.reviews) {
+                    document.getElementById('edit-googleReviewsUrl').value = connections.reviews.google || '';
+                    document.getElementById('edit-yelpReviewsUrl').value = connections.reviews.yelp || '';
+                } else {
+                    document.getElementById('edit-googleReviewsUrl').value = '';
+                    document.getElementById('edit-yelpReviewsUrl').value = '';
+                }
+                
+                // Set Toast fields
+                if (connections.toast) {
+                    document.getElementById('edit-toastLocationId').value = connections.toast.locationId || '';
+                    document.getElementById('edit-toastApiKey').value = connections.toast.apiKey || '';
+                } else {
+                    document.getElementById('edit-toastLocationId').value = '';
+                    document.getElementById('edit-toastApiKey').value = '';
+                }
+                
+                // Set Twilio fields
+                if (connections.twilio) {
+                    document.getElementById('edit-twilioPhoneNumber').value = connections.twilio.phoneNumber || '';
+                    document.getElementById('edit-twilioSid').value = connections.twilio.sid || '';
+                    document.getElementById('edit-twilioAuthToken').value = connections.twilio.authToken || '';
+                } else {
+                    document.getElementById('edit-twilioPhoneNumber').value = '';
+                    document.getElementById('edit-twilioSid').value = '';
+                    document.getElementById('edit-twilioAuthToken').value = '';
+                }
+                
+                // Set up event handlers for the edit form
+                setupEditFormHandlers();
+                
+                // Clear any previous error messages
+                document.getElementById('edit-location-status').innerHTML = '';
+                
+                addStatus(`Location ${locationId} loaded for editing.`);
+            } catch (error) {
+                addStatus(`Error loading location for editing: ${error.message}`, true);
+                console.error("Error:", error);
+            }
+        }
+        
+        // Function to set up event handlers for the edit form
+        function setupEditFormHandlers() {
+            // Business group change handler
+            const editBusinessGroupSelect = document.getElementById('edit-businessGroup');
+            const editCustomGroupContainer = document.getElementById('edit-customGroupContainer');
+            const editCustomGroupNameInput = document.getElementById('edit-customGroupName');
+            const editGroupCodeInput = document.getElementById('edit-groupCode');
+            
+            editBusinessGroupSelect.addEventListener('change', function() {
+                const selectedValue = this.value;
+                
+                if (selectedValue === 'custom') {
+                    editCustomGroupContainer.style.display = 'block';
+                    editGroupCodeInput.value = '';
+                    editCustomGroupNameInput.focus();
+                } else {
+                    editCustomGroupContainer.style.display = 'none';
+                    editGroupCodeInput.value = generateCodeFromText(selectedValue);
+                }
+            });
+            
+            // Custom group name change handler
+            editCustomGroupNameInput.addEventListener('input', function() {
+                editGroupCodeInput.value = generateCodeFromText(this.value);
+            });
+            
+            // Location name change handler
+            const editLocationNameInput = document.getElementById('edit-locationName');
+            const editLocationCodeInput = document.getElementById('edit-locationCode');
+            
+            editLocationNameInput.addEventListener('input', function() {
+                editLocationCodeInput.value = generateCodeFromText(this.value);
+            });
+            
+            // County change handler
+            const editCountySelect = document.getElementById('edit-county');
+            const editCountyCodeInput = document.getElementById('edit-countyCode');
+            
+            editCountySelect.addEventListener('change', function() {
+                editCountyCodeInput.value = getCountyCode(this.value);
+            });
+            
+            // Save button handler
+            document.getElementById('save-location-btn').addEventListener('click', saveLocationChanges);
+        }
+        
+        // Function to save location changes
+        async function saveLocationChanges() {
+            try {
+                const locationId = document.getElementById('edit-location-id').value;
+                const editLocationStatusDiv = document.getElementById('edit-location-status');
+                
+                addStatus(`Saving changes to location ${locationId}...`);
+                
+                // Get form values
+                let businessGroup = document.getElementById('edit-businessGroup').value;
+                if (businessGroup === 'custom') {
+                    businessGroup = document.getElementById('edit-customGroupName').value.trim();
+                    if (!businessGroup) {
+                        editLocationStatusDiv.innerHTML = `
+                            <div class="alert alert-danger">
+                                Please enter a custom business group name
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+                
+                const groupCode = document.getElementById('edit-groupCode').value.trim();
+                const locationName = document.getElementById('edit-locationName').value.trim();
+                const locationCode = document.getElementById('edit-locationCode').value.trim();
+                const county = document.getElementById('edit-county').value;
+                const countyCode = document.getElementById('edit-countyCode').value.trim();
+                const address = document.getElementById('edit-address').value.trim();
+                const locationEmail = document.getElementById('edit-locationEmail').value.trim();
+                const asanaUserId = document.getElementById('edit-asanaUserId').value.trim();
+                const asanaPAT = document.getElementById('edit-asanaPAT').value.trim();
+                const active = document.getElementById('edit-active').checked;
+                const notes = document.getElementById('edit-notes').value.trim();
+                
+                // Get the Sling integration fields
+                const slingLocationId = document.getElementById('edit-slingLocationId').value.trim();
+                const slingApiKey = document.getElementById('edit-slingApiKey').value.trim();
+                
+                // Get QuickBooks fields
+                const quickbooksClass = document.getElementById('edit-quickbooksClass').value.trim();
+                const quickbooksClientId = document.getElementById('edit-quickbooksClientId').value.trim();
+                
+                // Get Reviews fields
+                const googleReviewsUrl = document.getElementById('edit-googleReviewsUrl').value.trim();
+                const yelpReviewsUrl = document.getElementById('edit-yelpReviewsUrl').value.trim();
+                
+                // Get Toast fields
+                const toastLocationId = document.getElementById('edit-toastLocationId').value.trim();
+                const toastApiKey = document.getElementById('edit-toastApiKey').value.trim();
+                
+                // Get Twilio fields
+                const twilioPhoneNumber = document.getElementById('edit-twilioPhoneNumber').value.trim();
+                const twilioSid = document.getElementById('edit-twilioSid').value.trim();
+                const twilioAuthToken = document.getElementById('edit-twilioAuthToken').value.trim();
+                
+                // Create updated location object
+                const updatedLocation = {
+                    groupName: businessGroup,
+                    groupCode: groupCode,
+                    locationName: locationName,
+                    locationCode: locationCode,
+                    county: county,
+                    countyCode: countyCode,
+                    address: address,
+                    locationEmail: locationEmail,
+                    asanaUserId: asanaUserId,
+                    asanaPAT: asanaPAT,
+                    active: active,
+                    notes: notes,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    connections: {
+                        sling: {
+                            locationId: slingLocationId,
+                            apiKey: slingApiKey
+                        },
+                        quickbooks: {
+                            class: quickbooksClass,
+                            clientId: quickbooksClientId
+                        },
+                        reviews: {
+                            google: googleReviewsUrl,
+                            yelp: yelpReviewsUrl
+                        },
+                        toast: {
+                            locationId: toastLocationId,
+                            apiKey: toastApiKey
+                        },
+                        twilio: {
+                            phoneNumber: twilioPhoneNumber,
+                            sid: twilioSid,
+                            authToken: twilioAuthToken
+                        }
+                    }
+                };
+                
+                // Make sure we preserve the existing locationId
+                const locationDoc = await db.collection('locations').doc(locationId).get();
+                if (locationDoc.exists) {
+                    const locationData = locationDoc.data();
+                    updatedLocation.locationId = locationData.locationId;
+                    
+                    // Preserve other connection settings if they exist
+                    if (locationData.connections) {
+                        const existingConnections = locationData.connections;
+                        updatedLocation.connections = {
+                            ...existingConnections,
+                            sling: {
+                                locationId: slingLocationId,
+                                apiKey: slingApiKey
+                            },
+                            quickbooks: {
+                                class: quickbooksClass,
+                                clientId: quickbooksClientId
+                            },
+                            reviews: {
+                                google: googleReviewsUrl,
+                                yelp: yelpReviewsUrl
+                            },
+                            toast: {
+                                locationId: toastLocationId,
+                                apiKey: toastApiKey
+                            },
+                            twilio: {
+                                phoneNumber: twilioPhoneNumber,
+                                sid: twilioSid,
+                                authToken: twilioAuthToken
+                            }
+                        };
+                    }
+                    
+                    // Preserve creation timestamp
+                    if (locationData.createdAt) {
+                        updatedLocation.createdAt = locationData.createdAt;
+                    }
+                }
+                
+                // Update in Firestore
+                await db.collection('locations').doc(locationId).update(updatedLocation);
+                
+                // Show success message
+                editLocationStatusDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        Location "${locationName}" updated successfully!
+                    </div>
+                `;
+                
+                // Add status message
+                addStatus(`Updated location: ${locationName} with ID: ${locationId}`);
+                
+                // Reload locations
+                await loadLocations();
+                
+                // Close the modal after a short delay
+                setTimeout(() => {
+                    const editLocationModal = bootstrap.Modal.getInstance(document.getElementById('editLocationModal'));
+                    if (editLocationModal) {
+                        editLocationModal.hide();
+                    }
+                }, 1500);
+            } catch (error) {
+                const editLocationStatusDiv = document.getElementById('edit-location-status');
+                editLocationStatusDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error updating location: ${error.message}
+                    </div>
+                `;
+                addStatus(`Error updating location: ${error.message}`, true);
+                console.error("Error:", error);
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async function() {
+            addStatus("Welcome to the JoJo's Shave Ice Location Manager!");
+            
+            // Load locations
+            await loadLocations();
+            
+            // Set up Sling integration auto-population
+            setupSlingFormAutoPopulation();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Test</title>
+</head>
+<body>
+    <h1>Location Test</h1>
+    
+    <div>
+        <h2>Locations</h2>
+        <select id="locationSelect">
+            <option value="">Loading locations...</option>
+        </select>
+    </div>
+    
+    <div id="results">
+        <h2>Debug Output</h2>
+        <pre id="debug"></pre>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Debug helper
+        function log(message) {
+            console.log(message);
+            const debug = document.getElementById('debug');
+            debug.textContent += message + '\n';
+        }
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.firebasestorage.app",
+            messagingSenderId: "344579778389",
+            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
+            measurementId: "G-VBP44WBTCP"
+        };
+
+        // Initialize Firebase
+        log("Initializing Firebase");
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            log("Firebase initialized successfully");
+        } catch (error) {
+            log("Error initializing Firebase: " + error.message);
+        }
+
+        // Load locations from Firestore
+        function loadLocations() {
+            const locationSelect = document.getElementById('locationSelect');
+            
+            log("Starting location loading");
+            
+            // Show loading state
+            locationSelect.innerHTML = '<option value="">Loading locations...</option>';
+            
+            db.collection('locations')
+                .get()
+                .then(snapshot => {
+                    log("Received snapshot - doc count: " + snapshot.size);
+                    const locations = [];
+                    
+                    snapshot.forEach(doc => {
+                        log("Processing location: " + doc.id);
+                        locations.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    if (locations.length === 0) {
+                        log("No locations found");
+                        locationSelect.innerHTML = '<option value="">No locations found</option>';
+                        return;
+                    }
+                    
+                    // Update dropdown
+                    log("Building dropdown with " + locations.length + " locations");
+                    locationSelect.innerHTML = '<option value="">Select a location</option>';
+                    
+                    locations.forEach(location => {
+                        log("Adding location to dropdown: " + location.locationName);
+                        const option = document.createElement('option');
+                        option.value = location.id;
+                        option.textContent = location.locationName;
+                        locationSelect.appendChild(option);
+                    });
+                    
+                    log("Locations loaded successfully");
+                })
+                .catch(error => {
+                    log("Error loading locations: " + error.message);
+                    locationSelect.innerHTML = '<option value="">Error loading locations</option>';
+                });
+        }
+
+        // Wait for DOM to be loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            log("DOM loaded");
+            
+            // Load locations
+            setTimeout(() => {
+                log("Starting location load after delay");
+                loadLocations();
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

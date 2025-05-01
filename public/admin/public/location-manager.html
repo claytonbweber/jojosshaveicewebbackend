@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Location Manager</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom styles -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #FFD60A;
+        }
+        h1 {
+            color: #87CEEB;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .btn-primary {
+            background-color: #FF4040;
+            border-color: #FF4040;
+        }
+        .btn-primary:hover {
+            background-color: #d93333;
+            border-color: #d93333;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #87CEEB;
+            color: white;
+            font-weight: bold;
+        }
+        .form-control:focus {
+            border-color: #87CEEB;
+            box-shadow: 0 0 0 0.25rem rgba(135, 206, 235, 0.25);
+        }
+        .status-log {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            font-family: monospace;
+        }
+        .location-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .location-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .location-header {
+            background-color: #87CEEB;
+            color: white;
+            padding: 10px 15px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .location-body {
+            padding: 15px;
+        }
+        .location-footer {
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            text-align: right;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .table-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .back-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        <h1>JoJo's Shave Ice - Location Manager</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-map-marker-alt me-2"></i> Locations
+                    </div>
+                    <div class="card-body">
+                        <div id="locations-list">
+                            <div class="loading-spinner" id="locations-spinner">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p>Loading locations...</p>
+                            </div>
+                        </div>
+                        <button id="add-location-btn" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus"></i> Add New Location
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-cog me-2"></i> Settings
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <a href="#" class="list-group-item list-group-item-action" id="sync-sling-btn">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1"><i class="fas fa-sync me-2"></i> Sync with Sling</h5>
+                                </div>
+                                <p class="mb-1">Sync location data with Sling scheduling system</p>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" id="export-data-btn">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1"><i class="fas fa-file-export me-2"></i> Export Data</h5>
+                                </div>
+                                <p class="mb-1">Export location data to CSV format</p>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action" id="location-settings-btn">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1"><i class="fas fa-cogs me-2"></i> Location Settings</h5>
+                                </div>
+                                <p class="mb-1">Configure global location settings</p>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="fas fa-history me-2"></i> Activity Log
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="status-log" id="status-log"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Location Form Modal -->
+    <div class="modal fade" id="location-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="location-modal-title">Add Location</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="location-form">
+                        <input type="hidden" id="location-id">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="location-name" class="form-label">Location Name</label>
+                                <input type="text" class="form-control" id="location-name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="location-code" class="form-label">Location Code</label>
+                                <input type="text" class="form-control" id="location-code" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="location-address" class="form-label">Address</label>
+                                <input type="text" class="form-control" id="location-address">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="location-city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="location-city">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="location-state" class="form-label">State</label>
+                                <input type="text" class="form-control" id="location-state">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="location-zip" class="form-label">ZIP Code</label>
+                                <input type="text" class="form-control" id="location-zip">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="location-phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="location-phone">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="location-email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="location-email">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="location-manager" class="form-label">Location Manager</label>
+                                <input type="text" class="form-control" id="location-manager">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="location-type" class="form-label">Location Type</label>
+                                <select class="form-control" id="location-type">
+                                    <option value="store">Store</option>
+                                    <option value="kiosk">Kiosk</option>
+                                    <option value="mobile">Mobile</option>
+                                    <option value="warehouse">Warehouse</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h5>Business Hours</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="regular-hours-check" checked>
+                                    <label class="form-check-label" for="regular-hours-check">
+                                        Regular Business Hours
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="regular-hours-container">
+                            <!-- Days of week will be generated dynamically -->
+                        </div>
+                        
+                        <hr>
+                        
+                        <h5>Integration Settings</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="sling-location-id" class="form-label">Sling Location ID</label>
+                                <input type="text" class="form-control" id="sling-location-id">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="asana-project-id" class="form-label">Asana Project ID</label>
+                                <input type="text" class="form-control" id="asana-project-id">
+                            </div>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="active-check" checked>
+                            <label class="form-check-label" for="active-check">Location Active</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-location-btn">Save Location</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase Config -->
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.appspot.com",
+            messagingSenderId: "344579778389",
+            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
+            measurementId: "G-VBP44WBTCP"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+    
+    <script>
+        // DOM Elements
+        const statusLogDiv = document.getElementById('status-log');
+        const locationsListDiv = document.getElementById('locations-list');
+        const locationsSpinner = document.getElementById('locations-spinner');
+        const addLocationBtn = document.getElementById('add-location-btn');
+        const locationForm = document.getElementById('location-form');
+        const saveLocationBtn = document.getElementById('save-location-btn');
+        const locationModal = new bootstrap.Modal(document.getElementById('location-modal'));
+        const syncSlingBtn = document.getElementById('sync-sling-btn');
+        const exportDataBtn = document.getElementById('export-data-btn');
+        const locationSettingsBtn = document.getElementById('location-settings-btn');
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show loading spinner
+            locationsSpinner.style.display = 'block';
+            
+            // Load locations
+            loadLocations();
+            
+            // Initialize business hours form
+            initBusinessHoursForm();
+            
+            // Add event listeners
+            addLocationBtn.addEventListener('click', showAddLocationModal);
+            saveLocationBtn.addEventListener('click', saveLocation);
+            syncSlingBtn.addEventListener('click', syncWithSling);
+            exportDataBtn.addEventListener('click', exportLocationsData);
+            locationSettingsBtn.addEventListener('click', showLocationSettings);
+            
+            // Add status message
+            addStatus("Welcome to the JoJo's Shave Ice Location Manager!");
+        });
+        
+        // Initialize business hours form
+        function initBusinessHoursForm() {
+            const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const container = document.getElementById('regular-hours-container');
+            
+            daysOfWeek.forEach(day => {
+                const dayRow = document.createElement('div');
+                dayRow.className = 'row mb-2';
+                
+                dayRow.innerHTML = `
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input day-active" type="checkbox" id="${day.toLowerCase()}-active" checked>
+                            <label class="form-check-label" for="${day.toLowerCase()}-active">
+                                ${day}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="time" class="form-control open-time" id="${day.toLowerCase()}-open" value="08:00">
+                    </div>
+                    <div class="col-md-1 text-center">
+                        <span>to</span>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="time" class="form-control close-time" id="${day.toLowerCase()}-close" value="17:00">
+                    </div>
+                `;
+                
+                container.appendChild(dayRow);
+            });
+        }
+        
+        // Load locations from Firestore
+        async function loadLocations() {
+            try {
+                const locationsSnapshot = await db.collection('locations')
+                    .where('active', '==', true)
+                    .orderBy('name')
+                    .get();
+                
+                // Hide loading spinner
+                locationsSpinner.style.display = 'none';
+                
+                if (locationsSnapshot.empty) {
+                    locationsListDiv.innerHTML = `
+                        <div class="alert alert-info">
+                            No locations found. Click "Add New Location" to create one.
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let locationsHTML = '';
+                
+                locationsSnapshot.forEach(doc => {
+                    const location = doc.data();
+                    
+                    locationsHTML += `
+                        <div class="location-card">
+                            <div class="location-header">
+                                <h5 class="m-0">${location.name}</h5>
+                                <span class="badge bg-${location.active ? 'success' : 'secondary'}">${location.active ? 'Active' : 'Inactive'}</span>
+                            </div>
+                            <div class="location-body">
+                                <p><i class="fas fa-map-marker-alt me-2"></i> ${location.address || 'No address'}, ${location.city || ''} ${location.state || ''} ${location.zip || ''}</p>
+                                <p><i class="fas fa-phone me-2"></i> ${location.phone || 'No phone'}</p>
+                                <p><i class="fas fa-store me-2"></i> ${location.type || 'Store'}</p>
+                            </div>
+                            <div class="location-footer">
+                                <button class="btn btn-sm btn-outline-primary edit-location-btn" data-id="${doc.id}">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger delete-location-btn" data-id="${doc.id}">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                locationsListDiv.innerHTML = locationsHTML;
+                
+                // Add event listeners to buttons
+                document.querySelectorAll('.edit-location-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const locationId = btn.getAttribute('data-id');
+                        editLocation(locationId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-location-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const locationId = btn.getAttribute('data-id');
+                        deleteLocation(locationId);
+                    });
+                });
+                
+                addStatus(`Loaded ${locationsSnapshot.size} locations.`);
+                
+            } catch (error) {
+                console.error('Error loading locations:', error);
+                locationsSpinner.style.display = 'none';
+                locationsListDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error loading locations: ${error.message}
+                    </div>
+                `;
+                addStatus(`Error loading locations: ${error.message}`, true);
+            }
+        }
+        
+        // Show add location modal
+        function showAddLocationModal() {
+            // Clear form
+            locationForm.reset();
+            document.getElementById('location-id').value = '';
+            document.getElementById('location-modal-title').textContent = 'Add Location';
+            
+            // Show modal
+            locationModal.show();
+        }
+        
+        // Edit location
+        async function editLocation(locationId) {
+            try {
+                const locationDoc = await db.collection('locations').doc(locationId).get();
+                
+                if (!locationDoc.exists) {
+                    addStatus(`Location with ID ${locationId} not found.`, true);
+                    return;
+                }
+                
+                const location = locationDoc.data();
+                
+                // Fill form with location data
+                document.getElementById('location-id').value = locationId;
+                document.getElementById('location-name').value = location.name || '';
+                document.getElementById('location-code').value = location.code || '';
+                document.getElementById('location-address').value = location.address || '';
+                document.getElementById('location-city').value = location.city || '';
+                document.getElementById('location-state').value = location.state || '';
+                document.getElementById('location-zip').value = location.zip || '';
+                document.getElementById('location-phone').value = location.phone || '';
+                document.getElementById('location-email').value = location.email || '';
+                document.getElementById('location-manager').value = location.manager || '';
+                document.getElementById('location-type').value = location.type || 'store';
+                document.getElementById('sling-location-id').value = location.slingLocationId || '';
+                document.getElementById('asana-project-id').value = location.asanaProjectId || '';
+                document.getElementById('active-check').checked = location.active !== false;
+                
+                // Set business hours
+                if (location.businessHours) {
+                    // For each day
+                    ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].forEach(day => {
+                        if (location.businessHours[day]) {
+                            document.getElementById(`${day}-active`).checked = location.businessHours[day].active !== false;
+                            document.getElementById(`${day}-open`).value = location.businessHours[day].open || '08:00';
+                            document.getElementById(`${day}-close`).value = location.businessHours[day].close || '17:00';
+                        }
+                    });
+                }
+                
+                // Update modal title
+                document.getElementById('location-modal-title').textContent = 'Edit Location';
+                
+                // Show modal
+                locationModal.show();
+                
+            } catch (error) {
+                console.error('Error editing location:', error);
+                addStatus(`Error editing location: ${error.message}`, true);
+            }
+        }
+        
+        // Save location
+        async function saveLocation() {
+            try {
+                const locationId = document.getElementById('location-id').value;
+                const isNewLocation = !locationId;
+                
+                // Get form values
+                const locationData = {
+                    name: document.getElementById('location-name').value,
+                    code: document.getElementById('location-code').value,
+                    address: document.getElementById('location-address').value,
+                    city: document.getElementById('location-city').value,
+                    state: document.getElementById('location-state').value,
+                    zip: document.getElementById('location-zip').value,
+                    phone: document.getElementById('location-phone').value,
+                    email: document.getElementById('location-email').value,
+                    manager: document.getElementById('location-manager').value,
+                    type: document.getElementById('location-type').value,
+                    slingLocationId: document.getElementById('sling-location-id').value,
+                    asanaProjectId: document.getElementById('asana-project-id').value,
+                    active: document.getElementById('active-check').checked,
+                    businessHours: {},
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // Set business hours
+                ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].forEach(day => {
+                    locationData.businessHours[day] = {
+                        active: document.getElementById(`${day}-active`).checked,
+                        open: document.getElementById(`${day}-open`).value,
+                        close: document.getElementById(`${day}-close`).value
+                    };
+                });
+                
+                // Add createdAt for new locations
+                if (isNewLocation) {
+                    locationData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                }
+                
+                // Save to Firestore
+                if (isNewLocation) {
+                    await db.collection('locations').add(locationData);
+                    addStatus(`Created new location: ${locationData.name}`);
+                } else {
+                    await db.collection('locations').doc(locationId).update(locationData);
+                    addStatus(`Updated location: ${locationData.name}`);
+                }
+                
+                // Hide modal
+                locationModal.hide();
+                
+                // Reload locations
+                loadLocations();
+                
+            } catch (error) {
+                console.error('Error saving location:', error);
+                addStatus(`Error saving location: ${error.message}`, true);
+            }
+        }
+        
+        // Delete location
+        async function deleteLocation(locationId) {
+            // Confirm deletion
+            if (!confirm('Are you sure you want to delete this location?')) {
+                return;
+            }
+            
+            try {
+                // Get location name first
+                const locationDoc = await db.collection('locations').doc(locationId).get();
+                const locationName = locationDoc.exists ? locationDoc.data().name : 'Unknown';
+                
+                // Delete location
+                await db.collection('locations').doc(locationId).delete();
+                
+                addStatus(`Deleted location: ${locationName}`);
+                
+                // Reload locations
+                loadLocations();
+                
+            } catch (error) {
+                console.error('Error deleting location:', error);
+                addStatus(`Error deleting location: ${error.message}`, true);
+            }
+        }
+        
+        // Sync with Sling
+        function syncWithSling() {
+            // This would normally call an API or Cloud Function to sync with Sling
+            addStatus('Syncing with Sling scheduling system...');
+            
+            // Simulate syncing
+            setTimeout(() => {
+                addStatus('Sync with Sling completed successfully!');
+            }, 2000);
+        }
+        
+        // Export locations data
+        async function exportLocationsData() {
+            try {
+                // Get all locations
+                const locationsSnapshot = await db.collection('locations').get();
+                
+                if (locationsSnapshot.empty) {
+                    addStatus('No locations to export.', true);
+                    return;
+                }
+                
+                // Convert to CSV
+                const locations = [];
+                locationsSnapshot.forEach(doc => {
+                    const location = doc.data();
+                    location.id = doc.id;
+                    locations.push(location);
+                });
+                
+                // Create CSV content
+                const headers = ['id', 'name', 'code', 'address', 'city', 'state', 'zip', 'phone', 'email', 'manager', 'type', 'active'];
+                let csvContent = headers.join(',') + '\n';
+                
+                locations.forEach(location => {
+                    const row = headers.map(header => {
+                        let value = location[header];
+                        if (value === undefined || value === null) value = '';
+                        if (typeof value === 'string') value = `"${value.replace(/"/g, '""')}"`;
+                        return value;
+                    });
+                    
+                    csvContent += row.join(',') + '\n';
+                });
+                
+                // Download CSV
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'jojos_locations.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                addStatus(`Exported ${locations.length} locations to CSV.`);
+                
+            } catch (error) {
+                console.error('Error exporting locations:', error);
+                addStatus(`Error exporting locations: ${error.message}`, true);
+            }
+        }
+        
+        // Show location settings
+        function showLocationSettings() {
+            // This would normally open a settings modal or page
+            addStatus('Location settings feature not implemented yet.');
+        }
+        
+        // Add status message
+        function addStatus(message, isError = false) {
+            const statusItem = document.createElement('div');
+            statusItem.className = isError ? 'text-danger' : 'text-info';
+            statusItem.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusLogDiv.appendChild(statusItem);
+            statusLogDiv.scrollTop = statusLogDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html> 

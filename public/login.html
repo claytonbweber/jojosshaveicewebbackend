@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Jojo's Shave Ice</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <style>
+        .login-form { display: none; }
+        .login-form.active { display: block; }
+        .login-option-btn { padding: 10px; margin: 5px; cursor: pointer; }
+        .login-option-btn.active { background-color: #ccc; }
+        .error-message, .loading-message { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Jojo's Shave Ice</h1>
+        <div class="version-alert" id="versionAlert">
+            Version 1.0.10 (2024-04-26)
+        </div>
+        
+        <!-- Login Options -->
+        <div class="login-options">
+            <button type="button" id="emailLoginBtn" class="login-option-btn active">Email Login</button>
+            <button type="button" id="passcodeLoginBtn" class="login-option-btn">Passcode Login</button>
+        </div>
+
+        <!-- Email Login Form -->
+        <form id="emailLoginForm" class="login-form active">
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+
+        <!-- Passcode Login Form -->
+        <form id="passcodeLoginForm" class="login-form">
+            <input type="password" id="passcode" placeholder="Passcode" required>
+            <button type="submit">Login</button>
+        </form>
+
+        <!-- Error and Loading Messages -->
+        <div id="error" class="error-message" style="display: none;"></div>
+        <div id="loading" class="loading-message" style="display: none;">Loading...</div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { firebaseConfig } from '/assets/js/firebase-config.js';
+
+        // Initialize Firebase with error handling
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            console.log('Firebase initialized:', app);
+        } catch (error) {
+            console.error('Firebase initialization failed:', error);
+        }
+
+        // Helper function to show error
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Helper function to show loading
+        function showLoading() {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        // Helper function to hide both error and loading
+        function hideMessages() {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Helper function to redirect based on role
+        async function redirectBasedOnRole(employeeData) {
+            console.log('Employee data:', employeeData);
+            console.log('Role:', employeeData?.role);
+            if (!employeeData?.role) {
+                console.error('No role found in employee data');
+                showError('No role assigned to user');
+                return;
+            }
+            sessionStorage.setItem('employeeData', JSON.stringify(employeeData));
+            const user = auth.currentUser;
+            if (user) {
+                const token = await user.getIdToken();
+                sessionStorage.setItem('authToken', token);
+                console.log('Auth token stored:', token);
+            } else {
+                console.error('No authenticated user found');
+                showError('Authentication session expired');
+                return;
+            }
+            const role = employeeData.role.toLowerCase();
+            console.log('Redirecting to role-based portal:', role);
+            switch(role) {
+                case 'admin':
+                    window.location.href = '/portals/base-portal.html';
+                    break;
+                case 'manager':
+                    window.location.href = '/portals/location-portal.html';
+                    break;
+                case 'staff':
+                    window.location.href = '/portals/staff-portal.html';
+                    break;
+                default:
+                    console.error('Invalid role:', role);
+                    showError('Invalid role assigned to user');
+                    window.location.href = '/default-portal';
+            }
+        }
+
+        // Toggle between login forms
+        function switchForm(showEmailForm) {
+            console.log('Switching to:', showEmailForm ? 'email form' : 'passcode form');
+            const emailForm = document.getElementById('emailLoginForm');
+            const passcodeForm = document.getElementById('passcodeLoginForm');
+            const emailBtn = document.getElementById('emailLoginBtn');
+            const passcodeBtn = document.getElementById('passcodeLoginBtn');
+
+            if (!emailForm || !passcodeForm || !emailBtn || !passcodeBtn) {
+                console.error('Form or button elements not found');
+                return;
+            }
+
+            emailForm.classList.toggle('active', showEmailForm);
+            passcodeForm.classList.toggle('active', !showEmailForm);
+            emailBtn.classList.toggle('active', showEmailForm);
+            passcodeBtn.classList.toggle('active', !showEmailForm);
+            hideMessages();
+        }
+
+        // Set up event listeners immediately
+        const emailLoginBtn = document.getElementById('emailLoginBtn');
+        const passcodeLoginBtn = document.getElementById('passcodeLoginBtn');
+
+        if (emailLoginBtn && passcodeLoginBtn) {
+            emailLoginBtn.addEventListener('click', () => {
+                console.log('Email Login button clicked');
+                switchForm(true);
+            });
+            passcodeLoginBtn.addEventListener('click', () => {
+                console.log('Passcode Login button clicked');
+                switchForm(false);
+            });
+        } else {
+            console.error('Login buttons not found in DOM');
+        }
+
+        // Email login form handler
+        document.getElementById('emailLoginForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessages();
+            showLoading();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                console.log('Auth successful:', userCredential.user.uid);
+                
+                const employeesRef = collection(db, 'employees');
+                const q = query(employeesRef, where('email', '==', email));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const employeeData = querySnapshot.docs[0].data();
+                    console.log('Employee data found:', employeeData);
+                    await redirectBasedOnRole(employeeData);
+                } else {
+                    console.error('No employee data found for email:', email);
+                    showError('Employee data not found');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError(error.message || 'Failed to login. Please try again.');
+            }
+        });
+
+        // Passcode login form handler
+        document.getElementById('passcodeLoginForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessages();
+            showLoading();
+
+            const passcode = document.getElementById('passcode').value;
+
+            try {
+                const employeesRef = collection(db, 'employees');
+                const q = query(employeesRef, where('passcode', '==', passcode));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const employeeData = querySnapshot.docs[0].data();
+                    console.log('Employee data found with passcode:', employeeData);
+                    await redirectBasedOnRole(employeeData);
+                } else {
+                    console.error('No employee found with passcode');
+                    showError('Invalid passcode');
+                }
+            } catch (error) {
+                console.error('Passcode login error:', error);
+                showError(error.message || 'Failed to login. Please try again.');
+            }
+        });
+
+        // Start with email form visible
+        switchForm(true);
+    </script>
+</body>
+</html> 

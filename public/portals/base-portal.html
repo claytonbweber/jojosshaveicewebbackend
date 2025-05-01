@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Base Portal</title>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+    <style>
+        :root {
+            --primary-color: #EF6C00;
+            --primary-dark: #E65100;
+            --text-color: #424242;
+            --background-color: #f5f5f5;
+            --card-background: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background-color: var(--card-background);
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        .nav-tab {
+            padding: 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--card-background);
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>JoJo's Shave Ice - Base Portal</h1>
+        <div>
+            <span id="userName"></span>
+            <button class="button" id="logoutButton">Logout</button>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <div class="nav-tab active" data-tab="locations">Locations</div>
+        <div class="nav-tab" data-tab="employees">Employees</div>
+        <div class="nav-tab" data-tab="tasks">Base Tasks</div>
+        <div class="nav-tab" data-tab="settings">Settings</div>
+    </div>
+
+    <div class="content">
+        <!-- Locations Tab -->
+        <div class="tab-content active" id="locationsTab">
+            <div class="card">
+                <h2>Manage Locations</h2>
+                <button class="button" id="addLocationButton">Add Location</button>
+                <div id="locationsList"></div>
+            </div>
+        </div>
+
+        <!-- Employees Tab -->
+        <div class="tab-content" id="employeesTab">
+            <div class="card">
+                <h2>Manage Employees</h2>
+                <button class="button" id="addEmployeeButton">Add Employee</button>
+                <div id="employeesList"></div>
+        </div>
+    </div>
+
+        <!-- Base Tasks Tab -->
+        <div class="tab-content" id="tasksTab">
+            <div class="card">
+                <h2>Manage Base Tasks</h2>
+                <button class="button" id="addTaskButton">Add Task</button>
+                <div id="tasksList"></div>
+        </div>
+    </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content" id="settingsTab">
+            <div class="card">
+                <h2>System Settings</h2>
+                <div id="settingsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Modal -->
+    <div class="modal" id="locationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="locationModalTitle">Add Location</h2>
+                <button class="close-button" id="closeLocationModal">&times;</button>
+            </div>
+            <form id="locationForm">
+                <div class="form-group">
+                    <label for="locationName">Location Name</label>
+                    <input type="text" id="locationName" required>
+                </div>
+                <div class="form-group">
+                    <label for="locationAddress">Address</label>
+                    <input type="text" id="locationAddress" required>
+                </div>
+                <div class="form-group">
+                    <label for="locationPhone">Phone</label>
+                    <input type="tel" id="locationPhone" required>
+                </div>
+                <button type="submit" class="button">Save Location</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db, COLLECTIONS } from './firebase-config.js';
+        import { signOut } from 'firebase/auth';
+        import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+
+        // Check authentication
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        if (!user || user.role !== 'Admin') {
+            window.location.href = 'login.html';
+        }
+
+        // Update UI with user info
+        document.getElementById('userName').textContent = user.name;
+
+        // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                sessionStorage.removeItem('user');
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        });
+
+        // Tab switching
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}Tab`).classList.add('active');
+            });
+        });
+
+        // Location management
+        const locationModal = document.getElementById('locationModal');
+        const locationForm = document.getElementById('locationForm');
+        const locationsList = document.getElementById('locationsList');
+
+        document.getElementById('addLocationButton').addEventListener('click', () => {
+            locationModal.classList.add('active');
+            document.getElementById('locationModalTitle').textContent = 'Add Location';
+            locationForm.reset();
+        });
+
+        document.getElementById('closeLocationModal').addEventListener('click', () => {
+            locationModal.classList.remove('active');
+        });
+
+        locationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const locationData = {
+                    name: document.getElementById('locationName').value,
+                    address: document.getElementById('locationAddress').value,
+                    phone: document.getElementById('locationPhone').value,
+                    status: 'active',
+                createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+
+                await addDoc(collection(db, COLLECTIONS.LOCATIONS), locationData);
+                locationModal.classList.remove('active');
+                loadLocations();
+            } catch (error) {
+                console.error('Error adding location:', error);
+            }
+        });
+
+        async function loadLocations() {
+            try {
+                const locationsSnapshot = await getDocs(collection(db, COLLECTIONS.LOCATIONS));
+                locationsList.innerHTML = '';
+                locationsSnapshot.forEach(doc => {
+                    const location = doc.data();
+                    const locationElement = document.createElement('div');
+                    locationElement.className = 'card';
+                    locationElement.innerHTML = `
+                        <h3>${location.name}</h3>
+                        <p>${location.address}</p>
+                        <p>${location.phone}</p>
+                        <button class="button" onclick="editLocation('${doc.id}')">Edit</button>
+                        <button class="button" onclick="deleteLocation('${doc.id}')">Delete</button>
+                    `;
+                    locationsList.appendChild(locationElement);
+                });
+            } catch (error) {
+                console.error('Error loading locations:', error);
+            }
+        }
+
+        // Initial load
+        loadLocations();
+    </script>
+</body>
+</html>

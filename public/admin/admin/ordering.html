@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Ordering Guides</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #FFD60A;
+        }
+        h1 {
+            color: #87CEEB;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #87CEEB;
+            color: white;
+            font-weight: bold;
+        }
+        .vendor-card {
+            transition: transform 0.3s;
+        }
+        .vendor-card:hover {
+            transform: translateY(-5px);
+        }
+        .product-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .product-item:last-child {
+            border-bottom: none;
+        }
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-primary {
+            background-color: #FF4040;
+            border-color: #FF4040;
+        }
+        .btn-primary:hover {
+            background-color: #d93333;
+            border-color: #d93333;
+        }
+        .contact-info {
+            margin: 10px 0;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        .contact-info p {
+            margin-bottom: 5px;
+        }
+        .order-instructions {
+            margin: 10px 0;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        .vendor-logo {
+            max-width: 100px;
+            max-height: 60px;
+            margin-right: 10px;
+        }
+        .vendor-header {
+            display: flex;
+            align-items: center;
+        }
+        .vendor-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .product-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        .product-details {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .reorder-point {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .product-actions {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>JoJo's Shave Ice - Ordering Guides</h1>
+    
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Ordering Guides</h2>
+            <a href="index.html" class="btn btn-outline-secondary">Back to Dashboard</a>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <strong>Location:</strong> <span id="current-location">Select a location</span>
+                    <div class="mt-2">
+                        <select id="location-select" class="form-select">
+                            <option value="">Select Location</option>
+                            <!-- Locations will be loaded here -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Vendors</span>
+                        <button class="btn btn-sm btn-light" id="add-vendor-btn">Add Vendor</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="vendors-container">
+                            <!-- Sample Vendor Cards -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card vendor-card" data-vendor-id="vendor1">
+                                    <div class="card-body">
+                                        <div class="vendor-header mb-2">
+                                            <img src="https://via.placeholder.com/60x40" alt="Hawaii Syrups" class="vendor-logo">
+                                            <div class="vendor-name">Hawaii Syrups</div>
+                                        </div>
+                                        <div class="card-text">
+                                            <p>Main supplier for syrup products and flavorings</p>
+                                            <div class="contact-info">
+                                                <p><strong>Contact:</strong> John Smith</p>
+                                                <p><strong>Phone:</strong> (808) 555-1234</p>
+                                                <p><strong>Email:</strong> orders@hawaiisyrups.com</p>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <button class="btn btn-sm btn-outline-primary view-products-btn">View Products</button>
+                                            <div>
+                                                <button class="btn btn-sm btn-outline-secondary edit-vendor-btn">Edit</button>
+                                                <button class="btn btn-sm btn-outline-danger delete-vendor-btn">Delete</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-4">
+                                <div class="card vendor-card" data-vendor-id="vendor2">
+                                    <div class="card-body">
+                                        <div class="vendor-header mb-2">
+                                            <img src="https://via.placeholder.com/60x40" alt="Pacific Supplies" class="vendor-logo">
+                                            <div class="vendor-name">Pacific Supplies</div>
+                                        </div>
+                                        <div class="card-text">
+                                            <p>Supplier for cups, spoons, napkins, and other supplies</p>
+                                            <div class="contact-info">
+                                                <p><strong>Contact:</strong> Mary Johnson</p>
+                                                <p><strong>Phone:</strong> (808) 555-5678</p>
+                                                <p><strong>Email:</strong> sales@pacificsupplies.com</p>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <button class="btn btn-sm btn-outline-primary view-products-btn">View Products</button>
+                                            <div>
+                                                <button class="btn btn-sm btn-outline-secondary edit-vendor-btn">Edit</button>
+                                                <button class="btn btn-sm btn-outline-danger delete-vendor-btn">Delete</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-4">
+                                <div class="card vendor-card" data-vendor-id="vendor3">
+                                    <div class="card-body">
+                                        <div class="vendor-header mb-2">
+                                            <img src="https://via.placeholder.com/60x40" alt="Island Ice" class="vendor-logo">
+                                            <div class="vendor-name">Island Ice</div>
+                                        </div>
+                                        <div class="card-text">
+                                            <p>Ice block supplier for shave ice production</p>
+                                            <div class="contact-info">
+                                                <p><strong>Contact:</strong> David Lee</p>
+                                                <p><strong>Phone:</strong> (808) 555-9012</p>
+                                                <p><strong>Email:</strong> orders@islandice.com</p>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <button class="btn btn-sm btn-outline-primary view-products-btn">View Products</button>
+                                            <div>
+                                                <button class="btn btn-sm btn-outline-secondary edit-vendor-btn">Edit</button>
+                                                <button class="btn btn-sm btn-outline-danger delete-vendor-btn">Delete</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Products Section -->
+        <div class="row mb-4 d-none" id="products-section">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <span id="current-vendor-name">Vendor Products</span>
+                            <button class="btn btn-sm btn-outline-secondary ms-3" id="back-to-vendors-btn">Back to Vendors</button>
+                        </div>
+                        <button class="btn btn-sm btn-light" id="add-product-btn">Add Product</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="order-instructions mb-4">
+                            <h5>Ordering Instructions</h5>
+                            <div id="vendor-order-instructions">
+                                <p>To place an order with Hawaii Syrups:</p>
+                                <ol>
+                                    <li>Call the order line at (808) 555-1234 between 8am-4pm HST</li>
+                                    <li>Reference your customer ID: JJ1234</li>
+                                    <li>Orders placed before 12pm will be delivered next business day</li>
+                                    <li>Minimum order amount is $100</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div id="products-container">
+                            <!-- Sample Products for Hawaii Syrups -->
+                            <div class="product-item" data-vendor-id="vendor1">
+                                <div class="product-header">
+                                    <div class="product-name">Blue Raspberry Syrup (16oz)</div>
+                                    <div class="product-actions">
+                                        <button class="btn btn-sm btn-outline-primary edit-product-btn">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger delete-product-btn">Delete</button>
+                                    </div>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-details">
+                                        <div>SKU: HS-BR16</div>
+                                        <div>Price: $8.99</div>
+                                    </div>
+                                    <div class="reorder-point">
+                                        Reorder when inventory reaches: 3 bottles
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="product-item" data-vendor-id="vendor1">
+                                <div class="product-header">
+                                    <div class="product-name">Strawberry Syrup (16oz)</div>
+                                    <div class="product-actions">
+                                        <button class="btn btn-sm btn-outline-primary edit-product-btn">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger delete-product-btn">Delete</button>
+                                    </div>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-details">
+                                        <div>SKU: HS-ST16</div>
+                                        <div>Price: $8.99</div>
+                                    </div>
+                                    <div class="reorder-point">
+                                        Reorder when inventory reaches: 3 bottles
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="product-item" data-vendor-id="vendor1">
+                                <div class="product-header">
+                                    <div class="product-name">Tiger's Blood Syrup (16oz)</div>
+                                    <div class="product-actions">
+                                        <button class="btn btn-sm btn-outline-primary edit-product-btn">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger delete-product-btn">Delete</button>
+                                    </div>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-details">
+                                        <div>SKU: HS-TB16</div>
+                                        <div>Price: $10.99</div>
+                                    </div>
+                                    <div class="reorder-point">
+                                        Reorder when inventory reaches: 4 bottles
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button class="btn btn-primary">Generate Order</button>
+                            <button class="btn btn-outline-primary ms-2">Export to PDF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vendor Modal -->
+    <div class="modal fade" id="vendorModal" tabindex="-1" aria-labelledby="vendorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vendorModalLabel">Add Vendor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="vendor-form">
+                        <div class="mb-3">
+                            <label for="vendor-name" class="form-label">Vendor Name</label>
+                            <input type="text" class="form-control" id="vendor-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="vendor-description" class="form-label">Description</label>
+                            <textarea class="form-control" id="vendor-description" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="vendor-logo" class="form-label">Logo URL (Optional)</label>
+                            <input type="text" class="form-control" id="vendor-logo" placeholder="https://example.com/logo.png">
+                        </div>
+                        <div class="mb-3">
+                            <label for="contact-name" class="form-label">Contact Name</label>
+                            <input type="text" class="form-control" id="contact-name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="contact-phone" class="form-label">Contact Phone</label>
+                            <input type="text" class="form-control" id="contact-phone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="contact-email" class="form-label">Contact Email</label>
+                            <input type="email" class="form-control" id="contact-email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="ordering-instructions" class="form-label">Ordering Instructions</label>
+                            <textarea class="form-control" id="ordering-instructions" rows="4"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-vendor-btn">Save Vendor</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Product Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">Add Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="product-form">
+                        <div class="mb-3">
+                            <label for="product-name" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="product-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product-sku" class="form-label">SKU</label>
+                            <input type="text" class="form-control" id="product-sku">
+                        </div>
+                        <div class="mb-3">
+                            <label for="product-price" class="form-label">Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="product-price" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reorder-point" class="form-label">Reorder Point</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="reorder-point" min="0">
+                                <input type="text" class="form-control" id="reorder-unit" placeholder="units">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-product-btn">Save Product</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.firebasestorage.app",
+            messagingSenderId: "344579778389",
+            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
+            measurementId: "G-VBP44WBTCP"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // DOM elements
+        const locationSelect = document.getElementById('location-select');
+        const currentLocationText = document.getElementById('current-location');
+        const vendorsContainer = document.getElementById('vendors-container');
+        const productsSection = document.getElementById('products-section');
+        const productsContainer = document.getElementById('products-container');
+        const currentVendorName = document.getElementById('current-vendor-name');
+        const vendorOrderInstructions = document.getElementById('vendor-order-instructions');
+        
+        // Modals
+        const vendorModal = new bootstrap.Modal(document.getElementById('vendorModal'));
+        const productModal = new bootstrap.Modal(document.getElementById('productModal'));
+        
+        // Current vendor ID
+        let currentVendorId = null;
+        
+        // Load locations from Firestore
+        function loadLocations() {
+            db.collection('locations').get()
+                .then(snapshot => {
+                    locationSelect.innerHTML = '<option value="">Select Location</option>';
+                    
+                    snapshot.forEach(doc => {
+                        const location = doc.data();
+                        const option = document.createElement('option');
+                        option.value = doc.id;
+                        option.textContent = location.locationName;
+                        locationSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error loading locations:", error);
+                    alert("Failed to load locations. Please try again later.");
+                });
+        }
+        
+        // Handle location selection
+        locationSelect.addEventListener('change', function() {
+            const selectedOption = locationSelect.options[locationSelect.selectedIndex];
+            
+            if (selectedOption.value) {
+                currentLocationText.textContent = selectedOption.textContent;
+                loadVendorsForLocation(selectedOption.value);
+            } else {
+                currentLocationText.textContent = "Select a location";
+            }
+        });
+        
+        // Load vendors for selected location
+        function loadVendorsForLocation(locationId) {
+            console.log("Loading vendors for location:", locationId);
+            // Here you would fetch vendors from Firestore and update the UI
+            // For now, we'll keep the sample vendors
+        }
+        
+        // Add vendor button click
+        document.getElementById('add-vendor-btn').addEventListener('click', function() {
+            // Clear form
+            document.getElementById('vendor-name').value = '';
+            document.getElementById('vendor-description').value = '';
+            document.getElementById('vendor-logo').value = '';
+            document.getElementById('contact-name').value = '';
+            document.getElementById('contact-phone').value = '';
+            document.getElementById('contact-email').value = '';
+            document.getElementById('ordering-instructions').value = '';
+            
+            // Update modal title
+            document.getElementById('vendorModalLabel').textContent = 'Add Vendor';
+            
+            // Show modal
+            vendorModal.show();
+        });
+        
+        // Save vendor button click
+        document.getElementById('save-vendor-btn').addEventListener('click', function() {
+            const vendorName = document.getElementById('vendor-name').value;
+            const vendorDescription = document.getElementById('vendor-description').value;
+            const vendorLogo = document.getElementById('vendor-logo').value || 'https://via.placeholder.com/60x40';
+            const contactName = document.getElementById('contact-name').value;
+            const contactPhone = document.getElementById('contact-phone').value;
+            const contactEmail = document.getElementById('contact-email').value;
+            const orderingInstructions = document.getElementById('ordering-instructions').value;
+            
+            if (!vendorName) {
+                alert("Please enter a vendor name");
+                return;
+            }
+            
+            // Here you would save the vendor to Firestore
+            console.log("Saving vendor:", {
+                name: vendorName,
+                description: vendorDescription,
+                logo: vendorLogo,
+                contactName: contactName,
+                contactPhone: contactPhone,
+                contactEmail: contactEmail,
+                orderingInstructions: orderingInstructions
+            });
+            
+            // Generate a simple ID for the vendor (in production, use Firebase's ID)
+            const vendorId = 'vendor' + Date.now();
+            
+            // Close modal
+            vendorModal.hide();
+            
+            // Add to UI
+            const vendorCard = document.createElement('div');
+            vendorCard.className = 'col-md-4 mb-4';
+            vendorCard.innerHTML = `
+                <div class="card vendor-card" data-vendor-id="${vendorId}">
+                    <div class="card-body">
+                        <div class="vendor-header mb-2">
+                            <img src="${vendorLogo}" alt="${vendorName}" class="vendor-logo">
+                            <div class="vendor-name">${vendorName}</div>
+                        </div>
+                        <div class="card-text">
+                            <p>${vendorDescription}</p>
+                            <div class="contact-info">
+                                <p><strong>Contact:</strong> ${contactName}</p>
+                                <p><strong>Phone:</strong> ${contactPhone}</p>
+                                <p><strong>Email:</strong> ${contactEmail}</p>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-sm btn-outline-primary view-products-btn">View Products</button>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary edit-vendor-btn">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger delete-vendor-btn">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add event listeners
+            const viewProductsBtn = vendorCard.querySelector('.view-products-btn');
+            viewProductsBtn.addEventListener('click', function() {
+                showVendorProducts(vendorId, vendorName, orderingInstructions);
+            });
+            
+            const editVendorBtn = vendorCard.querySelector('.edit-vendor-btn');
+            editVendorBtn.addEventListener('click', function() {
+                // Populate form with vendor data
+                document.getElementById('vendor-name').value = vendorName;
+                document.getElementById('vendor-description').value = vendorDescription;
+                document.getElementById('vendor-logo').value = vendorLogo;
+                document.getElementById('contact-name').value = contactName;
+                document.getElementById('contact-phone').value = contactPhone;
+                document.getElementById('contact-email').value = contactEmail;
+                document.getElementById('ordering-instructions').value = orderingInstructions;
+                
+                // Update modal title
+                document.getElementById('vendorModalLabel').textContent = 'Edit Vendor';
+                
+                // Show modal
+                vendorModal.show();
+            });
+            
+            const deleteVendorBtn = vendorCard.querySelector('.delete-vendor-btn');
+            deleteVendorBtn.addEventListener('click', function() {
+                if (confirm("Are you sure you want to delete this vendor?")) {
+                    vendorCard.remove();
+                }
+            });
+            
+            // Add to container
+            vendorsContainer.appendChild(vendorCard);
+        });
+        
+        // Back to vendors button click
+        document.getElementById('back-to-vendors-btn').addEventListener('click', function() {
+            productsSection.classList.add('d-none');
+        });
+        
+        // Add product button click
+        document.getElementById('add-product-btn').addEventListener('click', function() {
+            // Clear form
+            document.getElementById('product-name').value = '';
+            document.getElementById('product-sku').value = '';
+            document.getElementById('product-price').value = '';
+            document.getElementById('reorder-point').value = '';
+            document.getElementById('reorder-unit').value = '';
+            
+            // Update modal title
+            document.getElementById('productModalLabel').textContent = 'Add Product';
+            
+            // Show modal
+            productModal.show();
+        });
+        
+        // Save product button click
+        document.getElementById('save-product-btn').addEventListener('click', function() {
+            const productName = document.getElementById('product-name').value;
+            const productSku = document.getElementById('product-sku').value;
+            const productPrice = document.getElementById('product-price').value;
+            const reorderPoint = document.getElementById('reorder-point').value;
+            const reorderUnit = document.getElementById('reorder-unit').value || 'units';
+            
+            if (!productName) {
+                alert("Please enter a product name");
+                return;
+            }
+            
+            // Here you would save the product to Firestore
+            console.log("Saving product:", {
+                name: productName,
+                sku: productSku,
+                price: productPrice,
+                reorderPoint: reorderPoint,
+                reorderUnit: reorderUnit,
+                vendorId: currentVendorId
+            });
+            
+            // Close modal
+            productModal.hide();
+            
+            // Add to UI
+            const productItem = document.createElement('div');
+            productItem.className = 'product-item';
+            productItem.dataset.vendorId = currentVendorId;
+            productItem.innerHTML = `
+                <div class="product-header">
+                    <div class="product-name">${productName}</div>
+                    <div class="product-actions">
+                        <button class="btn btn-sm btn-outline-primary edit-product-btn">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger delete-product-btn">Delete</button>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-details">
+                        <div>SKU: ${productSku}</div>
+                        <div>Price: $${productPrice}</div>
+                    </div>
+                    <div class="reorder-point">
+                        Reorder when inventory reaches: ${reorderPoint} ${reorderUnit}
+                    </div>
+                </div>
+            `;
+            
+            // Add event listeners
+            const editProductBtn = productItem.querySelector('.edit-product-btn');
+            editProductBtn.addEventListener('click', function() {
+                // Populate form with product data
+                document.getElementById('product-name').value = productName;
+                document.getElementById('product-sku').value = productSku;
+                document.getElementById('product-price').value = productPrice;
+                document.getElementById('reorder-point').value = reorderPoint;
+                document.getElementById('reorder-unit').value = reorderUnit;
+                
+                // Update modal title
+                document.getElementById('productModalLabel').textContent = 'Edit Product';
+                
+                // Show modal
+                productModal.show();
+            });
+            
+            const deleteProductBtn = productItem.querySelector('.delete-product-btn');
+            deleteProductBtn.addEventListener('click', function() {
+                if (confirm("Are you sure you want to delete this product?")) {
+                    productItem.remove();
+                }
+            });
+            
+            // Add to container
+            productsContainer.appendChild(productItem);
+        });
+        
+        // Show vendor products
+        function showVendorProducts(vendorId, vendorName, orderingInstructions) {
+            currentVendorId = vendorId;
+            currentVendorName.textContent = vendorName + " Products";
+            
+            // Show ordering instructions if available
+            if (orderingInstructions) {
+                vendorOrderInstructions.innerHTML = orderingInstructions;
+            } else {
+                vendorOrderInstructions.innerHTML = "No ordering instructions available.";
+            }
+            
+            // Show only products for this vendor
+            document.querySelectorAll('.product-item').forEach(item => {
+                if (item.dataset.vendorId === vendorId) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show products section
+            productsSection.classList.remove('d-none');
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLocations();
+            
+            // Add event listeners for view products buttons
+            document.querySelectorAll('.view-products-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const vendorCard = this.closest('.vendor-card');
+                    const vendorId = vendorCard.dataset.vendorId;
+                    const vendorName = vendorCard.querySelector('.vendor-name').textContent;
+                    
+                    showVendorProducts(vendorId, vendorName);
+                });
+            });
+            
+            // Add event listeners for edit vendor buttons
+            document.querySelectorAll('.edit-vendor-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const vendorCard = this.closest('.vendor-card');
+                    const vendorName = vendorCard.querySelector('.vendor-name').textContent;
+                    const vendorDescription = vendorCard.querySelector('.card-text p').textContent;
+                    const vendorLogo = vendorCard.querySelector('.vendor-logo').src;
+                    const contactName = vendorCard.querySelector('.contact-info p:nth-child(1)').textContent.replace('Contact: ', '');
+                    const contactPhone = vendorCard.querySelector('.contact-info p:nth-child(2)').textContent.replace('Phone: ', '');
+                    const contactEmail = vendorCard.querySelector('.contact-info p:nth-child(3)').textContent.replace('Email: ', '');
+                    
+                    // Populate form
+                    document.getElementById('vendor-name').value = vendorName;
+                    document.getElementById('vendor-description').value = vendorDescription;
+                    document.getElementById('vendor-logo').value = vendorLogo;
+                    document.getElementById('contact-name').value = contactName;
+                    document.getElementById('contact-phone').value = contactPhone;
+                    document.getElementById('contact-email').value = contactEmail;
+                    
+                    // Update modal title
+                    document.getElementById('vendorModalLabel').textContent = 'Edit Vendor';
+                    
+                    // Show modal
+                    vendorModal.show();
+                });
+            });
+            
+            // Add event listeners for delete vendor buttons
+            document.querySelectorAll('.delete-vendor-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const vendorCard = this.closest('.col-md-4');
+                    
+                    if (confirm("Are you sure you want to delete this vendor?")) {
+                        vendorCard.remove();
+                    }
+                });
+            });
+            
+            // Add event listeners for edit product buttons
+            document.querySelectorAll('.edit-product-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productItem = this.closest('.product-item');
+                    const productName = productItem.querySelector('.product-name').textContent;
+                    const productSku = productItem.querySelector('.product-details div:nth-child(1)').textContent.replace('SKU: ', '');
+                    const productPrice = productItem.querySelector('.product-details div:nth-child(2)').textContent.replace('Price: $', '');
+                    const reorderText = productItem.querySelector('.reorder-point').textContent.replace('Reorder when inventory reaches: ', '');
+                    const reorderPoint = reorderText.split(' ')[0];
+                    const reorderUnit = reorderText.split(' ')[1];
+                    
+                    // Populate form
+                    document.getElementById('product-name').value = productName;
+                    document.getElementById('product-sku').value = productSku;
+                    document.getElementById('product-price').value = productPrice;
+                    document.getElementById('reorder-point').value = reorderPoint;
+                    document.getElementById('reorder-unit').value = reorderUnit;
+                    
+                    // Update modal title
+                    document.getElementById('productModalLabel').textContent = 'Edit Product';
+                    
+                    // Show modal
+                    productModal.show();
+                });
+            });
+            
+            // Add event listeners for delete product buttons
+            document.querySelectorAll('.delete-product-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productItem = this.closest('.product-item');
+                    
+                    if (confirm("Are you sure you want to delete this product?")) {
+                        productItem.remove();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

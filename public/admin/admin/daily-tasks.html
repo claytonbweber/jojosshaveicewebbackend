@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoJo's Shave Ice - Daily Tasks</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #FFD60A;
+        }
+        h1 {
+            color: #87CEEB;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+        .task-section {
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .task-header {
+            background-color: #87CEEB;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-body {
+            padding: 15px;
+        }
+        .task-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+        }
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .task-checkbox {
+            margin-right: 10px;
+        }
+        .task-text {
+            flex-grow: 1;
+        }
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-primary {
+            background-color: #FF4040;
+            border-color: #FF4040;
+        }
+        .btn-primary:hover {
+            background-color: #d93333;
+            border-color: #d93333;
+        }
+        .nav-link {
+            color: #FF4040;
+        }
+        .nav-link.active {
+            color: white !important;
+            background-color: #FF4040 !important;
+        }
+        .task-details {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .date-picker {
+            margin-bottom: 20px;
+        }
+        .badge-completed {
+            background-color: #28a745;
+            color: white;
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+        .badge-pending {
+            background-color: #ffc107;
+            color: #212529;
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+        .completion-stats {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .progress {
+            height: 20px;
+        }
+        .spinner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+        .task-notes {
+            margin-top: 5px;
+            font-style: italic;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <h1>JoJo's Shave Ice - Daily Tasks</h1>
+    
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Daily Tasks Management</h2>
+            <a href="index.html" class="btn btn-outline-secondary">Back to Dashboard</a>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <strong>Location:</strong> <span id="current-location">Select a location</span>
+                    <div class="mt-2">
+                        <select id="location-select" class="form-select">
+                            <option value="">Select Location</option>
+                            <!-- Locations will be loaded here -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <ul class="nav nav-tabs mb-4" id="taskTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="opening-tab" data-bs-toggle="tab" data-bs-target="#opening" type="button" role="tab" aria-controls="opening" aria-selected="true">Opening</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="midday-tab" data-bs-toggle="tab" data-bs-target="#midday" type="button" role="tab" aria-controls="midday" aria-selected="false">Mid-Day</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="closing-tab" data-bs-toggle="tab" data-bs-target="#closing" type="button" role="tab" aria-controls="closing" aria-selected="false">Closing</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="cleaning-tab" data-bs-toggle="tab" data-bs-target="#cleaning" type="button" role="tab" aria-controls="cleaning" aria-selected="false">Day's Cleaning</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="taskTabContent">
+            <!-- Opening Tasks -->
+            <div class="tab-pane fade show active" id="opening" role="tabpanel" aria-labelledby="opening-tab">
+                <div class="task-section">
+                    <div class="task-header">
+                        <span>Opening Tasks</span>
+                        <button class="btn btn-sm btn-light" id="add-opening-task">Add Task</button>
+                    </div>
+                    <div class="task-body">
+                        <div id="opening-tasks-list">
+                            <div class="spinner-container" id="opening-spinner">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <!-- Tasks will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mid-Day Tasks -->
+            <div class="tab-pane fade" id="midday" role="tabpanel" aria-labelledby="midday-tab">
+                <div class="task-section">
+                    <div class="task-header">
+                        <span>Mid-Day Tasks</span>
+                        <button class="btn btn-sm btn-light" id="add-midday-task">Add Task</button>
+                    </div>
+                    <div class="task-body">
+                        <div id="midday-tasks-list">
+                            <div class="spinner-container" id="midday-spinner">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <!-- Tasks will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Closing Tasks -->
+            <div class="tab-pane fade" id="closing" role="tabpanel" aria-labelledby="closing-tab">
+                <div class="task-section">
+                    <div class="task-header">
+                        <span>Closing Tasks</span>
+                        <button class="btn btn-sm btn-light" id="add-closing-task">Add Task</button>
+                    </div>
+                    <div class="task-body">
+                        <div id="closing-tasks-list">
+                            <div class="spinner-container" id="closing-spinner">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <!-- Tasks will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day's Cleaning Tasks -->
+            <div class="tab-pane fade" id="cleaning" role="tabpanel" aria-labelledby="cleaning-tab">
+                <div class="task-section">
+                    <div class="task-header">
+                        <span>Day's Cleaning Tasks</span>
+                        <button class="btn btn-sm btn-light" id="add-cleaning-task">Add Task</button>
+                    </div>
+                    <div class="task-body">
+                        <div id="cleaning-tasks-list">
+                            <div class="spinner-container" id="cleaning-spinner">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <!-- Tasks will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Task Edit Modal -->
+        <div class="modal fade" id="taskEditModal" tabindex="-1" aria-labelledby="taskEditModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="taskEditModalLabel">Edit Task</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="task-edit-form">
+                            <input type="hidden" id="task-id">
+                            <div class="mb-3">
+                                <label for="task-name" class="form-label">Task Name</label>
+                                <input type="text" class="form-control" id="task-name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="task-details" class="form-label">Task Details</label>
+                                <textarea class="form-control" id="task-details" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="task-category" class="form-label">Category</label>
+                                <select class="form-select" id="task-category" required>
+                                    <option value="opening">Opening</option>
+                                    <option value="midday">Mid-Day</option>
+                                    <option value="closing">Closing</option>
+                                    <option value="cleaning">Day's Cleaning</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="task-type" class="form-label">Task Type</label>
+                                <select class="form-select" id="task-type" onchange="toggleTaskTypeOptions()">
+                                    <option value="check-off">Check-off (Simple Completion)</option>
+                                    <option value="short-answer">Short Answer</option>
+                                    <option value="long-answer">Long Answer</option>
+                                    <option value="photo">Photo Upload</option>
+                                    <option value="numeric">Numeric Input</option>
+                                    <option value="rating">Rating (1-5 Stars)</option>
+                                    <option value="single-select">Single Selection (Dropdown)</option>
+                                    <option value="multiple-choice">Multiple Choice</option>
+                                    <option value="verification">Verification (Signature)</option>
+                                    <option value="yes-no">Yes/No Question</option>
+                                    <option value="inspection">Inspection (Pass/Fail)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Conditional fields based on task type -->
+                            <div id="single-select-options" class="mb-3" style="display: none;">
+                                <label for="task-options" class="form-label">Dropdown Options</label>
+                                <textarea class="form-control" id="task-options" rows="3" placeholder="Enter one option per line"></textarea>
+                                <small class="form-text text-muted">Enter each dropdown option on a new line.</small>
+                            </div>
+                            
+                            <div id="multiple-choice-options" class="mb-3" style="display: none;">
+                                <label for="task-multiple-options" class="form-label">Multiple Choice Options</label>
+                                <textarea class="form-control" id="task-multiple-options" rows="3" placeholder="Enter one option per line"></textarea>
+                                <small class="form-text text-muted">Enter each checkbox option on a new line. Users can select multiple options.</small>
+                            </div>
+                            
+                            <!-- Cleaning-specific fields -->
+                            <div id="cleaning-fields" class="mb-3" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="cleaning-time" class="form-label">Cleaning Time</label>
+                                        <select class="form-select" id="cleaning-time">
+                                            <option value="morning">Morning (Opening)</option>
+                                            <option value="evening">Evening (Closing)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Days of Week</label>
+                                        <div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="day-mon" value="monday">
+                                                <label class="form-check-label" for="day-mon">Mon</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="day-tue" value="tuesday">
+                                                <label class="form-check-label" for="day-tue">Tue</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="day-wed" value="wednesday">
+                                                <label class="form-check-label" for="day-wed">Wed</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="day-thu" value="thursday">
+                                                <label class="form-check-label" for="day-thu">Thu</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="day-fri" value="friday">
+                                                <label class="form-check-label" for="day-fri">Fri</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="day-sat" value="saturday">
+                                                <label class="form-check-label" for="day-sat">Sat</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="day-sun" value="sunday">
+                                                <label class="form-check-label" for="day-sun">Sun</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="task-order" class="form-label">Display Order</label>
+                                <input type="number" class="form-control" id="task-order" min="1" value="1">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="save-task">Save Task</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Task Completion Modal -->
+        <div class="modal fade" id="taskCompletionModal" tabindex="-1" aria-labelledby="taskCompletionModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="taskCompletionModalLabel">Complete Task</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="task-completion-form">
+                            <input type="hidden" id="completion-task-id">
+                            <input type="hidden" id="completion-log-id">
+                            <div class="mb-3">
+                                <label for="completion-notes" class="form-label">Completion Notes (optional)</label>
+                                <textarea class="form-control" id="completion-notes" rows="3" placeholder="Add any notes about this task completion..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="save-completion">Mark as Completed</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task History Modal -->
+        <div class="modal fade" id="taskHistoryModal" tabindex="-1" aria-labelledby="taskHistoryModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="taskHistoryModalLabel">Task History</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6 id="history-task-name"></h6>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Completed By</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body">
+                                    <!-- History records will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
+            authDomain: "jojo-s-app-back-end.firebaseapp.com",
+            projectId: "jojo-s-app-back-end",
+            storageBucket: "jojo-s-app-back-end.firebasestorage.app",
+            messagingSenderId: "344579778389",
+            appId: "1:344579778389:web:6a17be1a1d13b82955f1dc",
+            measurementId: "G-VBP44WBTCP"
+        };
+        
+        // Initialize Firebase with detailed error logging
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized successfully");
+            
+            // Enable local persistence to work offline
+            firebase.firestore().enablePersistence()
+              .then(() => {
+                  console.log("Offline persistence enabled");
+              })
+              .catch((err) => {
+                  console.error("Error enabling offline persistence:", err);
+                  if (err.code === 'failed-precondition') {
+                      // Multiple tabs open, persistence can only be enabled in one tab at a time
+                      console.warn("Multiple tabs open, persistence only enabled in one tab");
+                  } else if (err.code === 'unimplemented') {
+                      // The current browser does not support all of the
+                      // features required to enable persistence
+                      console.warn("Current browser does not support offline persistence");
+                  }
+              });
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            alert("Firebase initialization failed. Check console for details.");
+        }
+        
+        const db = firebase.firestore();
+        
+        // Enable Firestore logging
+        firebase.firestore.setLogLevel('debug');
+        
+        // DOM elements
+        const locationSelect = document.getElementById('location-select');
+        const currentLocationText = document.getElementById('current-location');
+        const taskEditModal = new bootstrap.Modal(document.getElementById('taskEditModal'));
+        const taskCompletionModal = new bootstrap.Modal(document.getElementById('taskCompletionModal'));
+        const taskHistoryModal = new bootstrap.Modal(document.getElementById('taskHistoryModal'));
+        
+        // Global variables
+        let currentLocationId = '';
+        let currentUser = { id: 'admin', name: 'Admin' }; // Default user for now
+        let masterTasks = {};
+        let dailyLogs = {};
+        let completionStats = { total: 0, completed: 0 };
+        
+        // Set default date to today
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        
+        // Category to display name mapping
+        const categoryLabels = {
+            'opening': 'Opening',
+            'midday': 'Mid-Day',
+            'closing': 'Closing',
+            'cleaning': 'Day\'s Cleaning'
+        };
+        
+        // Sign in anonymously to Firebase
+        function signInAnonymously() {
+            return firebase.auth().signInAnonymously()
+                .then(() => {
+                    console.log("Signed in anonymously");
+                })
+                .catch((error) => {
+                    console.error("Error signing in anonymously:", error);
+                });
+        }
+        
+        // Load locations from Firestore
+        function loadLocations() {
+            console.log("Attempting to load locations from Firestore");
+            
+            // First ensure we're signed in
+            return signInAnonymously()
+                .then(() => {
+                    return db.collection('locations').get();
+                })
+                .then(snapshot => {
+                    console.log("Location snapshot received:", snapshot.size, "locations");
+                    locationSelect.innerHTML = '<option value="">Select Location</option>';
+                    
+                    snapshot.forEach(doc => {
+                        const location = doc.data();
+                        console.log("Location:", doc.id, location);
+                        const option = document.createElement('option');
+                        option.value = doc.id;
+                        option.textContent = location.locationName;
+                        locationSelect.appendChild(option);
+                    });
+                    
+                    if (snapshot.empty) {
+                        console.log("No locations found. Creating sample location.");
+                        return createSampleLocation();
+                    }
+                })
+                .catch(error => {
+                    console.error("Error loading locations:", error);
+                    alert("Failed to load locations: " + error.message);
+                    
+                    // If we get a permission error, use local data
+                    if (error.code === 'permission-denied') {
+                        console.log("Using local sample data due to permission issues");
+                        createAndUseLocalData();
+                    }
+                });
+        }
+        
+        // Create and use local data when Firestore access fails
+        function createAndUseLocalData() {
+            // Create a sample location locally
+            const sampleLocation = {
+                id: 'local-sample',
+                locationName: 'Sample Location (Local)',
+                address: '123 Main St',
+                phone: '555-1234'
+            };
+            
+            // Add it to the dropdown
+            locationSelect.innerHTML = '<option value="">Select Location</option>';
+            const option = document.createElement('option');
+            option.value = sampleLocation.id;
+            option.textContent = sampleLocation.locationName;
+            locationSelect.appendChild(option);
+            
+            // Select the local location
+            locationSelect.value = sampleLocation.id;
+            currentLocationId = sampleLocation.id;
+            currentLocationText.textContent = sampleLocation.locationName;
+            
+            // Set up sample tasks
+            masterTasks = {
+                opening: [
+                    {
+                        id: 'local-task-1',
+                        name: "Turn on all equipment",
+                        details: "Turn on shave ice machines, refrigerators, and freezers",
+                        category: "opening",
+                        type: "check-off",
+                        locationId: sampleLocation.id,
+                        order: 1
+                    },
+                    {
+                        id: 'local-task-2',
+                        name: "Check inventory levels",
+                        details: "Verify all supplies needed for the day",
+                        category: "opening",
+                        type: "numeric",
+                        locationId: sampleLocation.id,
+                        order: 2
+                    }
+                ],
+                midday: [
+                    {
+                        id: 'local-task-3',
+                        name: "Restock syrup containers",
+                        details: "Check and refill all syrup dispensers",
+                        category: "midday",
+                        type: "short-answer",
+                        locationId: sampleLocation.id,
+                        order: 1
+                    }
+                ],
+                closing: [
+                    {
+                        id: 'local-task-4',
+                        name: "Clean all equipment",
+                        details: "Wipe down and sanitize all machines and tools",
+                        category: "closing",
+                        type: "check-off",
+                        locationId: sampleLocation.id,
+                        order: 1
+                    }
+                ],
+                cleaning: [
+                    {
+                        id: 'local-task-5',
+                        name: "Deep clean shave ice machines",
+                        details: "Disassemble and thoroughly clean all parts",
+                        category: "cleaning",
+                        type: "check-off",
+                        cleaningTime: "evening",
+                        cleaningDays: ["monday", "friday"],
+                        locationId: sampleLocation.id,
+                        order: 1
+                    }
+                ]
+            };
+            
+            // Empty the daily logs
+            dailyLogs = {};
+            
+            // Alert the user
+            alert("Using sample data due to database permission issues. Your changes will be saved locally but not synced to the server.");
+            
+            // Save to localStorage for persistence
+            try {
+                localStorage.setItem('jojo_local_tasks', JSON.stringify(masterTasks));
+                localStorage.setItem('jojo_local_logs', JSON.stringify(dailyLogs));
+                localStorage.setItem('selectedLocationId', sampleLocation.id);
+            } catch (e) {
+                console.error("Error saving to localStorage:", e);
+            }
+        }
+        
+        // Create a sample location if none exist
+        function createSampleLocation() {
+            return db.collection('locations').doc('sample-location').set({
+                locationName: 'Sample Location',
+                address: '123 Main St',
+                phone: '555-1234',
+                createdAt: new Date().toISOString()
+            })
+            .then(() => {
+                console.log("Sample location created.");
+                return loadLocations(); // Reload the locations
+            })
+            .catch(error => {
+                console.error("Error creating sample location:", error);
+                if (error.code === 'permission-denied') {
+                    console.log("Using local sample data due to permission issues");
+                    createAndUseLocalData();
+                }
+            });
+        }
+
+        // Handle location selection
+        locationSelect.addEventListener('change', function() {
+            const selectedOption = locationSelect.options[locationSelect.selectedIndex];
+            
+            if (selectedOption.value) {
+                currentLocationId = selectedOption.value;
+                currentLocationText.textContent = selectedOption.textContent;
+                loadTasksForLocation();
+            } else {
+                currentLocationId = '';
+                currentLocationText.textContent = "Select a location";
+                clearTaskLists();
+            }
+        });
+        
+        // Load tasks for selected location and date
+        function loadTasksForLocation() {
+            showLoadingSpinners(true);
+            clearTaskLists();
+            
+            currentLocationId = locationSelect.value;
+            currentLocationText.textContent = locationSelect.options[locationSelect.selectedIndex].text;
+            
+            if (!currentLocationId) {
+                alert("Please select a location first");
+                return;
+            }
+            
+            localStorage.setItem('selectedLocationId', currentLocationId);
+            
+            // Reset completion stats
+            completionStats = { total: 0, completed: 0 };
+            
+            console.log("Loading tasks for location:", currentLocationId);
+            
+            // If we're using local data (starts with 'local-')
+            if (currentLocationId.startsWith('local-')) {
+                console.log("Using local task data");
+                displayTasks();
+                showLoadingSpinners(false);
+                return;
+            }
+            
+            // Clear tasks lists first
+            clearTaskLists();
+            
+            // Load master tasks for this location
+            masterTasks = { opening: [], midday: [], closing: [], cleaning: [] };
+            
+            Promise.all([
+                db.collection('tasks')
+                    .where('locationId', '==', currentLocationId)
+                    .where('category', '==', 'opening')
+                    .get(),
+                db.collection('tasks')
+                    .where('locationId', '==', currentLocationId)
+                    .where('category', '==', 'midday')
+                    .get(),
+                db.collection('tasks')
+                    .where('locationId', '==', currentLocationId)
+                    .where('category', '==', 'closing')
+                    .get(),
+                db.collection('tasks')
+                    .where('locationId', '==', currentLocationId)
+                    .where('category', '==', 'cleaning')
+                    .get()
+            ])
+            .then(([openingSnapshot, middaySnapshot, closingSnapshot, cleaningSnapshot]) => {
+                console.log(`Found ${openingSnapshot.size} opening tasks`);
+                console.log(`Found ${middaySnapshot.size} midday tasks`);
+                console.log(`Found ${closingSnapshot.size} closing tasks`);
+                console.log(`Found ${cleaningSnapshot.size} cleaning tasks`);
+                
+                openingSnapshot.forEach(doc => {
+                    masterTasks.opening.push({ ...doc.data(), id: doc.id });
+                });
+                
+                middaySnapshot.forEach(doc => {
+                    masterTasks.midday.push({ ...doc.data(), id: doc.id });
+                });
+                
+                closingSnapshot.forEach(doc => {
+                    masterTasks.closing.push({ ...doc.data(), id: doc.id });
+                });
+                
+                cleaningSnapshot.forEach(doc => {
+                    masterTasks.cleaning.push({ ...doc.data(), id: doc.id });
+                });
+                
+                // Now load daily logs to see which tasks are completed
+                return loadTaskLogs();
+            })
+            .then(() => {
+                // Display tasks
+                displayTasks();
+                showLoadingSpinners(false);
+            })
+            .catch(error => {
+                console.error("Error loading tasks:", error);
+                
+                // If we get a permission error, use local data
+                if (error.code === 'permission-denied') {
+                    console.log("Using local sample data due to permission issues");
+                    createAndUseLocalData();
+                    displayTasks();
+                } else {
+                    alert("Error loading tasks: " + error.message);
+                }
+                
+                showLoadingSpinners(false);
+            });
+        }
+        
+        // Load daily task logs for the current date and location
+        function loadTaskLogs() {
+            if (!currentLocationId) {
+                console.warn("No location selected");
+                return Promise.resolve({});
+            }
+            
+            dailyLogs = {}; // Reset logs
+            
+            // If using local data
+            if (currentLocationId.startsWith('local-')) {
+                console.log("Using local logs data");
+                return Promise.resolve({});
+            }
+            
+            console.log(`Loading daily logs for ${formattedDate} and location ${currentLocationId}`);
+            
+            return db.collection('dailyTaskLogs')
+                .where('locationId', '==', currentLocationId)
+                .where('date', '==', formattedDate)
+                .get()
+                .then(snapshot => {
+                    console.log(`Found ${snapshot.size} daily logs`);
+                    
+                    snapshot.forEach(doc => {
+                        const log = doc.data();
+                        console.log("Daily log:", log);
+                        
+                        // Store log by task ID + date
+                        const taskLogKey = `${log.taskId}_${log.date}`;
+                        dailyLogs[taskLogKey] = { ...log, id: doc.id };
+                    });
+                    
+                    return dailyLogs;
+                })
+                .catch(error => {
+                    console.error("Error loading daily logs:", error);
+                    
+                    // If we get a permission error, use local data
+                    if (error.code === 'permission-denied') {
+                        console.log("Using local logs data due to permission issues");
+                        return {};
+                    }
+                    
+                    return {};
+                });
+        }
+        
+        // Display tasks for each category
+        function displayTasks() {
+            const categories = ['opening', 'midday', 'closing', 'cleaning'];
+            
+            categories.forEach(category => {
+                const tasksList = document.getElementById(`${category}-tasks-list`);
+                if (!tasksList) return;
+                
+                // Clear previous content but keep the spinner
+                const spinner = tasksList.querySelector(`#${category}-spinner`);
+                tasksList.innerHTML = '';
+                if (spinner) {
+                    tasksList.appendChild(spinner);
+                }
+                
+                // Check if we have tasks for this category
+                const tasks = masterTasks[category] || [];
+                
+                if (tasks.length === 0) {
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'alert alert-light text-center';
+                    emptyMessage.textContent = `No ${categoryLabels[category]} tasks found. Click "Add Task" to create one.`;
+                    tasksList.appendChild(emptyMessage);
+                    return;
+                }
+                
+                // Sort tasks by order
+                tasks.sort((a, b) => (a.order || 0) - (b.order || 0));
+                
+                // Add each task to the list
+                tasks.forEach(task => {
+                    // Check if there's a daily log for this task
+                    const taskLogKey = `${task.id}_${formattedDate}`;
+                    const dailyLog = dailyLogs[taskLogKey];
+                    const isCompleted = dailyLog && dailyLog.completed;
+                    
+                    // Create task item
+                    const taskItem = document.createElement('div');
+                    taskItem.className = `task-item ${isCompleted ? 'completed' : ''}`;
+                    taskItem.dataset.taskId = task.id;
+                    
+                    // Create task checkbox
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'task-checkbox form-check-input';
+                    checkbox.checked = isCompleted;
+                    checkbox.disabled = isCompleted; // Disable if already completed
+                    
+                    // Create task content
+                    const taskContent = document.createElement('div');
+                    taskContent.className = 'task-text';
+                    
+                    // Task name with badge
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'd-flex align-items-center';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = task.name;
+                    nameDiv.appendChild(nameSpan);
+                    
+                    if (isCompleted) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge-completed';
+                        badge.textContent = 'Completed';
+                        nameDiv.appendChild(badge);
+                    }
+                    
+                    // Add task type badge if available
+                    if (task.type) {
+                        const typeBadge = document.createElement('span');
+                        typeBadge.className = 'badge bg-secondary text-white ms-2';
+                        typeBadge.style.fontSize = '0.7rem';
+                        typeBadge.style.padding = '2px 6px';
+                        
+                        switch(task.type) {
+                            case 'check-off':
+                                typeBadge.textContent = 'Check-off';
+                                typeBadge.className = 'badge bg-success text-white ms-2';
+                                break;
+                            case 'short-answer':
+                                typeBadge.textContent = 'Short Answer';
+                                typeBadge.className = 'badge bg-info text-white ms-2';
+                                break;
+                            case 'long-answer':
+                                typeBadge.textContent = 'Long Answer';
+                                typeBadge.className = 'badge bg-primary text-white ms-2';
+                                break;
+                            case 'photo':
+                                typeBadge.textContent = 'Photo';
+                                typeBadge.className = 'badge bg-warning text-dark ms-2';
+                                break;
+                            case 'numeric':
+                                typeBadge.textContent = 'Numeric';
+                                typeBadge.className = 'badge bg-dark text-white ms-2';
+                                break;
+                            case 'rating':
+                                typeBadge.textContent = 'Rating';
+                                typeBadge.className = 'badge bg-secondary text-white ms-2';
+                                break;
+                            case 'single-select':
+                                typeBadge.textContent = 'Dropdown';
+                                typeBadge.className = 'badge bg-primary text-white ms-2';
+                                break;
+                            case 'multiple-choice':
+                                typeBadge.textContent = 'Multiple Choice';
+                                typeBadge.className = 'badge bg-info text-white ms-2';
+                                break;
+                            case 'verification':
+                                typeBadge.textContent = 'Verification';
+                                typeBadge.className = 'badge bg-danger text-white ms-2';
+                                break;
+                            case 'yes-no':
+                                typeBadge.textContent = 'Yes/No';
+                                typeBadge.className = 'badge bg-primary text-white ms-2';
+                                break;
+                            case 'inspection':
+                                typeBadge.textContent = 'Inspection';
+                                typeBadge.className = 'badge bg-warning text-dark ms-2';
+                                break;
+                            default:
+                                typeBadge.textContent = task.type;
+                        }
+                        
+                        nameDiv.appendChild(typeBadge);
+                    }
+                    
+                    // Add cleaning specific badges
+                    if (category === 'cleaning') {
+                        // Cleaning time badge
+                        if (task.cleaningTime) {
+                            const timeBadge = document.createElement('span');
+                            timeBadge.className = 'badge bg-info text-white ms-2';
+                            timeBadge.style.fontSize = '0.7rem';
+                            timeBadge.style.padding = '2px 6px';
+                            
+                            if (task.cleaningTime === 'morning') {
+                                timeBadge.textContent = 'Morning';
+                                timeBadge.className = 'badge bg-warning text-dark ms-2';
+                            } else {
+                                timeBadge.textContent = 'Evening';
+                                timeBadge.className = 'badge bg-dark text-white ms-2';
+                            }
+                            
+                            nameDiv.appendChild(timeBadge);
+                        }
+                        
+                        // Days badge
+                        if (task.cleaningDays && task.cleaningDays.length > 0) {
+                            const daysBadge = document.createElement('span');
+                            daysBadge.className = 'badge bg-secondary text-white ms-2';
+                            daysBadge.style.fontSize = '0.7rem';
+                            daysBadge.style.padding = '2px 6px';
+                            
+                            // Map day values to short names
+                            const dayMap = {
+                                'monday': 'Mon', 
+                                'tuesday': 'Tue', 
+                                'wednesday': 'Wed', 
+                                'thursday': 'Thu', 
+                                'friday': 'Fri', 
+                                'saturday': 'Sat', 
+                                'sunday': 'Sun'
+                            };
+                            
+                            if (task.cleaningDays.length === 7) {
+                                daysBadge.textContent = 'All Days';
+                            } else {
+                                daysBadge.textContent = task.cleaningDays.map(day => dayMap[day]).join(',');
+                            }
+                            
+                            nameDiv.appendChild(daysBadge);
+                        }
+                    }
+                    
+                    taskContent.appendChild(nameDiv);
+                    
+                    // Task details
+                    if (task.details) {
+                        const detailsDiv = document.createElement('div');
+                        detailsDiv.className = 'task-details';
+                        detailsDiv.textContent = task.details;
+                        taskContent.appendChild(detailsDiv);
+                    }
+                    
+                    // Task completion notes (if any)
+                    if (dailyLog && dailyLog.notes) {
+                        const notesDiv = document.createElement('div');
+                        notesDiv.className = 'task-notes';
+                        notesDiv.textContent = `Note: ${dailyLog.notes}`;
+                        taskContent.appendChild(notesDiv);
+                    }
+                    
+                    // Create action buttons
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'task-actions';
+                    
+                    // Edit button
+                    const editButton = document.createElement('button');
+                    editButton.className = 'btn btn-sm btn-outline-primary edit-task';
+                    editButton.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+                    actionsDiv.appendChild(editButton);
+                    
+                    // History button
+                    const historyButton = document.createElement('button');
+                    historyButton.className = 'btn btn-sm btn-outline-info history-task';
+                    historyButton.innerHTML = '<i class="bi bi-clock-history"></i> History';
+                    actionsDiv.appendChild(historyButton);
+                    
+                    // Delete button
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'btn btn-sm btn-outline-danger delete-task';
+                    deleteButton.innerHTML = '<i class="bi bi-trash"></i> Delete';
+                    actionsDiv.appendChild(deleteButton);
+                    
+                    // Assemble task item
+                    taskItem.appendChild(checkbox);
+                    taskItem.appendChild(taskContent);
+                    taskItem.appendChild(actionsDiv);
+                    
+                    // Add to list
+                    tasksList.appendChild(taskItem);
+                });
+                
+                // Add event listeners
+                addTaskEventListeners(tasksList);
+            });
+        }
+        
+        // Add event listeners to task items
+        function addTaskEventListeners(tasksList) {
+            // Task completion checkboxes
+            tasksList.querySelectorAll('.task-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        const taskItem = this.closest('.task-item');
+                        const taskId = taskItem.dataset.taskId;
+                        
+                        // Get the task data
+                        let taskCategory;
+                        let taskData;
+                        
+                        for (const category in masterTasks) {
+                            const task = masterTasks[category].find(t => t.id === taskId);
+                            if (task) {
+                                taskCategory = category;
+                                taskData = task;
+                                break;
+                            }
+                        }
+                        
+                        if (taskData) {
+                            // Update completion modal based on task type
+                            const modalBody = document.querySelector('#taskCompletionModal .modal-body form');
+                            let responseField = '';
+                            
+                            // Clear any existing response field
+                            const existingResponseField = document.getElementById('completion-response-field');
+                            if (existingResponseField) {
+                                existingResponseField.remove();
+                            }
+                            
+                            // Create appropriate input field based on task type
+                            if (taskData.type === 'single-select' && taskData.options && taskData.options.length) {
+                                responseField = `
+                                    <div id="completion-response-field" class="mb-3">
+                                        <label for="completion-response-value" class="form-label">Select an option:</label>
+                                        <select class="form-select" id="completion-response-value">
+                                            ${taskData.options.map(option => `<option value="${option}">${option}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                `;
+                                
+                                // Insert the field before notes
+                                const notesField = modalBody.querySelector('#completion-notes').closest('.mb-3');
+                                notesField.insertAdjacentHTML('beforebegin', responseField);
+                            } else if (taskData.type === 'multiple-choice' && taskData.multipleOptions && taskData.multipleOptions.length) {
+                                responseField = `
+                                    <div id="completion-response-field" class="mb-3">
+                                        <label class="form-label">Select all that apply:</label>
+                                        <div class="multiple-choice-options">
+                                            ${taskData.multipleOptions.map((option, index) => 
+                                                `<div class="form-check">
+                                                    <input class="form-check-input multiple-choice-option" type="checkbox" value="${option}" id="option-${index}">
+                                                    <label class="form-check-label" for="option-${index}">${option}</label>
+                                                </div>`
+                                            ).join('')}
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                // Insert the field before notes
+                                const notesField = modalBody.querySelector('#completion-notes').closest('.mb-3');
+                                notesField.insertAdjacentHTML('beforebegin', responseField);
+                            } else if (taskData.type === 'rating') {
+                                responseField = `
+                                    <div id="completion-response-field" class="mb-3">
+                                        <label class="form-label">Rating (1-5):</label>
+                                        <div class="rating-stars">
+                                            <div class="btn-group" role="group">
+                                                <input type="radio" class="btn-check" name="rating" id="rating-1" value="1" autocomplete="off">
+                                                <label class="btn btn-outline-warning" for="rating-1">1</label>
+                                                
+                                                <input type="radio" class="btn-check" name="rating" id="rating-2" value="2" autocomplete="off">
+                                                <label class="btn btn-outline-warning" for="rating-2">2</label>
+                                                
+                                                <input type="radio" class="btn-check" name="rating" id="rating-3" value="3" autocomplete="off">
+                                                <label class="btn btn-outline-warning" for="rating-3">3</label>
+                                                
+                                                <input type="radio" class="btn-check" name="rating" id="rating-4" value="4" autocomplete="off">
+                                                <label class="btn btn-outline-warning" for="rating-4">4</label>
+                                                
+                                                <input type="radio" class="btn-check" name="rating" id="rating-5" value="5" autocomplete="off" checked>
+                                                <label class="btn btn-outline-warning" for="rating-5">5</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                // Insert the field before notes
+                                const notesField = modalBody.querySelector('#completion-notes').closest('.mb-3');
+                                notesField.insertAdjacentHTML('beforebegin', responseField);
+                            }
+                            
+                            // Open completion modal
+                            document.getElementById('completion-task-id').value = taskId;
+                            document.getElementById('completion-log-id').value = 
+                                (dailyLogs[taskId] && dailyLogs[taskId].id) || '';
+                            document.getElementById('completion-notes').value = '';
+                            
+                            // Update modal title
+                            document.getElementById('taskCompletionModalLabel').textContent = 
+                                `Complete Task: ${taskData.name}`;
+                            
+                            taskCompletionModal.show();
+                        }
+                    }
+                });
+            });
+            
+            // Edit task buttons
+            tasksList.querySelectorAll('.edit-task').forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskItem = this.closest('.task-item');
+                    const taskId = taskItem.dataset.taskId;
+                    
+                    // Find the task in masterTasks
+                    let taskData;
+                    let taskCategory;
+                    
+                    for (const category in masterTasks) {
+                        const task = masterTasks[category].find(t => t.id === taskId);
+                        if (task) {
+                            taskData = task;
+                            taskCategory = category;
+                            break;
+                        }
+                    }
+                    
+                    if (taskData) {
+                        // Populate form
+                        document.getElementById('task-id').value = taskId;
+                        document.getElementById('task-name').value = taskData.name;
+                        document.getElementById('task-details').value = taskData.details || '';
+                        document.getElementById('task-category').value = taskCategory;
+                        document.getElementById('task-type').value = taskData.type || 'check-off';
+                        document.getElementById('task-options').value = taskData.options ? taskData.options.join('\n') : '';
+                        document.getElementById('task-multiple-options').value = taskData.multipleOptions ? taskData.multipleOptions.join('\n') : '';
+                        document.getElementById('task-order').value = taskData.order || 1;
+                        
+                        // Set cleaning fields if applicable
+                        if (taskCategory === 'cleaning') {
+                            document.getElementById('cleaning-time').value = taskData.cleaningTime || 'morning';
+                            
+                            // Reset all day checkboxes first
+                            document.querySelectorAll('#cleaning-fields input[type="checkbox"]').forEach(checkbox => {
+                                checkbox.checked = false;
+                            });
+                            
+                            // Check the appropriate days
+                            if (taskData.cleaningDays && Array.isArray(taskData.cleaningDays)) {
+                                taskData.cleaningDays.forEach(day => {
+                                    const checkbox = document.getElementById(`day-${day.substring(0, 3).toLowerCase()}`);
+                                    if (checkbox) checkbox.checked = true;
+                                });
+                            }
+                        }
+                        
+                        // Toggle conditional fields
+                        toggleTaskTypeOptions();
+                        
+                        // Update modal title
+                        document.getElementById('taskEditModalLabel').textContent = 'Edit Task';
+                        
+                        // Show modal
+                        taskEditModal.show();
+                    }
+                });
+            });
+            
+            // History task buttons
+            tasksList.querySelectorAll('.history-task').forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskItem = this.closest('.task-item');
+                    const taskId = taskItem.dataset.taskId;
+                    
+                    // Find the task in masterTasks
+                    let taskData;
+                    
+                    for (const category in masterTasks) {
+                        const task = masterTasks[category].find(t => t.id === taskId);
+                        if (task) {
+                            taskData = task;
+                            break;
+                        }
+                    }
+                    
+                    if (taskData) {
+                        // Update modal title
+                        document.getElementById('history-task-name').textContent = taskData.name;
+                        
+                        // Clear existing history
+                        document.getElementById('history-table-body').innerHTML = '';
+                        
+                        // Show loading indicator
+                        document.getElementById('history-table-body').innerHTML = 
+                            '<tr><td colspan="4" class="text-center">Loading history...</td></tr>';
+                        
+                        // Show modal
+                        taskHistoryModal.show();
+                        
+                        // Load task history
+                        db.collection('dailyTaskLogs')
+                            .where('taskId', '==', taskId)
+                            .orderBy('date', 'desc')
+                            .limit(30) // Limit to last 30 records
+                            .get()
+                            .then(snapshot => {
+                                const historyTableBody = document.getElementById('history-table-body');
+                                historyTableBody.innerHTML = '';
+                                
+                                if (snapshot.empty) {
+                                    historyTableBody.innerHTML = 
+                                        '<tr><td colspan="4" class="text-center">No history found</td></tr>';
+                                    return;
+                                }
+                                
+                                snapshot.forEach(doc => {
+                                    const log = doc.data();
+                                    const row = document.createElement('tr');
+                                    
+                                    // Date cell
+                                    const dateCell = document.createElement('td');
+                                    dateCell.textContent = formatDate(log.date);
+                                    row.appendChild(dateCell);
+                                    
+                                    // Status cell
+                                    const statusCell = document.createElement('td');
+                                    if (log.completed) {
+                                        statusCell.innerHTML = 
+                                            '<span class="badge bg-success">Completed</span>';
+                                    } else {
+                                        statusCell.innerHTML = 
+                                            '<span class="badge bg-warning text-dark">Pending</span>';
+                                    }
+                                    row.appendChild(statusCell);
+                                    
+                                    // Completed by cell
+                                    const completedByCell = document.createElement('td');
+                                    completedByCell.textContent = log.completedBy || 'N/A';
+                                    row.appendChild(completedByCell);
+                                    
+                                    // Notes cell
+                                    const notesCell = document.createElement('td');
+                                    notesCell.textContent = log.notes || 'N/A';
+                                    row.appendChild(notesCell);
+                                    
+                                    historyTableBody.appendChild(row);
+                                });
+                            })
+                            .catch(error => {
+                                console.error("Error loading task history:", error);
+                                document.getElementById('history-table-body').innerHTML = 
+                                    '<tr><td colspan="4" class="text-center text-danger">Error loading history</td></tr>';
+                            });
+                    }
+                });
+            });
+            
+            // Delete task buttons
+            tasksList.querySelectorAll('.delete-task').forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskItem = this.closest('.task-item');
+                    const taskId = taskItem.dataset.taskId;
+                    
+                    if (confirm("Are you sure you want to delete this task? This will permanently remove the task from the master list.")) {
+                        deleteTask(taskId);
+                    }
+                });
+            });
+        }
+        
+        // Complete a task
+        document.getElementById('save-completion').addEventListener('click', function() {
+            const taskId = document.getElementById('completion-task-id').value;
+            const logId = document.getElementById('completion-log-id').value;
+            const notes = document.getElementById('completion-notes').value;
+            
+            // Get response value based on task type
+            let responseValue = null;
+            
+            // For single-select dropdown
+            const responseValueElement = document.getElementById('completion-response-value');
+            if (responseValueElement) {
+                responseValue = responseValueElement.value;
+            }
+            
+            // For multiple-choice checkboxes
+            const multipleChoiceOptions = document.querySelectorAll('.multiple-choice-option:checked');
+            if (multipleChoiceOptions && multipleChoiceOptions.length > 0) {
+                responseValue = Array.from(multipleChoiceOptions).map(option => option.value);
+            }
+            
+            // For rating inputs
+            const selectedRating = document.querySelector('input[name="rating"]:checked');
+            if (selectedRating) {
+                responseValue = selectedRating.value;
+            }
+            
+            if (!taskId) {
+                alert("Task ID is missing. Please try again.");
+                return;
+            }
+            
+            // Find the task in masterTasks
+            let taskData;
+            
+            for (const category in masterTasks) {
+                const task = masterTasks[category].find(t => t.id === taskId);
+                if (task) {
+                    taskData = task;
+                    break;
+                }
+            }
+            
+            if (!taskData) {
+                alert("Task not found. Please refresh the page and try again.");
+                return;
+            }
+            
+            console.log("Completing task:", taskId, "with notes:", notes);
+            
+            // If we're using local data
+            if (taskId.startsWith('local-')) {
+                // Create a local completion log
+                const selectedDate = formattedDate;
+                const completionLog = {
+                    id: 'local-log-' + Date.now(),
+                    taskId: taskId,
+                    locationId: currentLocationId,
+                    date: selectedDate,
+                    completed: true,
+                    completedAt: new Date().toISOString(),
+                    completedBy: currentUser.name,
+                    userId: currentUser.id,
+                    notes: notes,
+                    taskName: taskData.name,
+                    taskCategory: taskData.category,
+                    responseValue: responseValue
+                };
+                
+                // Store it locally
+                dailyLogs[taskId] = completionLog;
+                
+                // Close modal
+                taskCompletionModal.hide();
+                
+                // Update UI
+                displayTasks();
+                
+                // Show success message
+                alert("Task marked as completed (locally)!");
+                return;
+            }
+            
+            // Otherwise use Firestore
+            // Create or update the daily log
+            const selectedDate = formattedDate;
+            let logRef;
+            
+            if (logId) {
+                // Update existing log
+                logRef = db.collection('dailyTaskLogs').doc(logId);
+                console.log("Updating existing log:", logId);
+            } else {
+                // Create new log
+                logRef = db.collection('dailyTaskLogs').doc();
+                console.log("Creating new log with ID:", logRef.id);
+            }
+            
+            const logData = {
+                taskId: taskId,
+                locationId: currentLocationId,
+                date: selectedDate,
+                completed: true,
+                completedAt: new Date().toISOString(),
+                completedBy: currentUser.name,
+                userId: currentUser.id,
+                notes: notes,
+                taskName: taskData.name,
+                taskCategory: taskData.category,
+                responseValue: responseValue
+            };
+            
+            console.log("Setting log data:", logData);
+            
+            signInAnonymously()
+                .then(() => {
+                    return logRef.set(logData, { merge: true });
+                })
+                .then(() => {
+                    console.log("Task completion saved successfully");
+                    // Close modal
+                    taskCompletionModal.hide();
+                    
+                    // Reload tasks
+                    loadTasksForLocation();
+                    
+                    // Show success message
+                    alert("Task marked as completed!");
+                })
+                .catch(error => {
+                    console.error("Error completing task:", error);
+                    alert("Failed to complete task: " + error.message);
+                    
+                    // If we get a permission error, use local data
+                    if (error.code === 'permission-denied') {
+                        console.log("Storing completion locally due to permission issues");
+                        // Store it locally
+                        dailyLogs[taskId] = logData;
+                        
+                        // Close modal
+                        taskCompletionModal.hide();
+                        
+                        // Update UI
+                        displayTasks();
+                        
+                        // Show success message
+                        alert("Task marked as completed (locally)!");
+                    }
+                });
+        });
+        
+        // Add a new task
+        function addTask() {
+            // Clear form fields
+            document.getElementById('task-id').value = '';
+            document.getElementById('task-name').value = '';
+            document.getElementById('task-details').value = '';
+            document.getElementById('task-type').value = 'check-off';
+            document.getElementById('task-options').value = '';
+            document.getElementById('task-multiple-options').value = '';
+            document.getElementById('task-order').value = '1';
+            
+            // Reset cleaning fields
+            document.getElementById('cleaning-time').value = 'morning';
+            document.querySelectorAll('#cleaning-fields input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Update modal title
+            document.getElementById('taskEditModalLabel').textContent = 'Add New Task';
+            
+            // Toggle conditional fields
+            toggleTaskTypeOptions();
+            
+            // Show modal
+            taskEditModal.show();
+        }
+        
+        // Save task (new or edit)
+        document.getElementById('save-task').addEventListener('click', function() {
+            const taskId = document.getElementById('task-id').value;
+            const taskName = document.getElementById('task-name').value;
+            const taskDetails = document.getElementById('task-details').value;
+            const taskCategory = document.getElementById('task-category').value;
+            const taskType = document.getElementById('task-type').value;
+            const taskOptionsText = document.getElementById('task-options').value;
+            const taskMultipleOptionsText = document.getElementById('task-multiple-options').value;
+            const taskOrder = parseInt(document.getElementById('task-order').value) || 1;
+            
+            // Process options if provided
+            let taskOptions = null;
+            if (taskType === 'single-select' && taskOptionsText.trim()) {
+                taskOptions = taskOptionsText.split('\n').filter(line => line.trim()).map(line => line.trim());
+            }
+            
+            let taskMultipleOptions = null;
+            if (taskType === 'multiple-choice' && taskMultipleOptionsText.trim()) {
+                taskMultipleOptions = taskMultipleOptionsText.split('\n').filter(line => line.trim()).map(line => line.trim());
+            }
+            
+            // Get cleaning fields if applicable
+            let cleaningTime = null;
+            let cleaningDays = null;
+            
+            if (taskCategory === 'cleaning') {
+                cleaningTime = document.getElementById('cleaning-time').value;
+                
+                // Get selected days
+                cleaningDays = [];
+                document.querySelectorAll('#cleaning-fields input[type="checkbox"]:checked').forEach(checkbox => {
+                    cleaningDays.push(checkbox.value);
+                });
+                
+                // If no days selected, default to all days
+                if (cleaningDays.length === 0) {
+                    cleaningDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                }
+            }
+            
+            if (!taskName) {
+                alert("Please enter a task name");
+                return;
+            }
+            
+            if (!currentLocationId) {
+                alert("Please select a location first");
+                return;
+            }
+            
+            // If we're using local data or editing a local task
+            if (currentLocationId.startsWith('local-') || (taskId && taskId.startsWith('local-'))) {
+                // Create or update task locally
+                const newTaskId = taskId || ('local-task-' + Date.now());
+                const taskData = {
+                    id: newTaskId,
+                    name: taskName,
+                    details: taskDetails,
+                    category: taskCategory,
+                    type: taskType,
+                    options: taskOptions,
+                    multipleOptions: taskMultipleOptions,
+                    locationId: currentLocationId,
+                    order: taskOrder,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: currentUser.name
+                };
+                
+                // Add cleaning fields if applicable
+                if (taskCategory === 'cleaning') {
+                    taskData.cleaningTime = cleaningTime;
+                    taskData.cleaningDays = cleaningDays;
+                }
+                
+                // Ensure the category exists in masterTasks
+                if (!masterTasks[taskCategory]) {
+                    masterTasks[taskCategory] = [];
+                }
+                
+                // If editing, remove the old task
+                if (taskId) {
+                    // Remove from any category it might be in
+                    for (const cat in masterTasks) {
+                        masterTasks[cat] = masterTasks[cat].filter(t => t.id !== taskId);
+                    }
+                }
+                
+                // Add the new/updated task
+                masterTasks[taskCategory].push(taskData);
+                
+                // Sort tasks by order
+                masterTasks[taskCategory].sort((a, b) => (a.order || 999) - (b.order || 999));
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('jojo_local_tasks', JSON.stringify(masterTasks));
+                } catch (e) {
+                    console.error("Error saving to localStorage:", e);
+                }
+                
+                // Close modal
+                taskEditModal.hide();
+                
+                // Update UI
+                displayTasks();
+                
+                // Show success message
+                if (taskId) {
+                    alert("Task updated successfully (locally)!");
+                } else {
+                    alert("Task added successfully (locally)!");
+                }
+                
+                return;
+            }
+            
+            let taskRef;
+            
+            if (taskId) {
+                // Edit existing task
+                taskRef = db.collection('tasks').doc(taskId);
+                console.log("Updating existing task:", taskId);
+            } else {
+                // Create new task
+                taskRef = db.collection('tasks').doc();
+                console.log("Creating new task with ID:", taskRef.id);
+            }
+            
+            const taskData = {
+                name: taskName,
+                details: taskDetails,
+                category: taskCategory,
+                type: taskType,
+                options: taskOptions,
+                multipleOptions: taskMultipleOptions,
+                locationId: currentLocationId,
+                order: taskOrder,
+                updatedAt: new Date().toISOString(),
+                updatedBy: currentUser.name
+            };
+            
+            // Add cleaning fields if applicable
+            if (taskCategory === 'cleaning') {
+                taskData.cleaningTime = cleaningTime;
+                taskData.cleaningDays = cleaningDays;
+            }
+            
+            console.log("Setting task data:", taskData);
+            
+            signInAnonymously()
+                .then(() => {
+                    return taskRef.set(taskData, { merge: true });
+                })
+                .then(() => {
+                    console.log("Task saved successfully");
+                    // Close modal
+                    taskEditModal.hide();
+                    
+                    // Reload tasks
+                    loadTasksForLocation();
+                    
+                    // Show success message
+                    if (taskId) {
+                        alert("Task updated successfully!");
+                    } else {
+                        alert("Task added successfully!");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error saving task:", error);
+                    
+                    // If we get a permission error, switch to local mode
+                    if (error.code === 'permission-denied') {
+                        console.log("Switching to local mode due to permission issues");
+                        // Switch current ID to local mode
+                        if (!currentLocationId.startsWith('local-')) {
+                            currentLocationId = 'local-' + currentLocationId;
+                            currentLocationText.textContent += " (Local)";
+                            
+                            // Create local data
+                            createAndUseLocalData();
+                            
+                            // Try saving again in local mode
+                            document.getElementById('save-task').click();
+                        } else {
+                            alert("Failed to save task. Please try again.");
+                        }
+                    } else {
+                        alert("Failed to save task: " + error.message);
+                    }
+                });
+        });
+        
+        // Delete a task
+        function deleteTask(taskId) {
+            console.log("Deleting task:", taskId);
+            
+            // If we're deleting a local task
+            if (taskId.startsWith('local-')) {
+                // Find and remove the task from masterTasks
+                for (const category in masterTasks) {
+                    const index = masterTasks[category].findIndex(t => t.id === taskId);
+                    if (index !== -1) {
+                        masterTasks[category].splice(index, 1);
+                        break;
+                    }
+                }
+                
+                // Remove any completion logs
+                if (dailyLogs[taskId]) {
+                    delete dailyLogs[taskId];
+                }
+                
+                // Update UI
+                displayTasks();
+                
+                // Show success message
+                alert("Task deleted successfully (locally)!");
+                return;
+            }
+            
+            signInAnonymously()
+                .then(() => {
+                    return db.collection('tasks').doc(taskId).delete();
+                })
+                .then(() => {
+                    console.log("Task deleted successfully");
+                    // Reload tasks
+                    loadTasksForLocation();
+                    
+                    // Show success message
+                    alert("Task deleted successfully!");
+                })
+                .catch(error => {
+                    console.error("Error deleting task:", error);
+                    alert("Failed to delete task: " + error.message);
+                    
+                    // If we get a permission error, switch to local mode
+                    if (error.code === 'permission-denied') {
+                        console.log("Switching to local mode for deletion");
+                        // Try again with local mode
+                        taskId = 'local-' + taskId;
+                        deleteTask(taskId);
+                    }
+                });
+        }
+        
+        // Show/hide loading spinners
+        function showLoadingSpinners(show) {
+            const categories = ['opening', 'midday', 'closing', 'cleaning'];
+            
+            categories.forEach(category => {
+                const spinner = document.getElementById(`${category}-spinner`);
+                
+                if (spinner) {
+                    spinner.style.display = show ? 'flex' : 'none';
+                }
+            });
+        }
+        
+        // Clear task lists
+        function clearTaskLists() {
+            const categories = ['opening', 'midday', 'closing', 'cleaning'];
+            
+            categories.forEach(category => {
+                const tasksList = document.getElementById(`${category}-tasks-list`);
+                
+                // Keep the spinner, remove everything else
+                const spinner = tasksList.querySelector(`#${category}-spinner`);
+                tasksList.innerHTML = '';
+                if (spinner) {
+                    tasksList.appendChild(spinner);
+                }
+            });
+        }
+        
+        // Format date for display
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            
+            const date = new Date(dateString);
+            
+            if (isNaN(date.getTime())) {
+                // Try parsing YYYY-MM-DD format
+                const parts = dateString.split('-');
+                if (parts.length === 3) {
+                    const year = parseInt(parts[0]);
+                    const month = parseInt(parts[1]) - 1; // Months are 0-indexed
+                    const day = parseInt(parts[2]);
+                    
+                    return new Date(year, month, day).toLocaleDateString();
+                }
+                
+                return dateString;
+            }
+            
+            return date.toLocaleDateString();
+        }
+        
+        // Toggle conditional fields based on task type
+        function toggleTaskTypeOptions() {
+            const taskType = document.getElementById('task-type').value;
+            const taskCategory = document.getElementById('task-category').value;
+            const singleSelectOptions = document.getElementById('single-select-options');
+            const multipleChoiceOptions = document.getElementById('multiple-choice-options');
+            const cleaningFields = document.getElementById('cleaning-fields');
+            
+            // Hide all conditional fields first
+            singleSelectOptions.style.display = 'none';
+            multipleChoiceOptions.style.display = 'none';
+            cleaningFields.style.display = 'none';
+            
+            // Show relevant fields based on task type
+            if (taskType === 'single-select') {
+                singleSelectOptions.style.display = 'block';
+            } else if (taskType === 'multiple-choice') {
+                multipleChoiceOptions.style.display = 'block';
+            }
+            
+            // Show cleaning fields if category is cleaning
+            if (taskCategory === 'cleaning') {
+                cleaningFields.style.display = 'block';
+            }
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM content loaded, initializing page");
+            
+            // Try to load local data from localStorage
+            try {
+                const localTasks = localStorage.getItem('jojo_local_tasks');
+                const localLogs = localStorage.getItem('jojo_local_logs');
+                const savedLocationId = localStorage.getItem('selectedLocationId');
+                
+                if (localTasks && savedLocationId && savedLocationId.startsWith('local-')) {
+                    console.log("Found local tasks in localStorage");
+                    masterTasks = JSON.parse(localTasks);
+                    
+                    if (localLogs) {
+                        dailyLogs = JSON.parse(localLogs);
+                    }
+                    
+                    // Create a sample location locally
+                    const sampleLocation = {
+                        id: savedLocationId,
+                        locationName: 'Sample Location (Local)'
+                    };
+                    
+                    // Add it to the dropdown when locations are loaded
+                    const loadLocationsOriginal = loadLocations;
+                    loadLocations = function() {
+                        return loadLocationsOriginal().then(() => {
+                            // Check if sample location already exists
+                            if (!Array.from(locationSelect.options).some(opt => opt.value === savedLocationId)) {
+                                const option = document.createElement('option');
+                                option.value = savedLocationId;
+                                option.textContent = sampleLocation.locationName;
+                                locationSelect.appendChild(option);
+                            }
+                            
+                            // Select it
+                            locationSelect.value = savedLocationId;
+                            currentLocationId = savedLocationId;
+                            currentLocationText.textContent = sampleLocation.locationName;
+                            
+                            // Trigger display
+                            displayTasks();
+                            
+                            return Promise.resolve();
+                        });
+                    };
+                }
+            } catch (e) {
+                console.error("Error loading from localStorage:", e);
+            }
+            
+            // Check if Firebase Auth is available
+            if (firebase.auth) {
+                // Sign in anonymously first
+                signInAnonymously().then(() => {
+                    loadLocations();
+                });
+            } else {
+                console.warn("Firebase Auth not available, proceeding without authentication");
+                loadLocations();
+            }
+            
+            // Add event listeners for add task buttons
+            document.querySelectorAll('[id^="add-"]').forEach(button => {
+                button.addEventListener('click', function() {
+                    // Set category in modal based on button clicked
+                    const category = this.id.replace('add-', '').replace('-task', '');
+                    document.getElementById('task-category').value = category;
+                    
+                    // Add a new task
+                    addTask();
+                });
+            });
+            
+            // Add event listener for category change
+            document.getElementById('task-category').addEventListener('change', toggleTaskTypeOptions);
+            
+            // Initial toggle for task type options
+            toggleTaskTypeOptions();
+        });
+    </script>
+</body>
+</html> 
