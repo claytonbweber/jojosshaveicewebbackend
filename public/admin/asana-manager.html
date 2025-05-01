@@ -632,12 +632,12 @@
                 alert(`Starting sync for ${selectedProjects.length} projects...`);
                 // Here you would trigger the actual sync process with the Asana API
                 
-                // Update last sync time (for demo purposes)
+                // Update last sync time in the UI
                 const now = new Date();
                 const formattedDate = now.toLocaleString();
                 document.getElementById('last-sync-time').textContent = `Last sync: ${formattedDate}`;
                 
-                // Add a new log entry (for demo purposes)
+                // Add a new log entry to the UI
                 const logEntry = document.createElement('div');
                 logEntry.className = 'log-entry';
                 logEntry.innerHTML = `
@@ -646,6 +646,34 @@
                 `;
                 const historyLog = document.getElementById('history-log');
                 historyLog.insertBefore(logEntry, historyLog.firstChild);
+                
+                // Update the lastSync time in Firestore
+                db.collection('asanaSettings').doc('config').update({
+                    lastSync: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastSyncProjects: selectedProjects,
+                    syncCount: firebase.firestore.FieldValue.increment(1)
+                })
+                .then(() => {
+                    console.log('Sync time updated in Firestore');
+                })
+                .catch((error) => {
+                    console.error('Error updating sync time:', error);
+                });
+                
+                // Add a log entry to Firestore
+                db.collection('asanaSettings').doc('sync_logs').collection('logs').add({
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    projects: selectedProjects,
+                    projectCount: selectedProjects.length,
+                    status: 'started',
+                    message: `Started manual sync for ${selectedProjects.length} projects`
+                })
+                .then(() => {
+                    console.log('Sync log added to Firestore');
+                })
+                .catch((error) => {
+                    console.error('Error adding sync log:', error);
+                });
             });
             
             // Load more logs button
@@ -768,8 +796,34 @@
             db.collection('asanaSettings').doc('config').get()
                 .then((doc) => {
                     if (doc.exists && doc.data().pat) {
+                        const data = doc.data();
+                        
+                        // Load saved settings into form fields
+                        document.getElementById('asana-pat').value = data.pat;
+                        
+                        // Set the frequency dropdown to the saved value
+                        if (data.syncFrequency) {
+                            const syncFrequencySelect = document.getElementById('sync-frequency');
+                            const options = syncFrequencySelect.options;
+                            for (let i = 0; i < options.length; i++) {
+                                if (parseInt(options[i].value) === data.syncFrequency) {
+                                    syncFrequencySelect.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Display last sync time if available
+                        if (data.lastSync) {
+                            const lastSyncDate = data.lastSync.toDate();
+                            const formattedDate = lastSyncDate.toLocaleString();
+                            document.getElementById('last-sync-time').textContent = `Last sync: ${formattedDate}`;
+                        }
+                        
+                        console.log('Loaded existing settings');
                         updateConnectionStatus(true);
                     } else {
+                        console.log('No existing settings found');
                         updateConnectionStatus(false);
                     }
                 })
