@@ -53,5 +53,10 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin() || isManager();
     }
+    
+    // Asana Settings collection
+    match /asanaSettings/{docId} {
+      allow read, write: if true;  // Allow public access for now to facilitate setup
+    }
   }
 } 

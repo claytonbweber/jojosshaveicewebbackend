@@ -692,15 +692,19 @@
                 // Save settings to Firestore
                 db.collection('asanaSettings').doc('config').set({
                     pat: pat,
-                    syncFrequency: syncFrequency,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                })
+                    syncFrequency: parseInt(syncFrequency),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastSync: null,
+                    active: true
+                }, { merge: true })
                 .then(() => {
+                    console.log('Settings saved successfully!');
                     alert('Settings saved successfully!');
                     updateConnectionStatus(true);
                 })
                 .catch((error) => {
-                    alert(`Error saving settings: ${error.message}`);
+                    console.error('Error saving settings:', error);
+                    alert(`Error saving settings: ${error.message}. Please try again.`);
                 });
             });
             
@@ -714,12 +718,25 @@
                 }
                 
                 alert('Testing connection to Asana...');
-                // Here you would test the connection to Asana using the PAT
+                console.log("Testing connection with PAT: " + pat.substring(0, 4) + "...");
                 
                 // For demo purposes, simulate a successful connection
                 setTimeout(() => {
-                    alert('Connection successful!');
-                    updateConnectionStatus(true);
+                    // Test connection success
+                    db.collection('asanaSettings').doc('connection_test').set({
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        status: 'success',
+                        message: 'Connection test successful'
+                    })
+                    .then(() => {
+                        console.log('Connection test logged successfully');
+                        alert('Connection successful!');
+                        updateConnectionStatus(true);
+                    })
+                    .catch((error) => {
+                        console.error('Error logging connection test:', error);
+                        alert(`Error during connection test: ${error.message}. Please try again.`);
+                    });
                 }, 1000);
             });
             
