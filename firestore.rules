@@ -58,5 +58,30 @@ service cloud.firestore {
     match /asanaSettings/{docId} {
       allow read, write: if true;  // Allow public access for now to facilitate setup
     }
+    
+    // New Asana collections
+    match /asana_config/{docId} {
+      allow read, write: if true;  // Allow public access to facilitate setup
+    }
+    
+    match /asana_projects/{docId} {
+      allow read, write: if true;  // Allow public access to facilitate setup
+    }
+    
+    match /asana_workspaces/{docId} {
+      allow read, write: if true;  // Allow public access to facilitate setup
+    }
+    
+    match /asana_tasks/{docId} {
+      allow read, write: if true;  // Allow public access to facilitate setup
+    }
+    
+    match /asana_sync_logs/{docId} {
+      allow read, write: if true;  // Allow public access to facilitate setup
+    }
+    
+    match /asana_change_logs/{docId} {
+      allow read, write: if true;  // Allow public access to facilitate setup
+    }
   }
 } 
