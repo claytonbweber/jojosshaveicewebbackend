@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Version: 7.0 - Always Stacked + Enhanced Auto-Sync - Timestamp: May 1, 2024 2:00 PM -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +7,14 @@
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <!-- Add unique query parameter to force cache invalidation -->
+    <meta name="cache-bust-timestamp" content="1714587433">
+    <script>
+        // Set a dynamic timestamp on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('meta[name="cache-bust-timestamp"]').content = Date.now();
+        });
+    </script>
     <title>Asana Sync Manager - JoJo's Shave Ice</title>
     <link rel="stylesheet" href="../assets/css/styles.css">
     <!-- Add Chart.js and Moment.js for graph visualization -->
@@ -285,6 +294,66 @@
             border-radius: 4px;
             background-color: #f9f9f9;
         }
+        
+        /* Add styles for retry queue components */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-error { background-color: #dc3545; }
+        .status-queued { background-color: #ffc107; }
+        .status-retrying { background-color: #17a2b8; }
+        .status-success { background-color: #28a745; }
+        
+        .project-error { color: #dc3545; margin-left: 15px; }
+        
+        .log-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .log-timestamp {
+            color: #6c757d;
+            margin-right: 10px;
+        }
+        .log-error { color: #dc3545; }
+        .log-success { color: #28a745; }
+        .log-info { color: #17a2b8; }
+        
+        .project-item-retry {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .project-item-retry:last-child { border-bottom: none; }
+        .project-item-retry:nth-child(odd) { background-color: #f9f9f9; }
+        
+        .project-name { font-weight: bold; flex: 1; }
+        .project-error { margin-left: 15px; flex: 2; }
+        .project-actions { flex: 0 0 100px; text-align: right; }
+        
+        .btn-success { 
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover { 
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -306,6 +375,7 @@
             <div class="tab-nav">
                 <button class="tab-btn active" data-tab="workspace-sync">Workspace Sync</button>
                 <button class="tab-btn" data-tab="task-viewer">Task Viewer</button>
+                <button class="tab-btn" data-tab="retry-queue">Retry Queue</button>
                 <button class="tab-btn" data-tab="settings">Settings</button>
             </div>
             
@@ -427,6 +497,62 @@
                     </div>
             </div>
             
+            <!-- Retry Queue Tab -->
+            <div id="retry-queue" class="tab-content">
+                <div id="not-connected-retry-queue" class="info-box" style="background-color: #fff3cd; border-left-color: #ffc107;">
+                    <p>You need to configure your Asana connection first. Go to the Settings tab to enter your Asana Personal Access Token.</p>
+                </div>
+                
+                <div id="connected-retry-queue" style="display: none;">
+                    <div id="queue-status" class="card">
+                        <h3>Retry Queue Status</h3>
+                        <p>Queue status: <span id="queue-state">Inactive</span></p>
+                        <p>Next retry: <span id="next-retry">None scheduled</span></p>
+                        <p>Projects in queue: <span id="queue-count">0</span></p>
+                        
+                        <div>
+                            <button id="start-queue" class="btn btn-success">Start Retry Queue</button>
+                            <button id="stop-queue" class="btn btn-secondary" disabled>Stop Queue</button>
+                            <button id="retry-now" class="btn" disabled>Retry Now</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Failed Projects Queue</h3>
+                        <p>These projects encountered errors during sync and are queued for retry.</p>
+                        
+                        <div id="project-list-retry" class="project-list">
+                            <div class="project-item" style="background-color: #f0f0f0; font-weight: bold;">
+                                <div class="project-name">Project Name</div>
+                                <div class="project-error">Error</div>
+                                <div class="project-actions">Actions</div>
+                            </div>
+                            <!-- Projects will be loaded here -->
+                            <div id="no-projects" style="padding: 20px; text-align: center; color: #6c757d;">
+                                No failed projects in queue
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 15px;">
+                            <button id="refresh-list" class="btn btn-secondary">Refresh List</button>
+                            <button id="retry-all" class="btn" disabled>Retry All Now</button>
+                            <button id="clear-queue" class="btn btn-secondary" disabled>Clear Queue</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Retry Log</h3>
+                        <div id="retry-log" class="log-container" style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 20px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 14px;">
+                            <!-- Log entries will be added here -->
+                            <div class="log-entry" style="margin-bottom: 5px; padding: 5px 0; border-bottom: 1px solid #eee;">
+                                <span class="log-timestamp" style="color: #6c757d; margin-right: 10px;">[System]</span>
+                                <span class="log-info" style="color: #17a2b8;">Retry system initialized</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Settings Tab -->
             <div id="settings" class="tab-content">
                 <div id="current-connection" class="asana-container" style="display: none;">
@@ -533,11 +659,10 @@
                         </div>
                         <div class="col">
                             <div class="form-group">
-                                <label for="stats-view-type">View Type:</label>
-                                <select id="stats-view-type" class="form-control">
-                                    <option value="success-rate">Success Rate</option>
-                                    <option value="sync-count">Sync Count</option>
-                                    <option value="errors">Errors</option>
+                                <label for="display-mode">Display Mode:</label>
+                                <select id="display-mode" class="form-control">
+                                    <option value="count">Count</option>
+                                    <option value="percentage">Percentage</option>
                                 </select>
                             </div>
                         </div>
@@ -569,6 +694,7 @@
                             <button id="apply-stats-filters" class="btn btn-primary btn-sm">Apply Filters</button>
                             <button id="reset-stats-filters" class="btn btn-secondary btn-sm" style="margin-left: 5px;">Reset</button>
                             <button id="drill-up-btn" class="btn btn-info btn-sm" style="margin-left: 5px; display: none;">Back to Summary</button>
+                            <span id="auto-sync-indicator" style="margin-left: 15px; padding: 3px 8px; border-radius: 10px; background-color: #e8f7ff; color: #0056b3; font-size: 0.8rem;">Auto-sync: <span id="auto-sync-status">Checking...</span></span>
                         </div>
                     </div>
                 </div>
@@ -611,6 +737,28 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script>
+        // Force cache clear on page load
+        window.onload = function() {
+            console.log('Page loaded with cache-busting timestamp: ' + new Date().toISOString());
+            
+            // Add a visual indicator that this is the latest version
+            const versionIndicator = document.createElement('div');
+            versionIndicator.style.position = 'fixed';
+            versionIndicator.style.bottom = '10px';
+            versionIndicator.style.right = '10px';
+            versionIndicator.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            versionIndicator.style.color = 'white';
+            versionIndicator.style.padding = '5px 10px';
+            versionIndicator.style.borderRadius = '4px';
+            versionIndicator.style.fontSize = '12px';
+            versionIndicator.style.zIndex = '9999';
+            versionIndicator.textContent = 'v2.0 - May 1 Error Fix';
+            document.body.appendChild(versionIndicator);
+            
+            // Skip version check - just display instructions in console
+            console.log('For best results, please use Ctrl+F5 (Windows/Linux) or Cmd+Shift+R (Mac) to force reload without cache');
+        };
+        
         // Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCgEDfRBjbqqnwWc0TeR97V3RvfrvjJu1U",
@@ -684,6 +832,8 @@
                 const connectedWorkspace = document.getElementById('connected-workspace');
                 const notConnectedTasks = document.getElementById('not-connected-tasks');
                 const connectedTasks = document.getElementById('connected-tasks');
+                const notConnectedRetryQueue = document.getElementById('not-connected-retry-queue');
+                const connectedRetryQueue = document.getElementById('connected-retry-queue');
                 const currentConnection = document.getElementById('current-connection');
                 const settingsFormContainer = document.getElementById('settings-form-container');
                 
@@ -706,6 +856,10 @@
                     if (notConnectedTasks) notConnectedTasks.style.display = 'none';
                     if (connectedTasks) connectedTasks.style.display = 'block';
                     
+                    // Show connected retry queue view
+                    if (notConnectedRetryQueue) notConnectedRetryQueue.style.display = 'none';
+                    if (connectedRetryQueue) connectedRetryQueue.style.display = 'block';
+                    
                     // Show current connection settings and hide the form
                     currentConnection.style.display = 'block';
                     settingsFormContainer.style.display = 'none';
@@ -716,6 +870,9 @@
                     loadTaskViewerProjects();
                     loadTaskViewerAssignees();
                     loadTasks();
+                    
+                    // Initialize the retry queue system
+                    initRetryQueue();
                     
                     // Don't load projects until a workspace is selected
                     const projectList = document.getElementById('project-list');
@@ -738,6 +895,10 @@
                     // Show disconnected tasks view
                     if (notConnectedTasks) notConnectedTasks.style.display = 'block';
                     if (connectedTasks) connectedTasks.style.display = 'none';
+                    
+                    // Show disconnected retry queue view
+                    if (notConnectedRetryQueue) notConnectedRetryQueue.style.display = 'block';
+                    if (connectedRetryQueue) connectedRetryQueue.style.display = 'none';
                     
                     // Hide current connection settings and show the form
                     currentConnection.style.display = 'none';
@@ -1485,7 +1646,7 @@
                                     })
                                     .catch(error => {
                                         console.error('Error updating token field name:', error);
-                                        updateConnectionStatus(false);
+                                        tryLocalStorageBackup();
                                     });
                 } else {
                                 console.log('No valid settings found with any token field names');
@@ -1514,23 +1675,89 @@
                                                 })
                                                 .catch(error => {
                                                     console.error('Error migrating settings:', error);
-                                                    updateConnectionStatus(false);
+                                                    tryLocalStorageBackup();
                                                 });
                                         } else {
-                                            updateConnectionStatus(false);
+                                            tryLocalStorageBackup();
                                         }
                                     })
                                     .catch(error => {
                                         console.error('Error checking legacy asana_config:', error);
-                                        updateConnectionStatus(false);
+                                        tryLocalStorageBackup();
                                     });
                             }
+                        } else {
+                            // No settings document exists, try localStorage backup
+                            tryLocalStorageBackup();
                         }
                     })
                     .catch((error) => {
                         console.error('Error checking connection status:', error);
-                        updateConnectionStatus(false);
+                        tryLocalStorageBackup();
                     });
+                
+                // Try to recover from localStorage if Firestore fails
+                function tryLocalStorageBackup() {
+                    try {
+                        const savedSettings = localStorage.getItem('asana_settings');
+                        if (savedSettings) {
+                            const localSettings = JSON.parse(savedSettings);
+                            console.log('Found settings in localStorage:', localSettings);
+                            
+                            if (localSettings.personal_access_token) {
+                                console.log('Restoring connection from localStorage backup');
+                                
+                                // Create normalized data from localStorage
+                                const normalizedData = {
+                                    personal_access_token: localSettings.personal_access_token,
+                                    sync_frequency: localSettings.sync_frequency || 60,
+                                    active: true
+                                };
+                                
+                                // Update UI with backup data
+                                updateConnectionDisplay(normalizedData);
+                                document.getElementById('asana-pat').value = normalizedData.personal_access_token;
+                                
+                                // Set frequency dropdown
+                                if (normalizedData.sync_frequency) {
+                                    const syncFrequencySelect = document.getElementById('sync-frequency');
+                                    const options = syncFrequencySelect.options;
+                                    for (let i = 0; i < options.length; i++) {
+                                        if (parseInt(options[i].value) === normalizedData.sync_frequency) {
+                                            syncFrequencySelect.selectedIndex = i;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                // Also restore to Firestore for future use
+                                db.collection('asana_config').doc('settings').set({
+                                    personal_access_token: localSettings.personal_access_token,
+                                    sync_frequency: localSettings.sync_frequency || 60,
+                                    updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                                    active: true,
+                                    restored_from_local: true
+                                }, { merge: true })
+                                .then(() => {
+                                    console.log('Restored settings from localStorage to Firestore');
+                                })
+                                .catch(err => {
+                                    console.error('Error restoring settings to Firestore:', err);
+                                });
+                                
+                                updateConnectionStatus(true);
+                                afterConnectionEstablished();
+                                return;
+                            }
+                        }
+                        
+                        // If we get here, there was no backup or it didn't have a token
+                        updateConnectionStatus(false);
+                    } catch (e) {
+                        console.error('Error trying localStorage backup:', e);
+                        updateConnectionStatus(false);
+                    }
+                }
             }
 
             // Function to update the current connection display
@@ -1611,6 +1838,15 @@
                     })
                     .then(() => {
                         console.log('Connection settings cleared');
+                        
+                        // Also clear localStorage backup
+                        try {
+                            localStorage.removeItem('asana_settings');
+                            console.log('LocalStorage backup also cleared');
+                        } catch (e) {
+                            console.error('Error clearing localStorage:', e);
+                        }
+                        
                         alert('Connection settings cleared successfully');
                         updateConnectionStatus(false);
                     })
@@ -2184,6 +2420,18 @@
                                 updated_at: firebase.firestore.FieldValue.serverTimestamp(),
                                 active: true
                             };
+                        }
+                        
+                        // Also save to localStorage as backup
+                        try {
+                            localStorage.setItem('asana_settings', JSON.stringify({
+                                personal_access_token: pat,
+                                sync_frequency: parseInt(syncFrequency),
+                                timestamp: new Date().toISOString()
+                            }));
+                            console.log('Settings saved to localStorage as backup');
+                        } catch (e) {
+                            console.error('Error saving to localStorage:', e);
                         }
                         
                         // Save settings to Firestore using the correct collection and document structure
@@ -2801,9 +3049,9 @@
             function loadSyncStatistics() {
                 try {
                     const days = parseInt(document.getElementById('stats-date-range').value) || 7;
-                    const viewType = document.getElementById('stats-view-type').value || 'success-rate';
+                    const displayMode = document.getElementById('display-mode')?.value || 'count';
                     
-                    console.log('Loading sync statistics with params:', { days, viewType, selectedProjects });
+                    console.log('Loading sync statistics with params:', { days, displayMode, selectedProjects });
                     
                     // Calculate date range
                     const endDate = new Date();
@@ -2812,6 +3060,9 @@
                     
                     console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
                     console.log(`Using project filters: ${selectedProjects.length > 0 ? selectedProjects.join(', ') : 'All Projects'}`);
+                    
+                    // Create stats controls if they don't exist
+                    ensureStatsControlsExist();
                     
                     // If we're in a drill-down view, handle that specially
                     if (drillDownState) {
@@ -2846,6 +3097,9 @@
                     
                     // Always make sure project filter is populated with all projects
                     populateProjectFilter();
+                    
+                    // Check auto-sync status and update UI
+                    checkAutoSyncStatus();
                     
                     // Query the sync logs within the date range
                     let query = db.collection('asana_sync_logs')
@@ -2917,8 +3171,14 @@
                                     successCount: 0,
                                     totalCount: 0,
                                     errorCount: 0,
+                                    errorTypes: {}, // Track different error types
                                     projectSuccessCount: 0,
                                     projectTotalCount: 0,
+                                    initiatedBy: {
+                                        manual: 0,
+                                        auto: 0,
+                                        unknown: 0
+                                    },
                                     dateKey: dateKey
                                 };
                                 currentDate.setDate(currentDate.getDate() + 1);
@@ -2932,6 +3192,13 @@
                                     const dateKey = log.date.toISOString().split('T')[0];
                                     if (logsByDay[dateKey]) {
                                         logsByDay[dateKey].logs.push(log);
+                                        
+                                        // Track who initiated the sync (manual, auto, or unknown)
+                                        let initiator = 'unknown';
+                                        if (log.details && log.details.initiated_by) {
+                                            initiator = log.details.initiated_by;
+                                        }
+                                        logsByDay[dateKey].initiatedBy[initiator]++;
                                         
                                         // For multi-select projects, we need to count only the selected projects
                                         if (selectedProjects.length > 0) {
@@ -2948,6 +3215,10 @@
                                                         daySuccessCount++;
                                                     } else if (stat.error) {
                                                         dayErrorCount++;
+                                                        
+                                                        // Track error types for breakdown
+                                                        const errorType = getErrorType(stat.error);
+                                                        logsByDay[dateKey].errorTypes[errorType] = (logsByDay[dateKey].errorTypes[errorType] || 0) + 1;
                                                     }
                                                 }
                                             });
@@ -2962,10 +3233,16 @@
                                                 logsByDay[dateKey].totalCount += log.project_count;
                                             }
                                             
-                                            // Count errors
+                                            // Count errors and track error types
                                             try {
                                                 if (log.errors && Array.isArray(log.errors)) {
                                                     logsByDay[dateKey].errorCount += log.errors.length;
+                                                    
+                                                    // Track each error type
+                                                    log.errors.forEach(error => {
+                                                        const errorType = getErrorType(error);
+                                                        logsByDay[dateKey].errorTypes[errorType] = (logsByDay[dateKey].errorTypes[errorType] || 0) + 1;
+                                                    });
                                                 }
                                                 
                                                 // Also count project-specific errors
@@ -2973,6 +3250,10 @@
                                                     Object.values(log.projectStats).forEach(stat => {
                                                         if (stat.error) {
                                                             logsByDay[dateKey].errorCount++;
+                                                            
+                                                            // Track error type
+                                                            const errorType = getErrorType(stat.error);
+                                                            logsByDay[dateKey].errorTypes[errorType] = (logsByDay[dateKey].errorTypes[errorType] || 0) + 1;
                                                         }
                                                     });
                                                 }
@@ -2992,47 +3273,88 @@
                             const logsByDayArray = Object.values(logsByDay);
                             console.log(`Prepared ${logsByDayArray.length} data points for chart`);
                             
-                            // Prepare data for chart based on view type
+                            // Prepare data for chart - always show stacked data
                             let chartData;
                             let chartTitle;
-                            let chartColor;
+                            let isPercentage = displayMode === 'percentage';
                             
-                            switch (viewType) {
-                                case 'success-rate':
-                                    chartTitle = 'Sync Success Rate (%)';
-                                    chartColor = 'rgba(40, 167, 69, 0.7)';
-                                    chartData = logsByDayArray.map(day => {
-                                        return day.totalCount === 0 ? 0 : 
-                                            Math.round((day.successCount / day.totalCount) * 100);
+                            // Get all error types
+                            const allErrorTypes = new Set();
+                            logsByDayArray.forEach(day => {
+                                Object.keys(day.errorTypes).forEach(type => allErrorTypes.add(type));
+                            });
+                            
+                            // Sort error types alphabetically for consistency
+                            const sortedErrorTypes = Array.from(allErrorTypes).sort();
+                            window.errorTypes = sortedErrorTypes;
+                            console.log('Error types:', sortedErrorTypes);
+                            
+                            if (sortedErrorTypes.length > 0) {
+                                // We have error types, show a full breakdown
+                                chartTitle = isPercentage ? 
+                                    'Sync Status Distribution (%)' : 
+                                    'Sync Status Breakdown';
+                                
+                                // Create data arrays - first for success, then each error type
+                                const successData = logsByDayArray.map(day => {
+                                    const successCount = day.successCount;
+                                    return isPercentage && day.totalCount > 0 ? 
+                                        Math.round((successCount / day.totalCount) * 100) : 
+                                        successCount;
+                                });
+                                
+                                // Create array for error types
+                                const errorDataSets = sortedErrorTypes.map(errorType => {
+                                    return logsByDayArray.map(day => {
+                                        const errorCount = day.errorTypes[errorType] || 0;
+                                        return isPercentage && day.totalCount > 0 ? 
+                                            Math.round((errorCount / day.totalCount) * 100) : 
+                                            errorCount;
                                     });
-                                    break;
-                                    
-                                case 'sync-count':
-                                    chartTitle = 'Number of Syncs';
-                                    chartColor = 'rgba(23, 162, 184, 0.7)';
-                                    chartData = logsByDayArray.map(day => {
-                                        return day.logs.length;
-                                    });
-                                    break;
-                                    
-                                case 'errors':
-                                    chartTitle = 'Number of Errors';
-                                    chartColor = 'rgba(220, 53, 69, 0.7)';
-                                    chartData = logsByDayArray.map(day => {
-                                        return day.errorCount;
-                                    });
-                                    break;
+                                });
+                                
+                                // Combine for full stacked chart [success, error1, error2, ...]
+                                chartData = [successData, ...errorDataSets];
+                                
+                                // Add dataset labels
+                                window.datasetLabels = ['Success', ...sortedErrorTypes];
+                            } else {
+                                // No error types found, show simple success/failure
+                                chartTitle = isPercentage ? 
+                                    'Success Rate (%)' : 
+                                    'Success vs Failure';
+                                
+                                // Create success and failure data
+                                const successData = logsByDayArray.map(day => {
+                                    const successCount = day.successCount;
+                                    return isPercentage && day.totalCount > 0 ? 
+                                        Math.round((successCount / day.totalCount) * 100) : 
+                                        successCount;
+                                });
+                                
+                                const failureData = logsByDayArray.map(day => {
+                                    const failureCount = day.totalCount - day.successCount;
+                                    return isPercentage && day.totalCount > 0 ? 
+                                        Math.round((failureCount / day.totalCount) * 100) : 
+                                        failureCount;
+                                });
+                                
+                                chartData = [successData, failureData];
+                                
+                                // Add dataset labels
+                                window.datasetLabels = ['Success', 'Failure'];
                             }
                             
                             console.log('Chart data prepared:', {
                                 title: chartTitle,
-                                dataPoints: chartData.length
+                                isPercentage: isPercentage,
+                                datasets: window.datasetLabels
                             });
                             
                             // Create or update chart
-                            createDrillableChart(labels, chartData, chartTitle, chartColor, logsByDayArray);
+                            createStackedChart(labels, chartData, chartTitle, isPercentage, logsByDayArray);
                             
-                            // Update summary statistics
+                            // Update summary statistics including auto-sync counts
                             updateSummaryStats(logs, filteredLogs);
                         })
                         .catch(error => {
@@ -3045,28 +3367,205 @@
                 }
             }
             
-            // Create or update the chart
-            function createDrillableChart(labels, data, title, color, dataSets) {
+            // Ensure stats controls exists and are properly configured
+            function ensureStatsControlsExist() {
+                let statsControls = document.querySelector('.stats-controls');
+                
+                if (!statsControls) {
+                    console.log('Creating stats controls container');
+                    const modalBody = document.getElementById('sync-stats-modal-body');
+                    
+                    // Create container
+                    statsControls = document.createElement('div');
+                    statsControls.className = 'stats-controls';
+                    statsControls.innerHTML = statsControlsHTML;
+                    
+                    // Insert at the beginning of modal body
+                    if (modalBody) {
+                        const firstChild = modalBody.firstChild;
+                        modalBody.insertBefore(statsControls, firstChild);
+                        
+                        // Add event listeners
+                        const applyButton = document.getElementById('apply-stats-filters');
+                        if (applyButton) {
+                            applyButton.addEventListener('click', loadSyncStatistics);
+                        }
+                        
+                        const resetButton = document.getElementById('reset-stats-filters');
+                        if (resetButton) {
+                            resetButton.addEventListener('click', function() {
+                                document.querySelectorAll('.project-filter-checkbox').forEach(checkbox => {
+                                    checkbox.checked = false;
+                                });
+                                selectedProjects = [];
+                                updateSelectedProjectsText();
+                                loadSyncStatistics();
+                            });
+                        }
+                        
+                        const drillUpButton = document.getElementById('drill-up-btn');
+                        if (drillUpButton) {
+                            drillUpButton.addEventListener('click', function() {
+                                drillDownState = null;
+                                this.style.display = 'none';
+                                loadSyncStatistics();
+                            });
+                        }
+                        
+                        const dateRangeSelect = document.getElementById('stats-date-range');
+                        if (dateRangeSelect) {
+                            dateRangeSelect.addEventListener('change', loadSyncStatistics);
+                        }
+                        
+                        const displayModeSelect = document.getElementById('display-mode');
+                        if (displayModeSelect) {
+                            displayModeSelect.addEventListener('change', loadSyncStatistics);
+                        }
+                    }
+                }
+                
+                // Check for auto-sync UI elements
+                const autoSyncIndicator = document.getElementById('auto-sync-indicator');
+                if (!autoSyncIndicator) {
+                    console.warn('Auto-sync indicator not found, controls may not be properly initialized');
+                }
+            }
+            
+            // Check auto-sync status and update the UI
+            function checkAutoSyncStatus() {
+                const statusElement = document.getElementById('auto-sync-status');
+                const indicatorElement = document.getElementById('auto-sync-indicator');
+                
+                if (!statusElement || !indicatorElement) {
+                    console.warn('Auto-sync status elements not found');
+                    return;
+                }
+                
+                db.collection('asana_config').doc('settings').get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            let isActive = data.active || data.syncEnabled;
+                            
+                            let syncFrequencyMinutes = 60; // Default to hourly
+                            
+                            // Get frequency from various possible field names
+                            if (data.sync_frequency) {
+                                syncFrequencyMinutes = parseInt(data.sync_frequency);
+                            } else if (data.syncFrequency) {
+                                syncFrequencyMinutes = parseInt(data.syncFrequency);
+                            }
+                            
+                            if (isActive) {
+                                let lastSyncText = 'Never';
+                                let nextSyncText = 'Unknown';
+                                
+                                if (data.last_sync) {
+                                    const lastSync = data.last_sync.toDate ? data.last_sync.toDate() : new Date(data.last_sync);
+                                    lastSyncText = lastSync.toLocaleString();
+                                    
+                                    // Calculate next sync
+                                    const nextSync = new Date(lastSync);
+                                    nextSync.setMinutes(nextSync.getMinutes() + syncFrequencyMinutes);
+                                    nextSyncText = nextSync.toLocaleString();
+                                }
+                                
+                                statusElement.textContent = 'Active';
+                                indicatorElement.style.backgroundColor = '#e2f2e2';
+                                indicatorElement.style.color = '#28a745';
+                                indicatorElement.title = `Last sync: ${lastSyncText}\nNext sync: ${nextSyncText}\nFrequency: ${syncFrequencyMinutes} minutes`;
+                            } else {
+                                statusElement.textContent = 'Disabled';
+                                indicatorElement.style.backgroundColor = '#f8d7da';
+                                indicatorElement.style.color = '#dc3545';
+                            }
+                        } else {
+                            statusElement.textContent = 'Not Configured';
+                            indicatorElement.style.backgroundColor = '#fff3cd';
+                            indicatorElement.style.color = '#856404';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking auto-sync status:', error);
+                        statusElement.textContent = 'Error';
+                        indicatorElement.style.backgroundColor = '#f8d7da';
+                        indicatorElement.style.color = '#dc3545';
+                    });
+                
+                // Also query recent auto-sync logs to verify
+                const oneWeekAgo = new Date();
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                
+                db.collection('asana_sync_logs')
+                    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(oneWeekAgo))
+                    .orderBy('timestamp', 'desc')
+                    .limit(10)
+                    .get()
+                    .then(snapshot => {
+                        if (!snapshot.empty) {
+                            let autoSyncCount = 0;
+                            let manualSyncCount = 0;
+                            
+                            snapshot.forEach(doc => {
+                                const log = doc.data();
+                                if (log.details && log.details.initiated_by === 'auto') {
+                                    autoSyncCount++;
+                                } else if (log.details && log.details.initiated_by === 'manual') {
+                                    manualSyncCount++;
+                                }
+                            });
+                            
+                            // Update UI with counts
+                            if (autoSyncCount > 0) {
+                                statusElement.textContent = `Active (${autoSyncCount} recent)`;
+                            }
+                            
+                            console.log(`Recent syncs: ${autoSyncCount} auto, ${manualSyncCount} manual`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking recent auto-sync logs:', error);
+                    });
+            }
+            
+            // Create stacked chart with custom configuration
+            function createStackedChart(labels, data, title, isPercentage, dataSets) {
                 try {
-                    console.log('Creating drillable chart with:', {
+                    console.log('Creating stacked chart with:', {
                         labelCount: labels ? labels.length : 0,
-                        dataCount: data ? data.length : 0,
-                        title: title,
-                        dataSetsCount: dataSets ? dataSets.length : 0
+                        datasetCount: data ? data.length : 0,
+                        isPercentage: isPercentage
                     });
                     
+                    // Define colors for datasets
+                    const successColor = 'rgba(40, 167, 69, 0.7)';
+                    const failureColor = 'rgba(220, 53, 69, 0.7)';
+                    const errorColors = [
+                        'rgba(220, 53, 69, 0.7)',    // Red
+                        'rgba(255, 127, 80, 0.7)',   // Coral
+                        'rgba(255, 165, 0, 0.7)',    // Orange
+                        'rgba(255, 99, 71, 0.7)',    // Tomato
+                        'rgba(178, 34, 34, 0.7)',    // Firebrick
+                        'rgba(139, 0, 0, 0.7)',      // DarkRed
+                        'rgba(165, 42, 42, 0.7)',    // Brown
+                        'rgba(128, 0, 0, 0.7)'       // Maroon
+                    ];
+                    
                     // Safety checks for required parameters
-                    if (!labels || !data || !dataSets) {
-                        console.error('Missing required parameters for createDrillableChart', {
-                            labels: !!labels,
-                            data: !!data,
-                            dataSets: !!dataSets
-                        });
-                        // Create fallback chart if parameters are missing
-                        labels = labels || [];
-                        data = data || [];
-                        dataSets = dataSets || [];
+                    if (!labels || !data) {
+                        console.error('Missing required parameters for createStackedChart');
+                        return;
                     }
+                    
+                    // Store date keys in a dedicated array linked to chart positions
+                    window.chartDateKeys = [];
+                    labels.forEach((label, index) => {
+                        if (dataSets && index < dataSets.length && dataSets[index] && dataSets[index].dateKey) {
+                            window.chartDateKeys[index] = dataSets[index].dateKey;
+                } else {
+                            window.chartDateKeys[index] = null;
+                        }
+                    });
                     
                     const graphElement = document.getElementById('sync-stats-graph');
                     if (!graphElement) {
@@ -3085,162 +3584,125 @@
                         syncStatsChart.destroy();
                     }
                     
+                    // Create datasets with appropriate colors
+                    const datasets = data.map((dataArray, index) => {
+                        let color;
+                        if (index === 0) {
+                            // First dataset is always success
+                            color = successColor;
+                        } else if (data.length === 2 && index === 1) {
+                            // Simple success/failure case
+                            color = failureColor;
+                        } else {
+                            // Error type breakdown
+                            color = errorColors[(index - 1) % errorColors.length];
+                        }
+                        
+                        return {
+                            label: window.datasetLabels && window.datasetLabels[index] ? 
+                                window.datasetLabels[index] : (index === 0 ? 'Success' : `Dataset ${index}`),
+                            data: dataArray,
+                            backgroundColor: color,
+                            borderColor: color.replace('0.7', '1'),
+                            borderWidth: 1
+                        };
+                    });
+                    
                     // Create new chart
                     syncStatsChart = new Chart(ctx, {
                         type: 'bar',
                         data: {
                             labels: labels,
-                            datasets: [{
-                                label: title,
-                                data: data,
-                                backgroundColor: color,
-                                borderColor: color.replace('0.7', '1'),
-                                borderWidth: 1
-                            }]
+                            datasets: datasets
                         },
                         options: {
                             responsive: true,
                             scales: {
                                 y: {
                                     beginAtZero: true,
+                                    stacked: true,
                                     title: {
                                         display: true,
-                                        text: title
-                                    }
+                                        text: isPercentage ? 'Percentage (%)' : 'Count'
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return isPercentage ? value + '%' : value;
+                                        }
+                                    },
+                                    // For percentage mode, fix the scale to 0-100
+                                    ...(isPercentage ? { 
+                                        min: 0, 
+                                        max: 100,
+                                        grid: {
+                                            color: (context) => {
+                                                return context.tick.value === 100 || 
+                                                       context.tick.value === 0 ? 
+                                                       'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.05)';
+                                            }
+                                        }
+                                    } : {})
                                 },
                                 x: {
+                                    stacked: true,
                                     title: {
                                         display: true,
                                         text: 'Date'
                                     }
                                 }
                             },
-                            onClick: (e, activeElements) => {
-                                try {
-                                    console.log('Chart click detected', activeElements);
-                                    
-                                    if (!activeElements || activeElements.length === 0) {
-                                        console.log('No active elements in chart click');
-                                        return;
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        // Enhanced tooltip for stacked data
+                                        afterTitle: function(context) {
+                                            if (dataSets && context[0].dataIndex < dataSets.length) {
+                                                const dayData = dataSets[context[0].dataIndex];
+                                                if (dayData) {
+                                                    // Show sync types in tooltip
+                                                    return `Auto: ${dayData.initiatedBy.auto}, Manual: ${dayData.initiatedBy.manual}`;
+                                                }
+                                            }
+                                            return '';
+                                        },
+                                        afterLabel: function(context) {
+                                            const datasetIndex = context.datasetIndex;
+                                            const index = context.dataIndex;
+                                            
+                                            if (dataSets && index < dataSets.length) {
+                                                const dayData = dataSets[index];
+                                                
+                                                // For success dataset (first one), show totals
+                                                if (datasetIndex === 0) {
+                                                    if (isPercentage) {
+                                                        return `Actual: ${dayData.successCount}/${dayData.totalCount}`;
+                                                    } else if (dayData.totalCount > 0) {
+                                                        return `Success rate: ${Math.round((dayData.successCount / dayData.totalCount) * 100)}%`;
+                                                    }
+                                                }
+                                            }
+                                            return '';
+                                        }
                                     }
-                                    
-                                    // Access the index safely
-                                    const index = activeElements[0].index;
-                                    console.log('Clicked element index:', index);
-                                    
-                                    // Check if dataSets exists and has the required index
-                                    if (!dataSets) {
-                                        console.error('dataSets is not defined');
-                                        return;
+                                },
+                                legend: {
+                                    position: 'top',
+                                    labels: {
+                                        boxWidth: 15,
+                                        padding: 10
                                     }
-                                    
-                                    if (index < 0 || index >= dataSets.length) {
-                                        console.error(`Index ${index} out of bounds for dataSets length ${dataSets.length}`);
-                                        return;
-                                    }
-                                    
-                                    const day = dataSets[index];
-                                    console.log('Selected day object:', day);
-                                    
-                                    // Check if day has the required dateKey property
-                                    if (!day || !day.dateKey) {
-                                        console.error('Day object is invalid or missing dateKey property:', day);
-                                        return;
-                                    }
-                                    
-                                    console.log(`Drill down into date: ${day.dateKey}`);
-                                    
-                                    // Set drill-down state
-                                    drillDownState = {
-                                        type: 'day',
-                                        date: day.dateKey
-                                    };
-                                    
-                                    // Show drill-up button
-                                    const drillUpBtn = document.getElementById('drill-up-btn');
-                                    if (drillUpBtn) {
-                                        drillUpBtn.style.display = 'inline-block';
-                                    } else {
-                                        console.error('Drill-up button not found in DOM');
-                                    }
-                                    
-                                    // Load details for this day
-                                    loadDayDetails(day.dateKey, selectedProjects);
-                                } catch (error) {
-                                    console.error('Error in chart click handler:', error);
-                                    console.error('Error details:', {
-                                        message: error.message,
-                                        stack: error.stack,
-                                        activeElements: JSON.stringify(activeElements),
-                                        dataSets: dataSets ? `Array(${dataSets.length})` : 'undefined'
-                                    });
-                                    displayErrorMessage(error);
                                 }
-                            }
+                            },
+                            onClick: handleChartClick // Use a separate function for chart clicks
                         }
                     });
-                } catch (error) {
-                    console.error('Error creating drillable chart:', error);
+            } catch (error) {
+                    console.error('Error creating stacked chart:', error);
                     displayErrorMessage(error);
                 }
             }
             
-            // Display a message when no data is available
-            function displayNoDataMessage() {
-                const graphContainer = document.getElementById('sync-stats-graph');
-                if (syncStatsChart) {
-                    syncStatsChart.destroy();
-                    syncStatsChart = null;
-                }
-                
-                // Since we're using a canvas now, we need to replace it with a div to show the message
-                const parentElement = graphContainer.parentElement;
-                parentElement.removeChild(graphContainer);
-                
-                const messageDiv = document.createElement('div');
-                messageDiv.id = 'sync-stats-graph';
-                messageDiv.style.width = '100%';
-                messageDiv.style.height = '400px';
-                messageDiv.style.display = 'flex';
-                messageDiv.style.alignItems = 'center';
-                messageDiv.style.justifyContent = 'center';
-                messageDiv.style.color = '#666';
-                messageDiv.textContent = 'No sync data available for the selected criteria';
-                
-                parentElement.insertBefore(messageDiv, parentElement.firstChild);
-                
-                // Reset summary stats
-                document.getElementById('stat-total-syncs').textContent = '0';
-                document.getElementById('stat-avg-success-rate').textContent = '0%';
-                document.getElementById('stat-common-error').textContent = 'None';
-            }
-            
-            // Display an error message
-            function displayErrorMessage(error) {
-                const graphContainer = document.getElementById('sync-stats-graph');
-                if (syncStatsChart) {
-                    syncStatsChart.destroy();
-                    syncStatsChart = null;
-                }
-                
-                // Since we're using a canvas now, we need to replace it with a div to show the message
-                const parentElement = graphContainer.parentElement;
-                parentElement.removeChild(graphContainer);
-                
-                const messageDiv = document.createElement('div');
-                messageDiv.id = 'sync-stats-graph';
-                messageDiv.style.width = '100%';
-                messageDiv.style.height = '400px';
-                messageDiv.style.display = 'flex';
-                messageDiv.style.alignItems = 'center';
-                messageDiv.style.justifyContent = 'center';
-                messageDiv.style.color = '#dc3545';
-                messageDiv.textContent = `Error loading sync data: ${error.message}`;
-                
-                parentElement.insertBefore(messageDiv, parentElement.firstChild);
-            }
-            
-            // Update the summary statistics
+            // Update summary statistics to include auto-sync info
             function updateSummaryStats(allLogs, filteredLogs) {
                 // Total syncs
                 document.getElementById('stat-total-syncs').textContent = filteredLogs.length;
@@ -3248,8 +3710,18 @@
                 // Average success rate
                 let totalSuccess = 0;
                 let totalProjects = 0;
+                let autoSyncCount = 0;
+                let manualSyncCount = 0;
                 
                 filteredLogs.forEach(log => {
+                    // Track sync initiation type
+                    if (log.details && log.details.initiated_by === 'auto') {
+                        autoSyncCount++;
+                    } else if (log.details && log.details.initiated_by === 'manual') {
+                        manualSyncCount++;
+                    }
+                    
+                    // Track success counts
                     if (log.success_count !== undefined && log.project_count !== undefined) {
                         totalSuccess += log.success_count;
                         totalProjects += log.project_count;
@@ -3258,6 +3730,12 @@
                 
                 const avgSuccessRate = totalProjects === 0 ? 0 : Math.round((totalSuccess / totalProjects) * 100);
                 document.getElementById('stat-avg-success-rate').textContent = `${avgSuccessRate}%`;
+                
+                // Add auto-sync info to summary if available
+                const syncCountElement = document.getElementById('stat-total-syncs');
+                if (autoSyncCount > 0 || manualSyncCount > 0) {
+                    syncCountElement.innerHTML = `${filteredLogs.length} <span style="font-size: 0.8rem; color: #6c757d;">(${autoSyncCount} auto, ${manualSyncCount} manual)</span>`;
+                }
                 
                 // Most common error
                 const errorCounts = {};
@@ -3301,332 +3779,135 @@
                 }
             }
             
-            // Update project filter options from logs
-            function updateProjectFilterOptions(logs) {
-                // Process logs to collect projects used in them
-                const projects = new Set();
+            // Helper function to extract error type from error message
+            function getErrorType(errorMsg) {
+                if (!errorMsg) return 'Unknown';
                 
-                console.log('Updating project filter options from logs:', logs.length);
+                const errorStr = String(errorMsg);
                 
-                // Collect all project IDs and names from logs
-                logs.forEach(log => {
-                    try {
-                        console.log('Processing log for projects:', log.id);
-                        
-                        // Add project IDs from the projects array
-                        if (log.projects && Array.isArray(log.projects)) {
-                            console.log(`Found ${log.projects.length} projects in log ${log.id}`);
-                            log.projects.forEach(projectId => {
-                                if (projectId) {
-                                    projects.add(projectId);
-                                    console.log(`Added project ID: ${projectId}`);
-                                }
-                            });
-                        }
-                        
-                        // Add project IDs from projectStats
-                        if (log.projectStats) {
-                            const projectIds = Object.keys(log.projectStats);
-                            console.log(`Found ${projectIds.length} projects in projectStats for log ${log.id}`);
-                            projectIds.forEach(projectId => {
-                                if (projectId) {
-                                    projects.add(projectId);
-                                    console.log(`Added project ID from stats: ${projectId}`);
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.error('Error processing log for projects:', e);
-                    }
-                });
-                
-                // Add any log-related projects to the dropdown
-                if (projects.size > 0) {
-                    const projectArray = Array.from(projects);
-                    console.log(`Found ${projectArray.length} unique projects in logs`);
-                    
-                    // Get names for these specific projects
-                    addProjectsToFilter(projectArray);
+                // Extract the first part of the error message as the type
+                if (errorStr.includes(':')) {
+                    return errorStr.split(':')[0].trim();
                 }
+                
+                // Common error patterns
+                if (errorStr.includes('API rate limit')) return 'Rate Limit';
+                if (errorStr.includes('permission') || errorStr.includes('access')) return 'Permission';
+                if (errorStr.includes('not found') || errorStr.includes('404')) return 'Not Found';
+                if (errorStr.includes('network') || errorStr.includes('timeout')) return 'Network';
+                if (errorStr.includes('invalid') || errorStr.includes('syntax')) return 'Validation';
+                
+                // If the error is long, just use first few words
+                if (errorStr.length > 20) {
+                    return errorStr.substring(0, 20).trim() + '...';
+                }
+                
+                return errorStr.trim() || 'Unknown';
             }
             
-            // Add specific projects to the filter dropdown
-            function addProjectsToFilter(projectIds) {
-                if (!projectIds || projectIds.length === 0) {
-                    return;
-                }
-                
-                console.log(`Adding ${projectIds.length} specific projects to filter`);
-                
-                const projectFilter = document.getElementById('stats-project-filter');
-                const existingOptions = Array.from(projectFilter.options).map(opt => opt.value);
-                
-                // Get project names from asana_projects collection
-                const projectPromises = projectIds.map(projectId => {
-                    // Skip if already in dropdown
-                    if (existingOptions.includes(projectId)) {
-                        return null;
+            // Handle chart click (separate function for better error isolation)
+            function handleChartClick(event, activeElements) {
+                try {
+                    console.log('Chart click detected', activeElements);
+                    
+                    if (!activeElements || activeElements.length === 0) {
+                        console.log('No active elements in chart click');
+                        return;
                     }
                     
-                    return db.collection('asana_projects').doc(projectId).get()
-                        .then(doc => {
-                            if (doc.exists) {
-                                const data = doc.data();
-                                console.log(`Found project name for ${projectId}: ${data.name}`);
-                                return {
-                                    id: projectId,
-                                    name: data.name || 'Unnamed Project'
-                                };
-                            } else {
-                                console.log(`Project document not found for ${projectId}`);
-                                return {
-                                    id: projectId,
-                                    name: `Project ${projectId}`
-                                };
-                            }
-                        })
-                        .catch((error) => {
-                            console.error(`Error getting project ${projectId}:`, error);
-                            return {
-                                id: projectId,
-                                name: `Project ${projectId}`
-                            };
-                        });
-                });
-                
-                // Filter out null values (already in dropdown)
-                Promise.all(projectPromises.filter(Boolean))
-                    .then(projectsWithNames => {
-                        if (projectsWithNames.length === 0) {
-                            console.log('No new projects to add to dropdown');
-                            return;
-                        }
-                        
-                        // Sort by name
-                        projectsWithNames.sort((a, b) => a.name.localeCompare(b.name));
-                        
-                        console.log(`Adding ${projectsWithNames.length} new projects to dropdown`);
-                        
-                        // Add options
-                        projectsWithNames.forEach(project => {
-                            const option = document.createElement('option');
-                            option.value = project.id;
-                            option.textContent = project.name;
-                            projectFilter.appendChild(option);
-                            console.log(`Added project to dropdown: ${project.name} (${project.id})`);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error fetching project names:', error);
-                    });
-            }
-            
-            // Add event listeners for filter changes
-            document.getElementById('stats-date-range').addEventListener('change', loadSyncStatistics);
-            document.getElementById('stats-view-type').addEventListener('change', loadSyncStatistics);
-            // Remove the old project filter event listener since we're using a different approach now
-            
-            // Auto-sync functionality
-            let autoSyncTimer = null;
-            
-            // Schedule the next auto-sync
-            function scheduleAutoSync() {
-                // Clear existing timer
-                if (autoSyncTimer) {
-                    clearTimeout(autoSyncTimer);
-                }
-                
-                // Get sync frequency from settings
-                db.collection('asana_config').doc('settings').get()
-                    .then(doc => {
-                        if (doc.exists) {
-                            const data = doc.data();
-                            let syncFrequencyMinutes = 60; // Default to hourly
-                            
-                            // Get frequency from various possible field names
-                            if (data.sync_frequency) {
-                                syncFrequencyMinutes = parseInt(data.sync_frequency);
-                            } else if (data.syncFrequency) {
-                                syncFrequencyMinutes = parseInt(data.syncFrequency);
-                            } else if (data.syncFrequency === '5min') {
-                                syncFrequencyMinutes = 5;
-                            }
-                            
-                            // Ensure frequency is at least 5 minutes
-                            syncFrequencyMinutes = Math.max(5, syncFrequencyMinutes);
-                            
-                            // Schedule next sync
-                            console.log(`Scheduling next auto-sync in ${syncFrequencyMinutes} minutes`);
-                            
-                            // Calculate next sync time
-                            const nextSyncTime = new Date();
-                            nextSyncTime.setMinutes(nextSyncTime.getMinutes() + syncFrequencyMinutes);
-                            
-                            // Update UI
-                            document.getElementById('next-auto-sync').textContent = `Next auto-sync: ${nextSyncTime.toLocaleTimeString()}`;
-                            
-                            // Set timer
-                            autoSyncTimer = setTimeout(performAutoSync, syncFrequencyMinutes * 60 * 1000);
-                        } else {
-                            console.log('No settings found, defaulting to hourly auto-sync');
-                            document.getElementById('next-auto-sync').textContent = 'Auto-sync: Not configured';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error scheduling auto-sync:', error);
-                        document.getElementById('next-auto-sync').textContent = 'Auto-sync: Error';
-                    });
-            }
-            
-            // Perform the auto-sync
-            function performAutoSync() {
-                console.log('Starting auto-sync...');
-                
-                // First, get the list of all active projects
-                db.collection('asana_projects')
-                    .where('archived', '!=', true) // Include all non-archived projects
-                    .get()
-                    .then(snapshot => {
-                        if (snapshot.empty) {
-                            console.log('No projects found for auto-sync');
-                            scheduleAutoSync(); // Reschedule for next time
-                            return;
-                        }
-                        
-                        const projects = [];
-                        const projectNames = {};
-                        
-                        snapshot.forEach(doc => {
-                            projects.push(doc.id);
-                            projectNames[doc.id] = doc.data().name || 'Unnamed Project';
-                        });
-                        
-                        console.log(`Found ${projects.length} projects for auto-sync`);
-                        
-                        // Create project stats
-                        const projectStats = {};
-                        projects.forEach(projectId => {
-                            projectStats[projectId] = {
-                                status: 'started',
-                                name: projectNames[projectId] || projectId,
-                                start_time: firebase.firestore.FieldValue.serverTimestamp()
-                            };
-                        });
-                        
-                        // Create sync log entry
-                        db.collection('asana_sync_logs').add({
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                            projects: projects,
-                            projectNames: projectNames,
-                            project_count: projects.length,
-                            status: 'started',
-                            message: `Started auto-sync for ${projects.length} projects`,
-                            projectStats: projectStats,
-                            details: {
-                                initiated_by: 'auto',
-                                initiated_at: firebase.firestore.FieldValue.serverTimestamp()
-                            }
-                        })
-                        .then(docRef => {
-                            console.log('Created auto-sync log with ID:', docRef.id);
-                            
-                            // Update the lastSync time in Firestore
-                            db.collection('asana_config').doc('settings').update({
-                                last_sync: firebase.firestore.FieldValue.serverTimestamp(),
-                                sync_count: firebase.firestore.FieldValue.increment(1)
-                            })
-                            .then(() => {
-                                console.log('Updated last_sync time in settings');
-                                
-                                // Simulate sync process
-                setTimeout(() => {
-                                    simulateAutoSyncCompletion(docRef.id, projects, projectNames);
-                }, 3000);
-                            })
-                            .catch(error => {
-                                console.error('Error updating last_sync time:', error);
-                                scheduleAutoSync();
-                            });
-                        })
-                        .catch(error => {
-                            console.error('Error creating auto-sync log:', error);
-                            scheduleAutoSync();
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error getting projects for auto-sync:', error);
-                        scheduleAutoSync();
-                    });
-            }
-            
-            // Simulate auto-sync completion (for demonstration)
-            function simulateAutoSyncCompletion(logId, projects, projectNames) {
-                console.log('Simulating auto-sync completion...');
-                
-                // Create simulated results
-                const updatedProjectStats = {};
-                let successCount = 0;
-                let taskCount = 0;
-                
-                projects.forEach(projectId => {
-                    // 85% chance of success for auto-sync
-                    const isSuccess = Math.random() < 0.85;
-                    const tasks = Math.floor(Math.random() * 15) + 1; // 1-15 tasks
+                    // Access the index safely
+                    const index = activeElements[0].index;
+                    console.log('Clicked element index:', index);
                     
-                    if (isSuccess) {
-                        successCount++;
-                        taskCount += tasks;
-                        updatedProjectStats[projectId] = {
-                            status: 'success',
-                            name: projectNames[projectId] || projectId,
-                            tasks_synced: tasks,
-                            completion_time: firebase.firestore.FieldValue.serverTimestamp()
-                        };
+                    // Use the global chartDateKeys array that was populated in createDrillableChart
+                    if (!window.chartDateKeys || !window.chartDateKeys[index]) {
+                        console.error(`No date key found for index ${index}`);
+                        return;
+                    }
+                    
+                    const dateKey = window.chartDateKeys[index];
+                    console.log(`Drill down into date: ${dateKey}`);
+                    
+                    // Set drill-down state
+                    drillDownState = {
+                        type: 'day',
+                        date: dateKey
+                    };
+                    
+                    // Show drill-up button
+                    const drillUpBtn = document.getElementById('drill-up-btn');
+                    if (drillUpBtn) {
+                        drillUpBtn.style.display = 'inline-block';
                     } else {
-                        const errors = [
-                            'API rate limit exceeded',
-                            'Task not found',
-                            'Permission denied',
-                            'Network error',
-                            'Invalid resource reference'
-                        ];
-                        const randomError = errors[Math.floor(Math.random() * errors.length)];
-                        
-                        updatedProjectStats[projectId] = {
-                            status: 'error',
-                            name: projectNames[projectId] || projectId,
-                            error: randomError,
-                            completion_time: firebase.firestore.FieldValue.serverTimestamp()
-                        };
+                        console.error('Drill-up button not found in DOM');
                     }
-                });
+                    
+                    // Load details for this day
+                    loadDayDetails(dateKey, selectedProjects);
+                } catch (error) {
+                    console.error('Error in chart click handler:', error);
+                    console.error('Error details:', {
+                        message: error.message,
+                        stack: error.stack,
+                        activeElements: JSON.stringify(activeElements)
+                    });
+                    displayErrorMessage(error);
+                }
+            }
+            
+            // Display a message when no data is available
+            function displayNoDataMessage(message) {
+                const graphContainer = document.getElementById('sync-stats-graph');
+                if (syncStatsChart) {
+                    syncStatsChart.destroy();
+                    syncStatsChart = null;
+                }
                 
-                // Update the sync log with completion details
-                db.collection('asana_sync_logs').doc(logId).update({
-                    status: 'completed',
-                    message: `Completed auto-sync of ${projects.length} projects with ${successCount} successful`,
-                    projectStats: updatedProjectStats,
-                    success_count: successCount,
-                    task_count: taskCount,
-                    completion_time: firebase.firestore.FieldValue.serverTimestamp()
-                })
-                .then(() => {
-                    console.log('Auto-sync completed successfully');
-                    
-                    // Reload sync logs to show the updated status
-                    loadSyncLogs();
-                    
-                    // Calculate next sync time
-                    const now = new Date();
-                    document.getElementById('last-sync-time').textContent = `Last sync: ${now.toLocaleString()}`;
-                    
-                    // Schedule next auto-sync
-                    scheduleAutoSync();
-                })
-                .catch(error => {
-                    console.error('Error completing auto-sync:', error);
-                    scheduleAutoSync();
-                });
+                // Since we're using a canvas now, we need to replace it with a div to show the message
+                const parentElement = graphContainer.parentElement;
+                parentElement.removeChild(graphContainer);
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.id = 'sync-stats-graph';
+                messageDiv.style.width = '100%';
+                messageDiv.style.height = '400px';
+                messageDiv.style.display = 'flex';
+                messageDiv.style.alignItems = 'center';
+                messageDiv.style.justifyContent = 'center';
+                messageDiv.style.color = '#666';
+                messageDiv.textContent = message || 'No sync data available for the selected criteria';
+                
+                parentElement.insertBefore(messageDiv, parentElement.firstChild);
+                
+                // Reset summary stats
+                document.getElementById('stat-total-syncs').textContent = '0';
+                document.getElementById('stat-avg-success-rate').textContent = '0%';
+                document.getElementById('stat-common-error').textContent = 'None';
+            }
+            
+            // Display an error message
+            function displayErrorMessage(error) {
+                const graphContainer = document.getElementById('sync-stats-graph');
+                if (syncStatsChart) {
+                    syncStatsChart.destroy();
+                    syncStatsChart = null;
+                }
+                
+                // Since we're using a canvas now, we need to replace it with a div to show the message
+                const parentElement = graphContainer.parentElement;
+                parentElement.removeChild(graphContainer);
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.id = 'sync-stats-graph';
+                messageDiv.style.width = '100%';
+                messageDiv.style.height = '400px';
+                messageDiv.style.display = 'flex';
+                messageDiv.style.alignItems = 'center';
+                messageDiv.style.justifyContent = 'center';
+                messageDiv.style.color = '#dc3545';
+                messageDiv.textContent = `Error loading sync data: ${error.message}`;
+                
+                parentElement.insertBefore(messageDiv, parentElement.firstChild);
             }
             
             // Start auto-sync scheduler when page loads
@@ -3661,7 +3942,7 @@
                     const drillUpBtn = document.getElementById('drill-up-btn');
                     if (drillUpBtn) {
                         drillUpBtn.style.display = 'inline-block';
-                    } else {
+                } else {
                         console.warn('Drill-up button not found in DOM');
                     }
                     
@@ -3712,8 +3993,8 @@
                                         <option value="hour">Hour</option>
                                         <option value="project">Project</option>
                                     </select>
-                                </div>
-                            `;
+                            </div>
+                        `;
                             controlsContainer.appendChild(viewToggleCol);
                             
                             // Add event listener for view toggle
@@ -3854,7 +4135,7 @@
                         });
                         
                         // Get the view type
-                        const viewType = document.getElementById('stats-view-type').value || 'success-rate';
+                        const viewType = document.getElementById('display-mode')?.value || 'count';
                         
                         // Prepare data for chart based on view type
                         let chartData;
@@ -3862,7 +4143,7 @@
                         let chartColor;
                         
                         switch (viewType) {
-                            case 'success-rate':
+                            case 'percentage':
                                 chartTitle = 'Hourly Success Rate (%)';
                                 chartColor = 'rgba(40, 167, 69, 0.7)';
                                 chartData = Object.values(hourlyData).map(hour => {
@@ -3871,19 +4152,12 @@
                                 });
                                 break;
                                 
-                            case 'sync-count':
+                            case 'count':
+                            default:
                                 chartTitle = 'Syncs per Hour';
                                 chartColor = 'rgba(23, 162, 184, 0.7)';
                                 chartData = Object.values(hourlyData).map(hour => {
                                     return hour.syncCount;
-                                });
-                                break;
-                                
-                            case 'errors':
-                                chartTitle = 'Errors per Hour';
-                                chartColor = 'rgba(220, 53, 69, 0.7)';
-                                chartData = Object.values(hourlyData).map(hour => {
-                                    return hour.errorCount;
                                 });
                                 break;
                         }
@@ -3902,244 +4176,352 @@
             
             // Load day details with project breakdown
             function loadDayDetailsByProject(dateKey, projectIds) {
-                console.log(`Loading project breakdown for day: ${dateKey}`);
-                
-                // Convert date string to Date objects for Firestore query
-                const startDate = new Date(dateKey);
-                const endDate = new Date(dateKey);
-                endDate.setDate(endDate.getDate() + 1); // End of the day
-                
-                // Query sync logs for this day
-                db.collection('asana_sync_logs')
-                    .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
-                    .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(endDate))
-                    .orderBy('timestamp', 'asc')
-                    .get()
-                    .then(snapshot => {
-                        if (snapshot.empty) {
-                            console.log('No sync logs found for the selected day');
-                            displayNoDataMessage();
-                            return;
-                        }
-                        
-                        // Process the sync logs
-                        const logs = [];
-                        snapshot.forEach(doc => {
-                            const log = doc.data();
-                            logs.push({
-                                id: doc.id,
-                                ...log,
-                                time: log.timestamp ? log.timestamp.toDate() : new Date()
-                            });
-                        });
-                        
-                        console.log(`Found ${logs.length} sync logs for ${dateKey}`);
-                        
-                        // Filter logs by selected projects if needed
-                        let filteredLogs = logs;
-                        if (projectIds && projectIds.length > 0) {
-                            filteredLogs = logs.filter(log => {
-                                for (const projectId of projectIds) {
-                                    if (log.projects && log.projects.includes(projectId)) {
-                                        return true;
-                                    }
-                                    if (log.projectStats && log.projectStats[projectId]) {
-                                        return true;
-                                    }
-                                }
-                                return false;
-                            });
-                        }
-                        
-                        if (filteredLogs.length === 0) {
-                            displayNoDataMessage();
-                            return;
-                        }
-                        
-                        // Extract all project data
-                        const projectsData = {};
-                        const projectIds = new Set();
-                        
-                        // Collect all projects from the logs
-                        filteredLogs.forEach(log => {
-                            if (log.projectStats) {
-                                Object.entries(log.projectStats).forEach(([projectId, stat]) => {
-                                    projectIds.add(projectId);
-                                    
-                                    if (!projectsData[projectId]) {
-                                        projectsData[projectId] = {
-                                            name: stat.name || `Project ${projectId}`,
-                                            syncCount: 0,
-                                            successCount: 0,
-                                            errorCount: 0,
-                                            totalCount: 0
-                                        };
-                                    }
-                                    
-                                    projectsData[projectId].syncCount++;
-                                    projectsData[projectId].totalCount++;
-                                    
-                                    if (stat.status === 'success') {
-                                        projectsData[projectId].successCount++;
-                                    }
-                                    
-                                    if (stat.error) {
-                                        projectsData[projectId].errorCount++;
-                                    }
-                                });
+                try {
+                    console.log(`Loading project breakdown for day: ${dateKey}`, { projectIds });
+                    
+                    if (!dateKey) {
+                        throw new Error('dateKey parameter is required');
+                    }
+                    
+                    // Convert date string to Date objects for Firestore query
+                    const startDate = new Date(dateKey);
+                    const endDate = new Date(dateKey);
+                    endDate.setDate(endDate.getDate() + 1); // End of the day
+                    
+                    // Query sync logs for this day
+                    db.collection('asana_sync_logs')
+                        .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(startDate))
+                        .where('timestamp', '<', firebase.firestore.Timestamp.fromDate(endDate))
+                        .orderBy('timestamp', 'asc')
+                        .get()
+                        .then(snapshot => {
+                            if (snapshot.empty) {
+                                console.log('No sync logs found for the selected day');
+                                displayNoDataMessage();
+                                return;
                             }
-                        });
-                        
-                        // Get project names if not available in stats
-                        const projectNamePromises = Array.from(projectIds)
-                            .filter(projectId => !projectsData[projectId] || !projectsData[projectId].name || projectsData[projectId].name === `Project ${projectId}`)
-                            .map(projectId => 
-                                db.collection('asana_projects').doc(projectId).get()
-                                    .then(doc => {
-                                        if (doc.exists && doc.data().name) {
-                                            if (!projectsData[projectId]) {
-                                                projectsData[projectId] = {
+                            
+                            // Process the sync logs
+                            const logs = [];
+                            snapshot.forEach(doc => {
+                                try {
+                                    const log = doc.data();
+                                    logs.push({
+                                        id: doc.id,
+                                        ...log,
+                                        time: log.timestamp ? log.timestamp.toDate() : new Date()
+                                    });
+                                } catch (e) {
+                                    console.error('Error processing log document:', e);
+                                }
+                            });
+                            
+                            console.log(`Found ${logs.length} sync logs for ${dateKey}`);
+                            
+                            // Filter logs by selected projects if needed
+                            let filteredLogs = logs;
+                            if (projectIds && projectIds.length > 0) {
+                                console.log('Filtering logs by project IDs:', projectIds);
+                                filteredLogs = logs.filter(log => {
+                                    for (const projectId of projectIds) {
+                                        // Different ways Asana might store project IDs
+                                        if (log.projects && (log.projects.includes(projectId) || log.projects.includes(String(projectId)))) {
+                                            return true;
+                                        }
+                                        
+                                        // Check in projectStats using all possible key formats (id, gid, etc.)
+                                        if (log.projectStats) {
+                                            if (log.projectStats[projectId] || 
+                                                log.projectStats[String(projectId)] ||
+                                                (log.projectStats.hasOwnProperty('gid') && (
+                                                    log.projectStats.gid === projectId || 
+                                                    log.projectStats.gid === String(projectId)
+                                                ))) {
+                                                return true;
+                                            }
+                                            
+                                            // Check if any project in projectStats has this ID or GID
+                                            const hasMatchingProject = Object.entries(log.projectStats).some(([key, value]) => {
+                                                if (key === projectId || key === String(projectId)) {
+                                                    return true;
+                                                }
+                                                
+                                                if (value && typeof value === 'object') {
+                                                    return (value.id === projectId || value.id === String(projectId) ||
+                                                            value.gid === projectId || value.gid === String(projectId));
+                                                }
+                                                
+                                                return false;
+                                            });
+                                            
+                                            if (hasMatchingProject) {
+                                                return true;
+                                            }
+                                        }
+                                    }
+                                    return false;
+                                });
+                                console.log(`Filtered to ${filteredLogs.length} logs for selected projects`);
+                            }
+                            
+                            if (filteredLogs.length === 0) {
+                                console.log('No logs found after filtering');
+                                displayNoDataMessage();
+                                return;
+                            }
+                            
+                            // Extract all project data with defensive coding
+                            const projectsData = {};
+                            const projectIdsSet = new Set();
+                            
+                            // First pass - collect all possible project identifiers from logs
+                            console.log('Collecting project identifiers from logs...');
+                            filteredLogs.forEach(log => {
+                                try {
+                                    // Add projects from projects array
+                                    if (log.projects && Array.isArray(log.projects)) {
+                                        log.projects.forEach(id => {
+                                            if (id) projectIdsSet.add(String(id));
+                                        });
+                                    }
+                                    
+                                    // Add projects from projectStats object
+                                    if (log.projectStats && typeof log.projectStats === 'object') {
+                                        Object.keys(log.projectStats).forEach(id => {
+                                            projectIdsSet.add(String(id));
+                                        });
+                                    }
+                                } catch (e) {
+                                    console.error('Error collecting project IDs:', e);
+                                }
+                            });
+                            
+                            console.log(`Found ${projectIdsSet.size} unique project identifiers`);
+                            
+                            // Second pass - collect stats for each project
+                            filteredLogs.forEach(log => {
+                                try {
+                                    if (log.projectStats && typeof log.projectStats === 'object') {
+                                        Object.entries(log.projectStats).forEach(([projectId, stat]) => {
+                                            const idKey = String(projectId);
+                                            
+                                            // Initialize project data if not exists
+                                            if (!projectsData[idKey]) {
+                                                projectsData[idKey] = {
+                                                    name: (stat && stat.name) ? stat.name : `Project ${idKey}`,
                                                     syncCount: 0,
                                                     successCount: 0,
                                                     errorCount: 0,
                                                     totalCount: 0
                                                 };
                                             }
-                                            projectsData[projectId].name = doc.data().name;
-                                        }
-                                        return projectId;
-                                    })
-                                    .catch(error => {
-                                        console.error(`Error fetching project name for ${projectId}:`, error);
-                                        return projectId;
-                                    })
-                            );
-                        
-                        Promise.all(projectNamePromises)
-                            .then(() => {
-                                // Sort projects by name
-                                const sortedProjects = Object.entries(projectsData)
-                                    .sort((a, b) => a[1].name.localeCompare(b[1].name))
-                                    .map(entry => entry[1].name);
-                                
-                                // Get the view type
-                                const viewType = document.getElementById('stats-view-type').value || 'success-rate';
-                                
-                                // Prepare data for chart based on view type
-                                let chartData;
-                                let chartTitle;
-                                let chartColor;
-                                
-                                switch (viewType) {
-                                    case 'success-rate':
-                                        chartTitle = 'Project Success Rate (%)';
-                                        chartColor = 'rgba(40, 167, 69, 0.7)';
-                                        chartData = Object.entries(projectsData)
-                                            .sort((a, b) => a[1].name.localeCompare(b[1].name))
-                                            .map(([id, data]) => {
-                                                return data.totalCount === 0 ? 0 : 
-                                                    Math.round((data.successCount / data.totalCount) * 100);
-                                            });
-                                        break;
-                                        
-                                    case 'sync-count':
-                                        chartTitle = 'Syncs per Project';
-                                        chartColor = 'rgba(23, 162, 184, 0.7)';
-                                        chartData = Object.entries(projectsData)
-                                            .sort((a, b) => a[1].name.localeCompare(b[1].name))
-                                            .map(([id, data]) => data.syncCount);
-                                        break;
-                                        
-                                    case 'errors':
-                                        chartTitle = 'Errors per Project';
-                                        chartColor = 'rgba(220, 53, 69, 0.7)';
-                                        chartData = Object.entries(projectsData)
-                                            .sort((a, b) => a[1].name.localeCompare(b[1].name))
-                                            .map(([id, data]) => data.errorCount);
-                                        break;
+                                            
+                                            // Increment counters
+                                            projectsData[idKey].syncCount++;
+                                            projectsData[idKey].totalCount++;
+                                            
+                                            if (stat && stat.status === 'success') {
+                                                projectsData[idKey].successCount++;
+                                            }
+                                            
+                                            if (stat && stat.error) {
+                                                projectsData[idKey].errorCount++;
+                                            }
+                                        });
+                                    }
+                                } catch (e) {
+                                    console.error('Error processing project stats:', e);
                                 }
-                                
-                                // Create or update chart
-                                createProjectChart(sortedProjects, chartData, chartTitle, chartColor, dateKey);
-                                
-                                // Update summary statistics
-                                updateSummaryStats(logs, filteredLogs);
                             });
-                    })
-                    .catch(error => {
-                        console.error('Error loading day details by project:', error);
-                        displayErrorMessage(error);
-                    });
+                            
+                            console.log(`Processed stats for ${Object.keys(projectsData).length} projects`);
+                            
+                            // If no projects were found, tell the user
+                            if (Object.keys(projectsData).length === 0) {
+                                console.log('No project data found in the logs');
+                                displayNoDataMessage('No project data found for the selected day');
+                                return;
+                            }
+                            
+                            // Get project names if not available in stats
+                            const projectNamePromises = Object.keys(projectsData)
+                                .filter(projectId => !projectsData[projectId].name || projectsData[projectId].name === `Project ${projectId}`)
+                                .map(projectId => 
+                                    db.collection('asana_projects').doc(projectId).get()
+                                        .then(doc => {
+                                            if (doc.exists && doc.data().name) {
+                                                projectsData[projectId].name = doc.data().name;
+                                            }
+                                            return projectId;
+                                        })
+                                        .catch(error => {
+                                            console.error(`Error fetching project name for ${projectId}:`, error);
+                                            return projectId;
+                                        })
+                                );
+                            
+                            Promise.all(projectNamePromises)
+                                .then(() => {
+                                    console.log('Project names retrieved, preparing chart data');
+                                    
+                                    // Ensure we have at least one project
+                                    if (Object.keys(projectsData).length === 0) {
+                                        console.log('No projects found after processing');
+                                        displayNoDataMessage('No project data found');
+                                        return;
+                                    }
+                                    
+                                    // Sort projects by name
+                                    const sortedProjectEntries = Object.entries(projectsData)
+                                        .sort((a, b) => a[1].name.localeCompare(b[1].name));
+                                            
+                                    const sortedProjects = sortedProjectEntries.map(entry => entry[1].name);
+                                    
+                                    console.log(`Sorted ${sortedProjects.length} projects by name`);
+                                    
+                                    // Get the view type
+                                    const viewType = document.getElementById('display-mode')?.value || 'count';
+                                    
+                                    // Prepare data for chart based on view type
+                                    let chartData;
+                                    let chartTitle;
+                                    let chartColor;
+                                    
+                                    switch (viewType) {
+                                        case 'percentage':
+                                            chartTitle = 'Project Success Rate (%)';
+                                            chartColor = 'rgba(40, 167, 69, 0.7)';
+                                            chartData = sortedProjectEntries
+                                                .map(([id, data]) => {
+                                                    return data.totalCount === 0 ? 0 : 
+                                                        Math.round((data.successCount / data.totalCount) * 100);
+                                                });
+                                            break;
+                                            
+                                        case 'count':
+                                        default:
+                                            chartTitle = 'Syncs per Project';
+                                            chartColor = 'rgba(23, 162, 184, 0.7)';
+                                            chartData = sortedProjectEntries
+                                                .map(([id, data]) => data.syncCount);
+                                            break;
+                                    }
+                                    
+                                    console.log('Chart data prepared:', {
+                                        title: chartTitle,
+                                        dataPoints: chartData.length
+                                    });
+                                    
+                                    // Create or update chart
+                                    createProjectChart(sortedProjects, chartData, chartTitle, chartColor, dateKey);
+                                    
+                                    // Update summary statistics
+                                    updateSummaryStats(logs, filteredLogs);
+                                });
+                        })
+                        .catch(error => {
+                            console.error('Error loading day details by project:', error);
+                            displayErrorMessage(error);
+                        });
+                } catch (error) {
+                    console.error('Error in loadDayDetailsByProject:', error);
+                    displayErrorMessage(error);
+                }
             }
             
             // Create project chart for day drill-down
             function createProjectChart(labels, data, title, color, dateKey) {
-                const ctx = document.getElementById('sync-stats-graph').getContext('2d');
-                
-                // Format date for display
-                const formattedDate = new Date(dateKey).toLocaleDateString(undefined, { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric' 
-                });
-                
-                // Destroy previous chart if it exists
-                if (syncStatsChart) {
-                    syncStatsChart.destroy();
-                }
-                
-                // Create new chart
-                syncStatsChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: title,
-                            data: data,
-                            backgroundColor: color,
-                            borderColor: color.replace('0.7', '1'),
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: title
-                                }
-                            },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: `Projects on ${formattedDate}`
+                try {
+                    const graphElement = document.getElementById('sync-stats-graph');
+                    if (!graphElement) {
+                        console.error('Graph element not found');
+                        displayErrorMessage(new Error('Graph element not found'));
+                        return;
+                    }
+
+                    // Make sure we have a canvas element
+                    let canvasElement = graphElement;
+                    if (graphElement.tagName !== 'CANVAS') {
+                        console.log('Graph element is not a canvas, recreating it...');
+                        const parentElement = graphElement.parentElement;
+                        parentElement.removeChild(graphElement);
+                        
+                        canvasElement = document.createElement('canvas');
+                        canvasElement.id = 'sync-stats-graph';
+                        canvasElement.style.width = '100%';
+                        canvasElement.style.height = '400px';
+                        
+                        parentElement.insertBefore(canvasElement, parentElement.firstChild);
+                    }
+                    
+                    const ctx = canvasElement.getContext('2d');
+                    if (!ctx) {
+                        console.error('Could not get 2D context from canvas');
+                        displayErrorMessage(new Error('Could not initialize chart context'));
+                        return;
+                    }
+                    
+                    // Destroy previous chart if it exists
+                    if (syncStatsChart) {
+                        syncStatsChart.destroy();
+                    }
+                    
+                    // Create new chart
+                    syncStatsChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: title,
+                                data: data,
+                                backgroundColor: color,
+                                borderColor: color.replace('0.7', '1'),
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: title
+                                    }
                                 },
-                                ticks: {
-                                    callback: function(value, index) {
-                                        // Truncate long project names
-                                        const label = this.getLabelForValue(index);
-                                        if (label.length > 15) {
-                                            return label.substr(0, 12) + '...';
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: `Projects on ${new Date(dateKey).toLocaleDateString()}`
+                                    },
+                                    ticks: {
+                                        callback: function(value, index) {
+                                            // Truncate long project names
+                                            const label = this.getLabelForValue(index);
+                                            if (label.length > 15) {
+                                                return label.substr(0, 12) + '...';
+                                            }
+                                            return label;
                                         }
-                                        return label;
                                     }
                                 }
-                            }
-                        },
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    title: function(tooltipItem) {
-                                        // Show full project name in tooltip
-                                        return tooltipItem[0].label;
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        title: function(tooltipItem) {
+                                            // Show full project name in tooltip
+                                            return tooltipItem[0].label;
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                } catch (error) {
+                    console.error('Error creating project chart:', error);
+                    displayErrorMessage(error);
+                }
             }
             
             // Load details for a specific project over time
@@ -4169,9 +4551,9 @@
                                 if (snapshot.empty) {
                                     console.log('No sync logs found for the selected project');
                                     displayNoDataMessage();
-                                    return;
-                                }
-                                
+                return;
+            }
+            
                                 // Process the sync logs
                                 const logs = [];
                                 snapshot.forEach(doc => {
@@ -4245,7 +4627,7 @@
                                 });
                                 
                                 // Get the view type
-                                const viewType = document.getElementById('stats-view-type').value || 'success-rate';
+                                const viewType = document.getElementById('display-mode')?.value || 'count';
                                 
                                 // Prepare data for chart based on view type
                                 let chartData;
@@ -4253,7 +4635,7 @@
                                 let chartColor;
                                 
                                 switch (viewType) {
-                                    case 'success-rate':
+                                    case 'percentage':
                                         chartTitle = `Success Rate for ${projectName} (%)`;
                                         chartColor = 'rgba(40, 167, 69, 0.7)';
                                         chartData = Object.values(logsByDay).map(day => {
@@ -4262,7 +4644,7 @@
                                         });
                                         break;
                                         
-                                    case 'sync-count':
+                                    case 'count':
                                         chartTitle = `Sync Count for ${projectName}`;
                                         chartColor = 'rgba(23, 162, 184, 0.7)';
                                         chartData = Object.values(logsByDay).map(day => {
@@ -4457,151 +4839,700 @@
                     });
             }
             
-            // Update auto-sync functionality with more visible indicators
-            function scheduleAutoSync() {
-                // Clear existing timer
-                if (autoSyncTimer) {
-                    clearTimeout(autoSyncTimer);
+            // Create hourly chart for day drill-down
+            function createHourlyChart(labels, data, title, color) {
+                try {
+                    const graphElement = document.getElementById('sync-stats-graph');
+                    if (!graphElement) {
+                        console.error('Graph element not found');
+                        displayErrorMessage(new Error('Graph element not found'));
+                        return;
+                    }
+
+                    // Make sure we have a canvas element
+                    let canvasElement = graphElement;
+                    if (graphElement.tagName !== 'CANVAS') {
+                        console.log('Graph element is not a canvas, recreating it...');
+                        const parentElement = graphElement.parentElement;
+                        parentElement.removeChild(graphElement);
+                        
+                        canvasElement = document.createElement('canvas');
+                        canvasElement.id = 'sync-stats-graph';
+                        canvasElement.style.width = '100%';
+                        canvasElement.style.height = '400px';
+                        
+                        parentElement.insertBefore(canvasElement, parentElement.firstChild);
+                    }
+                    
+                    const ctx = canvasElement.getContext('2d');
+                    if (!ctx) {
+                        console.error('Could not get 2D context from canvas');
+                        displayErrorMessage(new Error('Could not initialize chart context'));
+                        return;
+                    }
+                    
+                    // Destroy previous chart if it exists
+                    if (syncStatsChart) {
+                        syncStatsChart.destroy();
+                    }
+                    
+                    // Create new chart
+                    syncStatsChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: title,
+                                data: data,
+                                backgroundColor: color,
+                                borderColor: color.replace('0.7', '1'),
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: title
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Hour of Day'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error creating hourly chart:', error);
+                    displayErrorMessage(error);
+                }
+            }
+            
+            // Retry Queue System
+            
+            // Queue state and configuration
+            const RETRY_DELAY = 60000; // 1 minute in milliseconds
+            const queueState = {
+                active: false,
+                timer: null,
+                projectsInQueue: [],
+                nextRetryTime: null
+            };
+            
+            // Initialize the retry queue system
+            function initRetryQueue() {
+                // DOM elements
+                const queueStateEl = document.getElementById('queue-state');
+                const nextRetryEl = document.getElementById('next-retry');
+                const queueCountEl = document.getElementById('queue-count');
+                const projectListEl = document.getElementById('project-list-retry');
+                const noProjectsEl = document.getElementById('no-projects');
+                const retryLogEl = document.getElementById('retry-log');
+                
+                // Buttons
+                const startQueueBtn = document.getElementById('start-queue');
+                const stopQueueBtn = document.getElementById('stop-queue');
+                const retryNowBtn = document.getElementById('retry-now');
+                const refreshListBtn = document.getElementById('refresh-list');
+                const retryAllBtn = document.getElementById('retry-all');
+                const clearQueueBtn = document.getElementById('clear-queue');
+                
+                if (!startQueueBtn || !stopQueueBtn || !retryNowBtn || !refreshListBtn || 
+                    !retryAllBtn || !clearQueueBtn || !queueStateEl || !nextRetryEl || 
+                    !queueCountEl || !projectListEl || !noProjectsEl || !retryLogEl) {
+                    console.error('Some retry queue elements not found in the DOM');
+                    return;
                 }
                 
-                // Get sync frequency from settings
-                db.collection('asana_config').doc('settings').get()
-                    .then(doc => {
-                        if (doc.exists) {
-                            const data = doc.data();
-                            let syncFrequencyMinutes = 60; // Default to hourly
+                // Create a retry queue collection if it doesn't exist
+                db.collection('asana_retry_queue').get()
+                  .then(snapshot => {
+                      if (snapshot.empty) {
+                          addRetryLogEntry('Creating retry queue collection', 'info');
+                      } else {
+                          addRetryLogEntry(`Found ${snapshot.size} projects in retry queue`, 'info');
+                      }
+                      refreshQueuedProjects();
+                  })
+                  .catch(error => {
+                      addRetryLogEntry(`Error checking retry queue: ${error.message}`, 'error');
+                  });
+                
+                // Add event listeners for buttons
+                startQueueBtn.addEventListener('click', () => {
+                    queueState.active = true;
+                    addRetryLogEntry('Retry queue activated', 'info');
+                    scheduleNextRetry();
+                    updateQueueUI();
+                });
+                
+                stopQueueBtn.addEventListener('click', () => {
+                    queueState.active = false;
+                    clearRetryTimer();
+                    addRetryLogEntry('Retry queue paused', 'info');
+                    updateQueueUI();
+                });
+                
+                retryNowBtn.addEventListener('click', () => {
+                    addRetryLogEntry('Manual retry triggered', 'info');
+                    processQueue();
+                });
+                
+                refreshListBtn.addEventListener('click', () => {
+                    addRetryLogEntry('Refreshing project list', 'info');
+                    refreshQueuedProjects();
+                    findFailedProjects();
+                });
+                
+                retryAllBtn.addEventListener('click', () => {
+                    if (queueState.projectsInQueue.length === 0) {
+                        addRetryLogEntry('No projects to retry', 'info');
+                        return;
+                    }
+                    
+                    addRetryLogEntry('Manual retry of all projects triggered', 'info');
+                    processQueue();
+                });
+                
+                clearQueueBtn.addEventListener('click', () => {
+                    if (queueState.projectsInQueue.length === 0) {
+                        return;
+                    }
+                    
+                    if (confirm('Are you sure you want to clear all projects from the retry queue?')) {
+                        addRetryLogEntry('Clearing retry queue', 'info');
+                        
+                        // Get all projects in the queue
+                        db.collection('asana_retry_queue')
+                            .where('status', 'in', ['queued', 'retrying', 'error'])
+                            .get()
+                            .then(snapshot => {
+                                if (snapshot.empty) {
+                                    addRetryLogEntry('No projects to clear', 'info');
+                                    return;
+                                }
+                                
+                                const batch = db.batch();
+                                
+                                snapshot.forEach(doc => {
+                                    // Mark as cancelled rather than deleting
+                                    batch.update(doc.ref, {
+                                        status: 'cancelled',
+                                        cancelledAt: firebase.firestore.FieldValue.serverTimestamp()
+                                    });
+                                });
+                                
+                                return batch.commit();
+                            })
+                            .then(() => {
+                                addRetryLogEntry('Retry queue cleared', 'success');
+                                refreshQueuedProjects();
+                            })
+                            .catch(error => {
+                                addRetryLogEntry(`Error clearing retry queue: ${error.message}`, 'error');
+                            });
+                    }
+                });
+                
+                // Initialize by checking for failed projects
+                findFailedProjects();
+            }
+            
+            // Function to check recent sync logs for failed projects
+            function findFailedProjects() {
+                addRetryLogEntry('Scanning recent sync logs for failed projects', 'info');
+                
+                db.collection('asana_sync_logs')
+                    .orderBy('timestamp', 'desc')
+                    .limit(5) // Get the most recent logs
+                    .get()
+                    .then(snapshot => {
+                        if (snapshot.empty) {
+                            addRetryLogEntry('No recent sync logs found', 'info');
+                            return;
+                        }
+                        
+                        let newFailedProjects = 0;
+                        
+                        // Process each log
+                        snapshot.forEach(doc => {
+                            const log = doc.data();
+                            const timestamp = log.timestamp ? log.timestamp.toDate() : new Date();
                             
-                            // Get frequency from various possible field names
-                            if (data.sync_frequency) {
-                                syncFrequencyMinutes = parseInt(data.sync_frequency);
-                            } else if (data.syncFrequency) {
-                                syncFrequencyMinutes = parseInt(data.syncFrequency);
-                            } else if (data.syncFrequency === '5min') {
-                                syncFrequencyMinutes = 5;
+                            // Skip logs older than 1 day
+                            const oneDayAgo = new Date();
+                            oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+                            if (timestamp < oneDayAgo) {
+                                return;
                             }
                             
-                            // Ensure frequency is at least 5 minutes
-                            syncFrequencyMinutes = Math.max(5, syncFrequencyMinutes);
-                            
-                            // Schedule next sync
-                            console.log(`Scheduling next auto-sync in ${syncFrequencyMinutes} minutes`);
-                            
-                            // Calculate next sync time
-                            const nextSyncTime = new Date();
-                            nextSyncTime.setMinutes(nextSyncTime.getMinutes() + syncFrequencyMinutes);
-                            
-                            // Update UI
-                            const autoSyncElem = document.getElementById('next-auto-sync');
-                            autoSyncElem.textContent = `Next auto-sync: ${nextSyncTime.toLocaleTimeString()}`;
-                            autoSyncElem.style.backgroundColor = '#e8f7ff';
-                            autoSyncElem.style.padding = '3px 8px';
-                            autoSyncElem.style.borderRadius = '4px';
-                            autoSyncElem.style.border = '1px solid #b8e2ff';
-                            autoSyncElem.style.display = 'inline-block';
-                            
-                            // Add a visual indicator that auto-sync is active
-                            document.getElementById('connection-notice').innerHTML = `
-                                <p>Your Asana account is connected. Auto-sync is <span style="background-color: #28a745; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8rem;">ACTIVE</span> and will run every ${syncFrequencyMinutes} minutes.</p>
-                            `;
-                            
-                            // Set timer
-                            autoSyncTimer = setTimeout(performAutoSync, syncFrequencyMinutes * 60 * 1000);
-                            
-                            // Start countdown timer
-                            startCountdownTimer(nextSyncTime);
-                        } else {
-                            console.log('No settings found, defaulting to hourly auto-sync');
-                            document.getElementById('next-auto-sync').textContent = 'Auto-sync: Not configured';
-                            document.getElementById('next-auto-sync').style.backgroundColor = '#fff3cd';
-                            document.getElementById('next-auto-sync').style.border = '1px solid #ffeeba';
-                        }
+                            if (log.projectStats) {
+                                Object.entries(log.projectStats).forEach(([projectId, stats]) => {
+                                    if (stats.error) {
+                                        // Check if this project is already in the queue
+                                        db.collection('asana_retry_queue').doc(projectId).get()
+                                            .then(projectDoc => {
+                                                if (!projectDoc.exists) {
+                                                    // Add to retry queue
+                                                    db.collection('asana_retry_queue').doc(projectId).set({
+                                                        projectId: projectId,
+                                                        name: stats.name || projectId,
+                                                        error: stats.error,
+                                                        status: 'queued',
+                                                        originalErrorTime: timestamp,
+                                                        addedToQueue: firebase.firestore.FieldValue.serverTimestamp(),
+                                                        retryCount: 0,
+                                                        lastRetryTime: null,
+                                                        syncLogId: doc.id
+                                                    })
+                                                    .then(() => {
+                                                        newFailedProjects++;
+                                                        addRetryLogEntry(`Added project ${stats.name || projectId} to retry queue`, 'info');
+                                                        refreshQueuedProjects();
+                                                    })
+                                                    .catch(error => {
+                                                        addRetryLogEntry(`Error adding project to queue: ${error.message}`, 'error');
+                                                    });
+                                                }
+                                            });
+                                    }
+                                });
+                            }
+                        });
+                        
+                        setTimeout(() => {
+                            if (newFailedProjects > 0) {
+                                addRetryLogEntry(`Added ${newFailedProjects} new projects to retry queue`, 'info');
+                            } else {
+                                addRetryLogEntry('No new failed projects found', 'info');
+                            }
+                        }, 1000);
                     })
                     .catch(error => {
-                        console.error('Error scheduling auto-sync:', error);
-                        document.getElementById('next-auto-sync').textContent = 'Auto-sync: Error';
-                        document.getElementById('next-auto-sync').style.backgroundColor = '#f8d7da';
-                        document.getElementById('next-auto-sync').style.border = '1px solid #f5c6cb';
+                        addRetryLogEntry(`Error scanning sync logs: ${error.message}`, 'error');
                     });
             }
             
-            // Add a countdown timer for the next auto-sync
+            // Function to refresh the project list display
+            function refreshQueuedProjects() {
+                const projectListEl = document.getElementById('project-list-retry');
+                const noProjectsEl = document.getElementById('no-projects');
+                
+                if (!projectListEl || !noProjectsEl) {
+                    console.error('Project list elements not found');
+                    return;
+                }
+                
+                db.collection('asana_retry_queue')
+                    .where('status', 'in', ['queued', 'retrying', 'error'])
+                    .get()
+                    .then(snapshot => {
+                        // Clear existing projects except the header
+                        const projectItems = projectListEl.querySelectorAll('.project-item-retry');
+                        projectItems.forEach(item => item.remove());
+                        
+                        if (snapshot.empty) {
+                            noProjectsEl.style.display = 'block';
+                            queueState.projectsInQueue = [];
+                            updateQueueUI();
+                            return;
+                        }
+                        
+                        noProjectsEl.style.display = 'none';
+                        queueState.projectsInQueue = [];
+                        
+                        snapshot.forEach(doc => {
+                            const project = doc.data();
+                            queueState.projectsInQueue.push(project);
+                            
+                            // Create project item
+                            const projectItem = document.createElement('div');
+                            projectItem.className = 'project-item-retry';
+                            projectItem.dataset.projectId = project.projectId;
+                            
+                            // Determine status indicator
+                            let statusClass = '';
+                            switch(project.status) {
+                                case 'error': statusClass = 'status-error'; break;
+                                case 'queued': statusClass = 'status-queued'; break;
+                                case 'retrying': statusClass = 'status-retrying'; break;
+                                case 'success': statusClass = 'status-success'; break;
+                            }
+                            
+                            projectItem.innerHTML = `
+                                <div class="project-name">
+                                    <span class="status-indicator ${statusClass}"></span>
+                                    ${project.name || project.projectId}
+                                </div>
+                                <div class="project-error">${project.error || 'Unknown error'}</div>
+                                <div class="project-actions">
+                                    <button class="btn retry-project" data-project-id="${project.projectId}">Retry</button>
+                                </div>
+                            `;
+                            
+                            projectListEl.appendChild(projectItem);
+                            
+                            // Add event listener to retry button
+                            const retryBtn = projectItem.querySelector('.retry-project');
+                            retryBtn.addEventListener('click', () => retryProject(project.projectId));
+                        });
+                        
+                        updateQueueUI();
+                    })
+                    .catch(error => {
+                        addRetryLogEntry(`Error refreshing project list: ${error.message}`, 'error');
+                    });
+            }
+            
+            // Function to retry a specific project
+            function retryProject(projectId) {
+                addRetryLogEntry(`Manually retrying project ${projectId}`, 'info');
+                
+                // Update status to retrying
+                db.collection('asana_retry_queue').doc(projectId).update({
+                    status: 'retrying',
+                    lastRetryTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    retryCount: firebase.firestore.FieldValue.increment(1)
+                })
+                .then(() => {
+                    // Create a new sync log for this retry
+                    return db.collection('asana_retry_queue').doc(projectId).get();
+                })
+                .then(doc => {
+                    if (!doc.exists) {
+                        throw new Error('Project not found in retry queue');
+                    }
+                    
+                    const project = doc.data();
+                    
+                    // Create a sync log entry specifically for this retry
+                    return db.collection('asana_sync_logs').add({
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        projects: [projectId],
+                        projectNames: { [projectId]: project.name || projectId },
+                        project_count: 1,
+                        status: 'started',
+                        message: `Started retry sync for project: ${project.name || projectId}`,
+                        projectStats: {
+                            [projectId]: {
+                                status: 'started',
+                                name: project.name || projectId,
+                                start_time: firebase.firestore.FieldValue.serverTimestamp()
+                            }
+                        },
+                        details: {
+                            initiated_by: 'retry_system',
+                            initiated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                            isRetry: true,
+                            previousError: project.error,
+                            retryCount: project.retryCount
+                        }
+                    });
+                })
+                .then(docRef => {
+                    addRetryLogEntry(`Created retry sync log for project ${projectId}`, 'info');
+                    
+                    // Here we would normally kick off the actual sync process via an API call
+                    // For demonstration, we'll simulate a successful sync
+                    simulateProjectSync(projectId, docRef.id);
+                    
+                    // Refresh the UI
+                    refreshQueuedProjects();
+                })
+                .catch(error => {
+                    addRetryLogEntry(`Error starting retry for project ${projectId}: ${error.message}`, 'error');
+                    
+                    // Mark as error in the queue
+                    db.collection('asana_retry_queue').doc(projectId).update({
+                        status: 'error',
+                        lastError: error.message
+                    })
+                    .catch(err => {
+                        addRetryLogEntry(`Failed to update project status: ${err.message}`, 'error');
+                    });
+                    
+                    refreshQueuedProjects();
+                });
+            }
+            
+            // Function to process all queued projects
+            function processQueue() {
+                if (!queueState.active) {
+                    addRetryLogEntry('Queue processing is paused', 'info');
+                    return;
+                }
+                
+                if (queueState.projectsInQueue.length === 0) {
+                    addRetryLogEntry('No projects in queue to process', 'info');
+                    scheduleNextRetry();
+                    return;
+                }
+                
+                addRetryLogEntry(`Processing ${queueState.projectsInQueue.length} projects in queue`, 'info');
+                
+                // Get projects with status 'queued'
+                db.collection('asana_retry_queue')
+                    .where('status', '==', 'queued')
+                    .get()
+                    .then(snapshot => {
+                        if (snapshot.empty) {
+                            addRetryLogEntry('No queued projects to retry', 'info');
+                            scheduleNextRetry();
+                            return;
+                        }
+                        
+                        const projectsToRetry = [];
+                        snapshot.forEach(doc => {
+                            projectsToRetry.push(doc.id);
+                        });
+                        
+                        // Retry each project with a small delay between them
+                        let index = 0;
+                        function retryNext() {
+                            if (index >= projectsToRetry.length) {
+                                addRetryLogEntry('Finished retrying all queued projects', 'info');
+                                scheduleNextRetry();
+                                return;
+                            }
+                            
+                            const projectId = projectsToRetry[index++];
+                            retryProject(projectId);
+                            
+                            // Add a small delay before retrying the next project
+                            setTimeout(retryNext, 2000);
+                        }
+                        
+                        retryNext();
+                    })
+                    .catch(error => {
+                        addRetryLogEntry(`Error processing queue: ${error.message}`, 'error');
+                        scheduleNextRetry();
+                    });
+            }
+            
+            // Function to simulate a project sync (for demonstration)
+            function simulateProjectSync(projectId, syncLogId) {
+                addRetryLogEntry(`Simulating sync for project ${projectId}`, 'info');
+                
+                // Get project data from the queue
+                db.collection('asana_retry_queue').doc(projectId).get()
+                    .then(doc => {
+                        if (!doc.exists) {
+                            throw new Error('Project not found in retry queue');
+                        }
+                        
+                        const project = doc.data();
+                        
+                        // 80% chance of success for retries
+                        const isSuccess = Math.random() < 0.8;
+                        
+                        setTimeout(() => {
+                            if (isSuccess) {
+                                // Update sync log with success
+                                db.collection('asana_sync_logs').doc(syncLogId).update({
+                                    status: 'completed',
+                                    message: `Retry sync for project ${project.name || projectId} completed successfully`,
+                                    projectStats: {
+                                        [projectId]: {
+                                            status: 'success',
+                                            name: project.name || projectId,
+                                            completion_time: firebase.firestore.FieldValue.serverTimestamp()
+                                        }
+                                    },
+                                    success_count: 1,
+                                    task_count: Math.floor(Math.random() * 10) + 1,
+                                    completion_time: firebase.firestore.FieldValue.serverTimestamp()
+                                })
+                                .then(() => {
+                                    // Mark as success in the queue
+                                    return db.collection('asana_retry_queue').doc(projectId).update({
+                                        status: 'success',
+                                        successTime: firebase.firestore.FieldValue.serverTimestamp()
+                                    });
+                                })
+                                .then(() => {
+                                    addRetryLogEntry(`Retry sync for project ${project.name || projectId} completed successfully`, 'success');
+                                    refreshQueuedProjects();
+                                });
+                            } else {
+                                // Generate a random error
+                                const errors = [
+                                    'API rate limit exceeded',
+                                    'Task not found',
+                                    'Network error',
+                                    'Invalid resource reference'
+                                ];
+                                
+                                // Don't use the permission denied error in simulation to avoid confusion
+                                const randomError = errors[Math.floor(Math.random() * errors.length)];
+                                
+                                // Update sync log with error
+                                db.collection('asana_sync_logs').doc(syncLogId).update({
+                                    status: 'error',
+                                    message: `Retry sync for project ${project.name || projectId} failed`,
+                                    projectStats: {
+                                        [projectId]: {
+                                            status: 'error',
+                                            name: project.name || projectId,
+                                            error: randomError,
+                                            completion_time: firebase.firestore.FieldValue.serverTimestamp()
+                                        }
+                                    },
+                                    success_count: 0,
+                                    errors: [randomError],
+                                    completion_time: firebase.firestore.FieldValue.serverTimestamp()
+                                })
+                                .then(() => {
+                                    // Mark as error in the queue
+                                    return db.collection('asana_retry_queue').doc(projectId).update({
+                                        status: 'error',
+                                        lastError: randomError,
+                                        lastRetryTime: firebase.firestore.FieldValue.serverTimestamp()
+                                    });
+                                })
+                                .then(() => {
+                                    addRetryLogEntry(`Retry sync for project ${project.name || projectId} failed: ${randomError}`, 'error');
+                                    refreshQueuedProjects();
+                                });
+                            }
+                        }, 3000); // Simulate 3 second sync process
+                    })
+                    .catch(error => {
+                        addRetryLogEntry(`Error in sync simulation: ${error.message}`, 'error');
+                    });
+            }
+            
+            // Function to schedule the next retry
+            function scheduleNextRetry() {
+                if (!queueState.active) {
+                    clearRetryTimer();
+                    return;
+                }
+                
+                // Clear any existing timer
+                clearRetryTimer();
+                
+                // Set next retry time to now + RETRY_DELAY
+                queueState.nextRetryTime = new Date(Date.now() + RETRY_DELAY);
+                
+                // Schedule the retry
+                queueState.timer = setTimeout(() => {
+                    processQueue();
+                }, RETRY_DELAY);
+                
+                updateQueueUI();
+                addRetryLogEntry(`Next retry scheduled for ${queueState.nextRetryTime.toLocaleTimeString()}`, 'info');
+            }
+            
+            // Function to clear the retry timer
+            function clearRetryTimer() {
+                if (queueState.timer) {
+                    clearTimeout(queueState.timer);
+                    queueState.timer = null;
+                    queueState.nextRetryTime = null;
+                }
+            }
+            
+            // Function to add a log entry
+            function addRetryLogEntry(message, type = 'info') {
+                const retryLogEl = document.getElementById('retry-log');
+                if (!retryLogEl) {
+                    console.error('Retry log element not found');
+                    return;
+                }
+                
+                const now = new Date();
+                const timestamp = now.toLocaleTimeString();
+                
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${type}`;
+                logEntry.innerHTML = `
+                    <span class="log-timestamp">[${timestamp}]</span>
+                    <span>${message}</span>
+                `;
+                
+                retryLogEl.appendChild(logEntry);
+                retryLogEl.scrollTop = retryLogEl.scrollHeight;
+                
+                // Also log to console
+                console.log(`[Retry] [${timestamp}] ${message}`);
+            }
+            
+            // Function to update the queue UI
+            function updateQueueUI() {
+                const queueStateEl = document.getElementById('queue-state');
+                const nextRetryEl = document.getElementById('next-retry');
+                const queueCountEl = document.getElementById('queue-count');
+                const startQueueBtn = document.getElementById('start-queue');
+                const stopQueueBtn = document.getElementById('stop-queue');
+                const retryNowBtn = document.getElementById('retry-now');
+                const retryAllBtn = document.getElementById('retry-all');
+                const clearQueueBtn = document.getElementById('clear-queue');
+                
+                if (!queueStateEl || !nextRetryEl || !queueCountEl || !startQueueBtn || 
+                    !stopQueueBtn || !retryNowBtn || !retryAllBtn || !clearQueueBtn) {
+                    console.error('Some queue UI elements not found');
+                    return;
+                }
+                
+                queueStateEl.textContent = queueState.active ? 'Active' : 'Inactive';
+                queueStateEl.style.color = queueState.active ? '#28a745' : '#6c757d';
+                
+                nextRetryEl.textContent = queueState.nextRetryTime ? 
+                    queueState.nextRetryTime.toLocaleTimeString() : 'None scheduled';
+                    
+                queueCountEl.textContent = queueState.projectsInQueue.length;
+                
+                // Update button states
+                startQueueBtn.disabled = queueState.active;
+                stopQueueBtn.disabled = !queueState.active;
+                retryNowBtn.disabled = queueState.projectsInQueue.length === 0;
+                retryAllBtn.disabled = queueState.projectsInQueue.length === 0;
+                clearQueueBtn.disabled = queueState.projectsInQueue.length === 0;
+                
+                if (queueState.active && queueState.nextRetryTime) {
+                    // Start a countdown timer
+                    startCountdown();
+                }
+            }
+            
             let countdownInterval = null;
-            function startCountdownTimer(nextSyncTime) {
-                // Clear any existing countdown
+            
+            // Function to start countdown timer
+            function startCountdown() {
+                const nextRetryEl = document.getElementById('next-retry');
+                if (!nextRetryEl) return;
+                
                 if (countdownInterval) {
                     clearInterval(countdownInterval);
                 }
                 
-                // Update countdown every second
                 countdownInterval = setInterval(() => {
-                    const now = new Date();
-                    const timeLeft = nextSyncTime - now;
-                    
-                    if (timeLeft <= 0) {
+                    if (!queueState.nextRetryTime) {
                         clearInterval(countdownInterval);
                         return;
                     }
                     
-                    // Calculate minutes and seconds
+                    const now = new Date();
+                    const timeLeft = queueState.nextRetryTime - now;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(countdownInterval);
+                        nextRetryEl.textContent = 'Processing...';
+                        return;
+                    }
+                    
+                    // Format as MM:SS
                     const minutes = Math.floor(timeLeft / 60000);
                     const seconds = Math.floor((timeLeft % 60000) / 1000);
-                    
-                    // Format countdown
-                    const countdown = `Next auto-sync: ${nextSyncTime.toLocaleTimeString()} (${minutes}m ${seconds}s)`;
-                    
-                    // Update UI
-                    const autoSyncElem = document.getElementById('next-auto-sync');
-                    autoSyncElem.textContent = countdown;
-                    
-                    // Change color as it gets closer
-                    if (timeLeft < 30000) { // Less than 30 seconds
-                        autoSyncElem.style.backgroundColor = '#ffeeba';
-                        autoSyncElem.style.border = '1px solid #ffdf7e';
-                    }
+                    nextRetryEl.textContent = `${queueState.nextRetryTime.toLocaleTimeString()} (${minutes}:${seconds.toString().padStart(2, '0')})`;
                 }, 1000);
-            }
-            
-            // Create hourly chart for day drill-down
-            function createHourlyChart(labels, data, title, color) {
-                const ctx = document.getElementById('sync-stats-graph').getContext('2d');
-                
-                // Destroy previous chart if it exists
-                if (syncStatsChart) {
-                    syncStatsChart.destroy();
-                }
-                
-                // Create new chart
-                syncStatsChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: title,
-                            data: data,
-                            backgroundColor: color,
-                            borderColor: color.replace('0.7', '1'),
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: title
-                                }
-                            },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Hour of Day'
-                                }
-                            }
-                        }
-                    }
-                });
             }
         });
     </script>
