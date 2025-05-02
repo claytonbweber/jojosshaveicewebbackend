@@ -752,7 +752,7 @@
             versionIndicator.style.borderRadius = '4px';
             versionIndicator.style.fontSize = '12px';
             versionIndicator.style.zIndex = '9999';
-            versionIndicator.textContent = 'v2.0 - May 1 Error Fix';
+            versionIndicator.textContent = 'v2.2 - Enhanced Token Persistence';
             document.body.appendChild(versionIndicator);
             
             // Skip version check - just display instructions in console
@@ -1565,6 +1565,13 @@
             function checkConnectionStatus() {
                 console.log("Checking connection status...");
                 
+                // Try local browser storage first for instant login
+                if (tryBrowserStorage()) {
+                    console.log("Connection restored from browser storage");
+                    return;
+                }
+                
+                // If local storage didn't work, try Firestore
                 // First, check if the asana_config collection exists
                 db.collection('asana_config').get()
                     .then(snapshot => {
@@ -1615,6 +1622,9 @@
                                 }
                             }
                             
+                            // Store token in browser storage for redundancy
+                            storeInBrowserStorage(normalizedData);
+                            
                             console.log('Loaded existing settings from asana_config');
                             updateConnectionStatus(true);
                             
@@ -1638,6 +1648,9 @@
                                     active: true
                                 };
                                 
+                                // Store in browser storage before Firestore update (in case it fails)
+                                storeInBrowserStorage(newData);
+                                
                                 db.collection('asana_config').doc('settings').set(newData, { merge: true })
                                     .then(() => {
                                         console.log('Updated token field name to standard format');
@@ -1646,9 +1659,9 @@
                                     })
                                     .catch(error => {
                                         console.error('Error updating token field name:', error);
-                                        tryLocalStorageBackup();
+                                        tryBrowserStorage();
                                     });
-                } else {
+                            } else {
                                 console.log('No valid settings found with any token field names');
                                 
                                 // Check if there's an "asana_config" document at the root level for legacy data
@@ -1666,6 +1679,9 @@
                                                 active: true
                                             };
                                             
+                                            // Store in browser storage before Firestore update
+                                            storeInBrowserStorage(newData);
+                                            
                                             // Update to new format
                                             db.collection('asana_config').doc('settings').set(newData)
                                                 .then(() => {
@@ -1675,91 +1691,143 @@
                                                 })
                                                 .catch(error => {
                                                     console.error('Error migrating settings:', error);
-                                                    tryLocalStorageBackup();
+                                                    tryBrowserStorage();
                                                 });
                                         } else {
-                                            tryLocalStorageBackup();
+                                            tryBrowserStorage();
                                         }
                                     })
                                     .catch(error => {
                                         console.error('Error checking legacy asana_config:', error);
-                                        tryLocalStorageBackup();
+                                        tryBrowserStorage();
                                     });
                             }
                         } else {
                             // No settings document exists, try localStorage backup
-                            tryLocalStorageBackup();
+                            tryBrowserStorage();
                         }
                     })
                     .catch((error) => {
                         console.error('Error checking connection status:', error);
-                        tryLocalStorageBackup();
+                        tryBrowserStorage();
                     });
+            }
+            
+            // NEW FUNCTION: Combined function to try all browser storage options
+            function tryBrowserStorage() {
+                console.log("Attempting to restore connection from browser storage...");
                 
-                // Try to recover from localStorage if Firestore fails
-                function tryLocalStorageBackup() {
-                    try {
+                try {
+                    // Try sessionStorage first (persists across page refreshes but not tab/window close)
+                    let settings = null;
+                    
+                    // Check sessionStorage
+                    const sessionSettings = sessionStorage.getItem('asana_settings');
+                    if (sessionSettings) {
+                        try {
+                            settings = JSON.parse(sessionSettings);
+                            console.log('Found settings in sessionStorage:', settings);
+                        } catch (e) {
+                            console.error('Error parsing sessionStorage settings:', e);
+                        }
+                    }
+                    
+                    // If not in sessionStorage, check localStorage
+                    if (!settings || !settings.personal_access_token) {
                         const savedSettings = localStorage.getItem('asana_settings');
                         if (savedSettings) {
-                            const localSettings = JSON.parse(savedSettings);
-                            console.log('Found settings in localStorage:', localSettings);
-                            
-                            if (localSettings.personal_access_token) {
-                                console.log('Restoring connection from localStorage backup');
-                                
-                                // Create normalized data from localStorage
-                                const normalizedData = {
-                                    personal_access_token: localSettings.personal_access_token,
-                                    sync_frequency: localSettings.sync_frequency || 60,
-                                    active: true
-                                };
-                                
-                                // Update UI with backup data
-                                updateConnectionDisplay(normalizedData);
-                                document.getElementById('asana-pat').value = normalizedData.personal_access_token;
-                                
-                                // Set frequency dropdown
-                                if (normalizedData.sync_frequency) {
-                                    const syncFrequencySelect = document.getElementById('sync-frequency');
-                                    const options = syncFrequencySelect.options;
-                                    for (let i = 0; i < options.length; i++) {
-                                        if (parseInt(options[i].value) === normalizedData.sync_frequency) {
-                                            syncFrequencySelect.selectedIndex = i;
-                                            break;
-                                        }
-                                    }
+                            try {
+                                settings = JSON.parse(savedSettings);
+                                console.log('Found settings in localStorage:', settings);
+                            } catch (e) {
+                                console.error('Error parsing localStorage settings:', e);
+                            }
+                        }
+                    }
+                    
+                    // If we found valid settings
+                    if (settings && settings.personal_access_token) {
+                        console.log('Restoring connection from browser storage');
+                        
+                        // Create normalized data from browser storage
+                        const normalizedData = {
+                            personal_access_token: settings.personal_access_token,
+                            sync_frequency: settings.sync_frequency || 60,
+                            active: true
+                        };
+                        
+                        // Update UI with backup data
+                        updateConnectionDisplay(normalizedData);
+                        document.getElementById('asana-pat').value = normalizedData.personal_access_token;
+                        
+                        // Set frequency dropdown
+                        if (normalizedData.sync_frequency) {
+                            const syncFrequencySelect = document.getElementById('sync-frequency');
+                            const options = syncFrequencySelect.options;
+                            for (let i = 0; i < options.length; i++) {
+                                if (parseInt(options[i].value) === normalizedData.sync_frequency) {
+                                    syncFrequencySelect.selectedIndex = i;
+                                    break;
                                 }
-                                
-                                // Also restore to Firestore for future use
-                                db.collection('asana_config').doc('settings').set({
-                                    personal_access_token: localSettings.personal_access_token,
-                                    sync_frequency: localSettings.sync_frequency || 60,
-                                    updated_at: firebase.firestore.FieldValue.serverTimestamp(),
-                                    active: true,
-                                    restored_from_local: true
-                                }, { merge: true })
-                                .then(() => {
-                                    console.log('Restored settings from localStorage to Firestore');
-                                })
-                                .catch(err => {
-                                    console.error('Error restoring settings to Firestore:', err);
-                                });
-                                
-                                updateConnectionStatus(true);
-                                afterConnectionEstablished();
-                                return;
                             }
                         }
                         
-                        // If we get here, there was no backup or it didn't have a token
-                        updateConnectionStatus(false);
-                    } catch (e) {
-                        console.error('Error trying localStorage backup:', e);
-                        updateConnectionStatus(false);
+                        // Also restore to Firestore for future use
+                        db.collection('asana_config').doc('settings').set({
+                            personal_access_token: settings.personal_access_token,
+                            sync_frequency: settings.sync_frequency || 60,
+                            updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                            active: true,
+                            restored_from_local: true
+                        }, { merge: true })
+                        .then(() => {
+                            console.log('Restored settings from browser storage to Firestore');
+                        })
+                        .catch(err => {
+                            console.error('Error restoring settings to Firestore:', err);
+                        });
+                        
+                        updateConnectionStatus(true);
+                        afterConnectionEstablished();
+                        return true;
                     }
+                    
+                    // If we get here, there was no backup or it didn't have a token
+                    updateConnectionStatus(false);
+                    return false;
+                } catch (e) {
+                    console.error('Error trying browser storage backup:', e);
+                    updateConnectionStatus(false);
+                    return false;
                 }
             }
 
+            // NEW FUNCTION: Store settings in all available browser storage methods
+            function storeInBrowserStorage(data) {
+                if (!data || !data.personal_access_token) {
+                    console.warn('Cannot store invalid settings in browser storage');
+                    return;
+                }
+                
+                const storageData = {
+                    personal_access_token: data.personal_access_token,
+                    sync_frequency: data.sync_frequency || 60,
+                    timestamp: new Date().toISOString()
+                };
+                
+                try {
+                    // Store in localStorage for persistence across browser sessions
+                    localStorage.setItem('asana_settings', JSON.stringify(storageData));
+                    console.log('Settings saved to localStorage');
+                    
+                    // Also store in sessionStorage for quicker access during the current session
+                    sessionStorage.setItem('asana_settings', JSON.stringify(storageData));
+                    console.log('Settings saved to sessionStorage');
+                } catch (e) {
+                    console.error('Error saving to browser storage:', e);
+                }
+            }
+            
             // Function to update the current connection display
             function updateConnectionDisplay(data) {
                 // Display partial token (first 4 chars + last 4 chars, rest are hidden)
@@ -1843,8 +1911,12 @@
                         try {
                             localStorage.removeItem('asana_settings');
                             console.log('LocalStorage backup also cleared');
+                            
+                            // Also clear sessionStorage
+                            sessionStorage.removeItem('asana_settings');
+                            console.log('SessionStorage backup also cleared');
                         } catch (e) {
-                            console.error('Error clearing localStorage:', e);
+                            console.error('Error clearing browser storage:', e);
                         }
                         
                         alert('Connection settings cleared successfully');
@@ -2395,6 +2467,12 @@
                     return;
                 }
                 
+                // Save to browser storage immediately for redundancy
+                storeInBrowserStorage({
+                    personal_access_token: pat,
+                    sync_frequency: parseInt(syncFrequency)
+                });
+                
                 // First, check if a settings document already exists to determine the naming convention
                 db.collection('asana_config').doc('settings').get()
                     .then(doc => {
@@ -2420,18 +2498,6 @@
                                 updated_at: firebase.firestore.FieldValue.serverTimestamp(),
                                 active: true
                             };
-                        }
-                        
-                        // Also save to localStorage as backup
-                        try {
-                            localStorage.setItem('asana_settings', JSON.stringify({
-                                personal_access_token: pat,
-                                sync_frequency: parseInt(syncFrequency),
-                                timestamp: new Date().toISOString()
-                            }));
-                            console.log('Settings saved to localStorage as backup');
-                        } catch (e) {
-                            console.error('Error saving to localStorage:', e);
                         }
                         
                         // Save settings to Firestore using the correct collection and document structure
@@ -2466,6 +2532,12 @@
             
                 alert('Testing connection to Asana...');
                 console.log("Testing connection with PAT: " + pat.substring(0, 4) + "...");
+                
+                // Save to browser storage immediately on test
+                storeInBrowserStorage({
+                    personal_access_token: pat,
+                    sync_frequency: parseInt(document.getElementById('sync-frequency').value)
+                });
                 
                 // For demo purposes, simulate a successful connection
                 setTimeout(() => {
