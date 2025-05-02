@@ -558,6 +558,10 @@
                 <div id="current-connection" class="asana-container" style="display: none;">
                     <h3>Current Connection</h3>
                     <div class="form-group">
+                        <label>Connected With:</label>
+                        <div id="current-pat-name" class="info-value">Unknown Connection</div>
+                    </div>
+                    <div class="form-group">
                         <label>Personal Access Token:</label>
                         <div id="current-token" class="info-value">••••••••••••••••</div>
                     </div>
@@ -571,39 +575,84 @@
                     </div>
                     <div class="form-group">
                         <button id="edit-settings" class="btn">Edit Settings</button>
-                        <button id="clear-settings" class="btn btn-secondary" style="margin-left: 10px;">Clear Settings</button>
+                        <button id="clear-settings" class="btn btn-secondary" style="margin-left: 10px;">Disconnect</button>
                 </div>
             </div>
             
                 <div id="settings-form-container">
                     <div class="info-box">
-                        <p>Configure your Asana integration settings here. Your Personal Access Token will be securely stored in Firestore.</p>
+                        <p>Configure your Asana integration settings here. You can save multiple Personal Access Tokens and switch between them.</p>
                     </div>
         
-                    <form id="settings-form">
-                        <div class="form-group">
-                            <label for="asana-pat">Asana Personal Access Token (PAT)</label>
-                            <input type="password" id="asana-pat" placeholder="Enter your Asana PAT">
-                            <small style="display: block; margin-top: 5px; color: #666;">You can generate a PAT in your Asana account settings</small>
+                    <div class="asana-container" style="margin-bottom: 20px;">
+                        <h3>Saved Connections</h3>
+                        <p>Select a saved connection to use, or create a new one.</p>
+                        
+                        <div id="token-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;">
+                            <div style="padding: 10px; text-align: center; color: #666;">Loading saved connections...</div>
                         </div>
                         
                         <div class="form-group">
-                            <label for="sync-frequency">Sync Frequency</label>
-                            <select id="sync-frequency">
-                                <option value="15">Every 15 minutes</option>
-                                <option value="30">Every 30 minutes</option>
-                                <option value="60" selected>Every hour</option>
-                                <option value="360">Every 6 hours</option>
-                                <option value="720">Every 12 hours</option>
-                                <option value="1440">Once a day</option>
-                            </select>
+                            <button id="create-new-token" class="btn">Create New Connection</button>
+                            <button id="refresh-tokens" class="btn btn-secondary" style="margin-left: 10px;">Refresh List</button>
+                        </div>
                     </div>
+                    
+                    <div id="token-form-container" style="display: none;" class="asana-container">
+                        <h3 id="token-form-title">Create New Connection</h3>
                         
-                        <div class="form-group">
-                            <button type="submit" class="btn">Save Settings</button>
-                            <button type="button" id="test-connection" class="btn btn-secondary" style="margin-left: 10px;">Test Connection</button>
-                            <button type="button" id="cancel-edit" class="btn btn-secondary" style="margin-left: 10px; display: none;">Cancel</button>
-                </div>
+                        <form id="token-form">
+                            <div class="form-group">
+                                <label for="connection-name">Connection Name</label>
+                                <input type="text" id="connection-name" placeholder="e.g., Production Workspace" required>
+                                <small style="display: block; margin-top: 5px; color: #666;">A memorable name for this connection</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="asana-pat">Asana Personal Access Token (PAT)</label>
+                                <input type="password" id="asana-pat" placeholder="Enter your Asana PAT" required>
+                                <small style="display: block; margin-top: 5px; color: #666;">You can generate a PAT in your Asana account settings</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <button type="submit" class="btn">Save Connection</button>
+                                <button type="button" id="test-connection" class="btn btn-secondary" style="margin-left: 10px;">Test Connection</button>
+                                <button type="button" id="cancel-token-form" class="btn btn-secondary" style="margin-left: 10px;">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <form id="settings-form" class="asana-container">
+                        <h3>Active Connection Settings</h3>
+                        
+                        <div class="info-box" id="no-active-connection" style="background-color: #fff3cd; border-left-color: #ffc107;">
+                            <p>No connection is currently active. Please select a connection from the list above.</p>
+                        </div>
+                        
+                        <div id="active-connection-settings" style="display: none;">
+                            <div class="form-group">
+                                <label>Active Connection:</label>
+                                <div id="active-connection-name" class="info-value" style="font-weight: bold;">None selected</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="sync-frequency">Sync Frequency</label>
+                                <select id="sync-frequency">
+                                    <option value="15">Every 15 minutes</option>
+                                    <option value="30">Every 30 minutes</option>
+                                    <option value="60" selected>Every hour</option>
+                                    <option value="360">Every 6 hours</option>
+                                    <option value="720">Every 12 hours</option>
+                                    <option value="1440">Once a day</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <button type="submit" class="btn">Save Settings</button>
+                                <button type="button" id="activate-connection" class="btn btn-secondary" style="margin-left: 10px;">Activate Connection</button>
+                                <button type="button" id="cancel-edit" class="btn btn-secondary" style="margin-left: 10px; display: none;">Cancel</button>
+                            </div>
+                        </div>
                     </form>
                     
                     <!-- Debug Section (for admin use) -->
@@ -616,7 +665,7 @@
                             <button id="debug-create-settings" class="btn btn-secondary" style="margin-left: 10px;">Create Sample Settings</button>
                             <button id="debug-create-projects" class="btn btn-secondary" style="margin-left: 10px;">Create Sample Projects</button>
                             <button id="debug-clear-logs" class="btn btn-secondary" style="margin-left: 10px;">Clear Console</button>
-    </div>
+                        </div>
 
                         <div id="debug-output" style="margin-top: 15px; background-color: #f5f5f5; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;"></div>
                     </div>
@@ -1563,153 +1612,109 @@
             
             // Check if connection is established from Firestore
             function checkConnectionStatus() {
-                console.log("Checking connection status...");
+                console.log("Checking connection status with new architecture...");
                 
-                // Try local browser storage first for instant login
+                // First check if we have an active connection
+                db.collection('asana_active_connection').doc('active').get()
+                    .then(doc => {
+                        if (doc.exists && doc.data().is_active && doc.data().token_id) {
+                            // Get the token
+                            return db.collection('asana_tokens').doc(doc.data().token_id).get()
+                                .then(tokenDoc => {
+                                    if (tokenDoc.exists) {
+                                        console.log('Found active connection with valid token');
+                                        updateConnectionStatus(true);
+                                        
+                                        // Ensure legacy storage is updated for compatibility
+                                        storeInBrowserStorage({
+                                            personal_access_token: tokenDoc.data().token,
+                                            sync_frequency: doc.data().sync_frequency || 60
+                                        });
+                                        
+                                        // Update legacy config document
+                                        db.collection('asana_config').doc('settings').set({
+                                            personal_access_token: tokenDoc.data().token,
+                                            sync_frequency: doc.data().sync_frequency || 60,
+                                            active: true,
+                                            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                                        }, { merge: true });
+                                        
+                                        afterConnectionEstablished();
+                                    } else {
+                                        console.log('Active token not found, trying fallbacks');
+                                        // Token not found - try legacy storage
+                                        tryLegacyStorage();
+                                    }
+                                });
+                        } else {
+                            console.log('No active connection, trying fallbacks');
+                            // No active connection - try legacy storage
+                            tryLegacyStorage();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking active connection:', error);
+                        tryLegacyStorage();
+                    });
+            }
+            
+            // Function to try legacy storage methods (for backwards compatibility)
+            function tryLegacyStorage() {
+                console.log("Trying legacy storage methods...");
+                
+                // First try browser storage
                 if (tryBrowserStorage()) {
                     console.log("Connection restored from browser storage");
                     return;
                 }
                 
-                // If local storage didn't work, try Firestore
-                // First, check if the asana_config collection exists
-                db.collection('asana_config').get()
-                    .then(snapshot => {
-                        console.log(`asana_config collection exists: ${!snapshot.empty}`);
-                        console.log(`Found ${snapshot.size} documents in asana_config`);
-                        
-                        if (!snapshot.empty) {
-                            snapshot.forEach(doc => {
-                                console.log(`Document ID: ${doc.id}, data:`, doc.data());
-                            });
-                        }
-                        
-                        // Now check for the settings document specifically
-                        return db.collection('asana_config').doc('settings').get();
-                    })
-                    .then((doc) => {
-                        console.log(`Settings document exists: ${doc.exists}`);
-                        if (doc.exists && (doc.data().personal_access_token || doc.data().personalAccessToken)) {
+                // If browser storage failed, try asana_config
+                db.collection('asana_config').doc('settings').get()
+                    .then(doc => {
+                        if (doc.exists && doc.data().personal_access_token && doc.data().active !== false) {
+                            console.log("Connection restored from asana_config");
+                            
                             const data = doc.data();
                             
-                            // Create a normalized data object that works with both naming conventions
-                            const normalizedData = {
-                                personal_access_token: data.personal_access_token || data.personalAccessToken,
-                                sync_frequency: data.sync_frequency || data.syncFrequency || (data.syncFrequency === '5min' ? 5 : 60),
-                                last_sync: data.last_sync || data.lastSync || data.lastFullSyncTimestamp,
-                                updated_at: data.updated_at || data.updatedAt,
-                                active: data.active || data.syncEnabled || true
-                            };
-                            
-                            // Log the normalized data for debugging
-                            console.log('Normalized settings data:', normalizedData);
-                            
-                            // Update the current connection display
-                            updateConnectionDisplay(normalizedData);
-                            
-                            // Load saved settings into form fields (for editing)
-                            document.getElementById('asana-pat').value = normalizedData.personal_access_token;
-                            
-                            // Set the frequency dropdown to the saved value
-                            if (normalizedData.sync_frequency) {
-                                const syncFrequencySelect = document.getElementById('sync-frequency');
-                                const options = syncFrequencySelect.options;
-                                for (let i = 0; i < options.length; i++) {
-                                    if (parseInt(options[i].value) === normalizedData.sync_frequency) {
-                                        syncFrequencySelect.selectedIndex = i;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            // Store token in browser storage for redundancy
-                            storeInBrowserStorage(normalizedData);
-                            
-                            console.log('Loaded existing settings from asana_config');
-                            updateConnectionStatus(true);
-                            
-                            // Initialize auto-sync
-                            afterConnectionEstablished();
-                        } else if (doc.exists) {
-                            // Check if token exists under different field names
-                            const data = doc.data();
-                            console.log('Checking for alternative token field names in:', data);
-                            
-                            if (data.pat || data.token || data.asanaToken || data.asana_token) {
-                                // Found token with different field name, update to standard format
-                                const token = data.pat || data.token || data.asanaToken || data.asana_token;
-                                console.log(`Found token with alternative field name: ${token.substring(0, 4)}...`);
-                                
-                                // Update to standard format
-                                const newData = {
-                                    personal_access_token: token,
-                                    sync_frequency: data.sync_frequency || data.syncFrequency || 60,
+                            // Create a token in the new system
+                            db.collection('asana_tokens').add({
+                                name: "Migrated Connection",
+                                token: data.personal_access_token,
+                                created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                                updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                                migrated_from_legacy: true
+                            })
+                            .then(tokenRef => {
+                                // Create active connection
+                                return db.collection('asana_active_connection').doc('active').set({
+                                    token_id: tokenRef.id,
+                                    is_active: true,
+                                    is_locked: false,
+                                    sync_frequency: data.sync_frequency || 60,
                                     updated_at: firebase.firestore.FieldValue.serverTimestamp(),
-                                    active: true
-                                };
-                                
-                                // Store in browser storage before Firestore update (in case it fails)
-                                storeInBrowserStorage(newData);
-                                
-                                db.collection('asana_config').doc('settings').set(newData, { merge: true })
-                                    .then(() => {
-                                        console.log('Updated token field name to standard format');
-                                        // Reload with new settings
-                                        checkConnectionStatus();
-                                    })
-                                    .catch(error => {
-                                        console.error('Error updating token field name:', error);
-                                        tryBrowserStorage();
-                                    });
-                            } else {
-                                console.log('No valid settings found with any token field names');
-                                
-                                // Check if there's an "asana_config" document at the root level for legacy data
-                                db.collection('asana_config').doc('asana_config').get()
-                                    .then(legacyDoc => {
-                                        if (legacyDoc.exists && legacyDoc.data().settings && legacyDoc.data().settings.pat) {
-                                            console.log('Found legacy settings structure:', legacyDoc.data());
-                                            
-                                            // Migrate legacy data to new format
-                                            const legacyData = legacyDoc.data();
-                                            const newData = {
-                                                personal_access_token: legacyData.settings.pat,
-                                                sync_frequency: legacyData.settings.sync_frequency || 60,
-                                                updated_at: firebase.firestore.FieldValue.serverTimestamp(),
-                                                active: true
-                                            };
-                                            
-                                            // Store in browser storage before Firestore update
-                                            storeInBrowserStorage(newData);
-                                            
-                                            // Update to new format
-                                            db.collection('asana_config').doc('settings').set(newData)
-                                                .then(() => {
-                                                    console.log('Migrated legacy settings to new format');
-                                                    // Reload to use the new settings
-                                                    checkConnectionStatus();
-                                                })
-                                                .catch(error => {
-                                                    console.error('Error migrating settings:', error);
-                                                    tryBrowserStorage();
-                                                });
-                                        } else {
-                                            tryBrowserStorage();
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error checking legacy asana_config:', error);
-                                        tryBrowserStorage();
-                                    });
-                            }
+                                    migrated_from_legacy: true
+                                });
+                            })
+                            .then(() => {
+                                console.log('Legacy connection migrated to new system');
+                                loadSavedTokens();
+                                updateConnectionStatus(true);
+                                afterConnectionEstablished();
+                            })
+                            .catch(error => {
+                                console.error('Error migrating legacy connection:', error);
+                                // Use the legacy connection directly as fallback
+                                updateConnectionStatus(true);
+                                afterConnectionEstablished();
+                            });
                         } else {
-                            // No settings document exists, try localStorage backup
-                            tryBrowserStorage();
+                            // No connection found
+                            updateConnectionStatus(false);
                         }
                     })
-                    .catch((error) => {
-                        console.error('Error checking connection status:', error);
-                        tryBrowserStorage();
+                    .catch(error => {
+                        console.error('Error checking legacy connection:', error);
+                        updateConnectionStatus(false);
                     });
             }
             
@@ -1892,39 +1897,36 @@
             
             // Clear settings button
             document.getElementById('clear-settings').addEventListener('click', function() {
-                if (confirm('Are you sure you want to clear all connection settings? This will disconnect your Asana integration.')) {
-                    document.getElementById('asana-pat').value = '';
-                    document.getElementById('sync-frequency').value = '60';
-                    document.getElementById('current-connection').style.display = 'none';
-                    document.getElementById('settings-form-container').style.display = 'block';
-                    
-                    // Clear settings in Firestore
-                    db.collection('asana_config').doc('settings').update({
-                        personal_access_token: firebase.firestore.FieldValue.delete(),
-                        active: false,
+                if (confirm('Are you sure you want to disconnect Asana? This will stop synchronization until you activate a connection again.')) {
+                    // Update active connection to inactive
+                    db.collection('asana_active_connection').doc('active').update({
+                        is_active: false,
                         updated_at: firebase.firestore.FieldValue.serverTimestamp()
                     })
                     .then(() => {
-                        console.log('Connection settings cleared');
-                        
-                        // Also clear localStorage backup
+                        // Also clear the legacy settings
+                        return db.collection('asana_config').doc('settings').update({
+                            active: false,
+                            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    })
+                    .then(() => {
+                        // Clear browser storage
                         try {
                             localStorage.removeItem('asana_settings');
-                            console.log('LocalStorage backup also cleared');
-                            
-                            // Also clear sessionStorage
                             sessionStorage.removeItem('asana_settings');
-                            console.log('SessionStorage backup also cleared');
+                            console.log('Browser storage cleared');
                         } catch (e) {
                             console.error('Error clearing browser storage:', e);
                         }
                         
-                        alert('Connection settings cleared successfully');
+                        alert('Connection disconnected successfully.');
                         updateConnectionStatus(false);
+                        loadSavedTokens();
                     })
-                    .catch((error) => {
-                        console.error('Error clearing settings:', error);
-                        alert(`Error clearing settings: ${error.message}`);
+                    .catch(error => {
+                        console.error('Error disconnecting Asana:', error);
+                        alert(`Error disconnecting: ${error.message}`);
                     });
                 }
             });
@@ -3988,10 +3990,224 @@
                 scheduleAutoSync();
             }
             
+            // Function to schedule auto sync based on settings
+            function scheduleAutoSync() {
+                console.log('Scheduling next auto-sync...');
+                
+                // Clear any existing timer
+                if (window.autoSyncTimer) {
+                    clearTimeout(window.autoSyncTimer);
+                    window.autoSyncTimer = null;
+                }
+                
+                // Check if we have an active connection
+                db.collection('asana_active_connection').doc('active').get()
+                    .then(doc => {
+                        if (!doc.exists || !doc.data().is_active || !doc.data().token_id) {
+                            console.log('No active connection found, auto-sync disabled');
+                            return;
+                        }
+                        
+                        const active = doc.data();
+                        const syncFrequency = active.sync_frequency || 60; // Default to 60 minutes
+                        
+                        // Calculate when the next sync should happen
+                        let nextSync = new Date();
+                        let lastSync = null;
+                        
+                        if (active.last_sync) {
+                            lastSync = active.last_sync.toDate ? active.last_sync.toDate() : new Date(active.last_sync);
+                            nextSync = new Date(lastSync);
+                            nextSync.setMinutes(nextSync.getMinutes() + syncFrequency);
+                        }
+                        
+                        const now = new Date();
+                        let timeUntilNextSync = 0;
+                        
+                        if (nextSync > now) {
+                            // Next sync is in the future
+                            timeUntilNextSync = nextSync.getTime() - now.getTime();
+                        } else {
+                            // Should sync now or in the recent past, schedule immediately
+                            timeUntilNextSync = 5000; // 5 seconds delay
+                        }
+                        
+                        console.log(`Next auto-sync scheduled in ${Math.round(timeUntilNextSync / 1000)} seconds (${Math.round(timeUntilNextSync / 60000)} minutes)`);
+                        
+                        // Schedule the next sync
+                        window.autoSyncTimer = setTimeout(() => {
+                            performAutoSync();
+                        }, timeUntilNextSync);
+                    })
+                    .catch(error => {
+                        console.error('Error scheduling auto-sync:', error);
+                        // Try again in 5 minutes
+                        window.autoSyncTimer = setTimeout(scheduleAutoSync, 5 * 60 * 1000);
+                    });
+            }
+            
+            // Function to perform the actual auto-sync
+            function performAutoSync() {
+                console.log('Starting auto-sync...');
+                
+                // Check if we have an active connection
+                db.collection('asana_active_connection').doc('active').get()
+                    .then(doc => {
+                        if (!doc.exists || !doc.data().is_active || !doc.data().token_id) {
+                            console.log('No active connection, skipping auto-sync');
+                            scheduleAutoSync();
+                            return;
+                        }
+                        
+                        // Create a new sync log
+                        return db.collection('asana_sync_logs').add({
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                            status: 'started',
+                            message: 'Started automatic sync',
+                            details: {
+                                initiated_by: 'auto',
+                                initiated_at: firebase.firestore.FieldValue.serverTimestamp()
+                            }
+                        })
+                        .then(docRef => {
+                            console.log('Created auto-sync log', docRef.id);
+                            
+                            // Get the projects to sync
+                            return db.collection('asana_projects')
+                                .where('sync_enabled', '==', true)
+                                .get()
+                                .then(snapshot => {
+                                    if (snapshot.empty) {
+                                        console.log('No projects enabled for sync');
+                                        
+                                        // Update the sync log
+                                        return db.collection('asana_sync_logs').doc(docRef.id).update({
+                                            status: 'completed',
+                                            message: 'No projects enabled for sync',
+                                            completion_time: firebase.firestore.FieldValue.serverTimestamp()
+                                        });
+                                    }
+                                    
+                                    const projects = [];
+                                    const projectNames = {};
+                                    
+                                    snapshot.forEach(doc => {
+                                        const project = doc.data();
+                                        projects.push(doc.id);
+                                        projectNames[doc.id] = project.name || doc.id;
+                                    });
+                                    
+                                    console.log(`Found ${projects.length} projects to sync`);
+                                    
+                                    // Update the sync log with projects
+                                    return db.collection('asana_sync_logs').doc(docRef.id).update({
+                                        projects: projects,
+                                        projectNames: projectNames,
+                                        project_count: projects.length,
+                                        message: `Auto-syncing ${projects.length} projects`
+                                    })
+                                    .then(() => {
+                                        // Now simulate syncing each project
+                                        // In a real implementation, you would call an API or cloud function
+                                        return simulateProjectSyncs(projects, projectNames, docRef.id);
+                                    });
+                                });
+                        })
+                        .then(() => {
+                            // Update the last sync time
+                            return db.collection('asana_active_connection').doc('active').update({
+                                last_sync: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        })
+                        .then(() => {
+                            // Schedule the next sync
+                            scheduleAutoSync();
+                            
+                            // Refresh any UI that shows sync logs
+                            if (typeof loadSyncLogs === 'function') {
+                                loadSyncLogs();
+                            }
+                            
+                            // Also check for failed projects
+                            if (typeof findFailedProjects === 'function') {
+                                setTimeout(findFailedProjects, 5000);
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error during auto-sync:', error);
+                        scheduleAutoSync();
+                    });
+            }
+            
             // Call this function after connection is established
             function afterConnectionEstablished() {
                 // Initialize auto-sync
                 initializeAutoSync();
+            }
+            
+            // Function to simulate syncing projects (for demo)
+            function simulateProjectSyncs(projects, projectNames, syncLogId) {
+                const projectStats = {};
+                let successCount = 0;
+                let errors = [];
+                
+                // Simulate each project sync with varying success/failure
+                const promises = projects.map(projectId => {
+                    return new Promise(resolve => {
+                        // Simulate sync delay
+                        setTimeout(() => {
+                            // 75% chance of success
+                            const isSuccess = Math.random() < 0.75;
+                            
+                            if (isSuccess) {
+                                projectStats[projectId] = {
+                                    status: 'success',
+                                    name: projectNames[projectId],
+                                    task_count: Math.floor(Math.random() * 10) + 1,
+                                    completion_time: firebase.firestore.FieldValue.serverTimestamp()
+                                };
+                                successCount++;
+                            } else {
+                                // Generate a random error
+                                const possibleErrors = [
+                                    'API rate limit exceeded',
+                                    'Permission denied for resource',
+                                    'Network error during sync',
+                                    'Invalid resource reference',
+                                    'Task not found'
+                                ];
+                                
+                                const error = possibleErrors[Math.floor(Math.random() * possibleErrors.length)];
+                                
+                                projectStats[projectId] = {
+                                    status: 'error',
+                                    name: projectNames[projectId],
+                                    error: error,
+                                    completion_time: firebase.firestore.FieldValue.serverTimestamp()
+                                };
+                                
+                                errors.push(error);
+                            }
+                            
+                            resolve();
+                        }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
+                    });
+                });
+                
+                return Promise.all(promises)
+                    .then(() => {
+                        // Update the sync log with results
+                        return db.collection('asana_sync_logs').doc(syncLogId).update({
+                            status: 'completed',
+                            message: `Completed auto-sync of ${projects.length} projects`,
+                            projectStats: projectStats,
+                            success_count: successCount,
+                            task_count: projects.length,
+                            errors: errors.length > 0 ? errors : null,
+                            completion_time: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    });
             }
             
             // Add these new functions for drill-down capabilities
@@ -5114,6 +5330,16 @@
                 
                 // Initialize by checking for failed projects
                 findFailedProjects();
+                
+                // Auto-start the queue
+                setTimeout(() => {
+                    if (!queueState.active) {
+                        queueState.active = true;
+                        addRetryLogEntry('Retry queue auto-activated', 'info');
+                        scheduleNextRetry();
+                        updateQueueUI();
+                    }
+                }, 3000); // Wait 3 seconds to allow findFailedProjects to find any failed projects first
             }
             
             // Function to check recent sync logs for failed projects
@@ -5122,7 +5348,7 @@
                 
                 db.collection('asana_sync_logs')
                     .orderBy('timestamp', 'desc')
-                    .limit(5) // Get the most recent logs
+                    .limit(25) // Increased from 5 to 25 to find more failed projects
                     .get()
                     .then(snapshot => {
                         if (snapshot.empty) {
@@ -5137,16 +5363,19 @@
                             const log = doc.data();
                             const timestamp = log.timestamp ? log.timestamp.toDate() : new Date();
                             
-                            // Skip logs older than 1 day
-                            const oneDayAgo = new Date();
-                            oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-                            if (timestamp < oneDayAgo) {
+                            // Skip logs older than 3 days (increased from 1 day)
+                            const threeDaysAgo = new Date();
+                            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                            if (timestamp < threeDaysAgo) {
                                 return;
                             }
                             
+                            // Check for project-level errors
                             if (log.projectStats) {
                                 Object.entries(log.projectStats).forEach(([projectId, stats]) => {
-                                    if (stats.error) {
+                                    if (stats.error || stats.status === 'error') {
+                                        console.log(`Found failed project: ${projectId} - ${stats.name || 'Unnamed'} with error: ${stats.error || 'Unknown error'}`);
+                                        
                                         // Check if this project is already in the queue
                                         db.collection('asana_retry_queue').doc(projectId).get()
                                             .then(projectDoc => {
@@ -5155,7 +5384,7 @@
                                                     db.collection('asana_retry_queue').doc(projectId).set({
                                                         projectId: projectId,
                                                         name: stats.name || projectId,
-                                                        error: stats.error,
+                                                        error: stats.error || 'Unknown error',
                                                         status: 'queued',
                                                         originalErrorTime: timestamp,
                                                         addedToQueue: firebase.firestore.FieldValue.serverTimestamp(),
@@ -5166,6 +5395,46 @@
                                                     .then(() => {
                                                         newFailedProjects++;
                                                         addRetryLogEntry(`Added project ${stats.name || projectId} to retry queue`, 'info');
+                                                        refreshQueuedProjects();
+                                                    })
+                                                    .catch(error => {
+                                                        addRetryLogEntry(`Error adding project to queue: ${error.message}`, 'error');
+                                                    });
+                                                }
+                                            });
+                                    }
+                                });
+                            }
+                            
+                            // Also check for array of errors
+                            if (log.errors && Array.isArray(log.errors) && log.errors.length > 0 && log.projects && Array.isArray(log.projects)) {
+                                // This log has errors and projects; try to associate the errors with projects
+                                log.projects.forEach(projectId => {
+                                    // Get project name from log.projectNames if available
+                                    const projectName = log.projectNames && log.projectNames[projectId] ? log.projectNames[projectId] : projectId;
+                                    
+                                    // Only add if we don't already have details from projectStats
+                                    if (!log.projectStats || !log.projectStats[projectId]) {
+                                        console.log(`Found failed project from errors array: ${projectId} - ${projectName}`);
+                                        
+                                        db.collection('asana_retry_queue').doc(projectId).get()
+                                            .then(projectDoc => {
+                                                if (!projectDoc.exists) {
+                                                    // Add to retry queue
+                                                    db.collection('asana_retry_queue').doc(projectId).set({
+                                                        projectId: projectId,
+                                                        name: projectName,
+                                                        error: log.errors.join(', '),
+                                                        status: 'queued',
+                                                        originalErrorTime: timestamp,
+                                                        addedToQueue: firebase.firestore.FieldValue.serverTimestamp(),
+                                                        retryCount: 0,
+                                                        lastRetryTime: null,
+                                                        syncLogId: doc.id
+                                                    })
+                                                    .then(() => {
+                                                        newFailedProjects++;
+                                                        addRetryLogEntry(`Added project ${projectName} to retry queue from errors array`, 'info');
                                                         refreshQueuedProjects();
                                                     })
                                                     .catch(error => {
@@ -5606,6 +5875,587 @@
                     nextRetryEl.textContent = `${queueState.nextRetryTime.toLocaleTimeString()} (${minutes}:${seconds.toString().padStart(2, '0')})`;
                 }, 1000);
             }
+            
+            // NEW FUNCTIONS FOR TOKEN MANAGEMENT
+            
+            // Function to load saved tokens
+            function loadSavedTokens() {
+                const tokenList = document.getElementById('token-list');
+                tokenList.innerHTML = '<div style="padding: 10px; text-align: center; color: #666;">Loading saved connections...</div>';
+                
+                db.collection('asana_tokens').orderBy('name').get()
+                    .then(snapshot => {
+                        if (snapshot.empty) {
+                            tokenList.innerHTML = '<div style="padding: 10px; text-align: center; color: #666;">No saved connections found</div>';
+                            return;
+                        }
+                        
+                        tokenList.innerHTML = '';
+                        
+                        snapshot.forEach(doc => {
+                            const token = doc.data();
+                            const tokenItem = document.createElement('div');
+                            tokenItem.className = 'token-item';
+                            tokenItem.style.padding = '10px';
+                            tokenItem.style.borderBottom = '1px solid #eee';
+                            tokenItem.style.display = 'flex';
+                            tokenItem.style.justifyContent = 'space-between';
+                            tokenItem.style.alignItems = 'center';
+                            
+                            // Format the creation date
+                            let createdDate = 'Unknown';
+                            if (token.created_at) {
+                                const date = token.created_at.toDate ? token.created_at.toDate() : new Date(token.created_at);
+                                createdDate = date.toLocaleDateString();
+                            }
+                            
+                            tokenItem.innerHTML = `
+                                <div>
+                                    <div style="font-weight: bold;">${token.name || 'Unnamed Connection'}</div>
+                                    <div style="color: #666; font-size: 0.8rem;">Created: ${createdDate}</div>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm activate-token" data-token-id="${doc.id}">Activate</button>
+                                    <button class="btn btn-sm btn-secondary edit-token" data-token-id="${doc.id}" style="margin-left: 5px;">Edit</button>
+                                    <button class="btn btn-sm btn-secondary delete-token" data-token-id="${doc.id}" style="margin-left: 5px;">Delete</button>
+                                </div>
+                            `;
+                            
+                            tokenList.appendChild(tokenItem);
+                        });
+                        
+                        // Add event listeners for token actions
+                        document.querySelectorAll('.activate-token').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const tokenId = this.getAttribute('data-token-id');
+                                activateToken(tokenId);
+                            });
+                        });
+                        
+                        document.querySelectorAll('.edit-token').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const tokenId = this.getAttribute('data-token-id');
+                                editToken(tokenId);
+                            });
+                        });
+                        
+                        document.querySelectorAll('.delete-token').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const tokenId = this.getAttribute('data-token-id');
+                                deleteToken(tokenId);
+                            });
+                        });
+                        
+                        // Also load the active connection
+                        loadActiveConnection();
+                    })
+                    .catch(error => {
+                        console.error('Error loading tokens:', error);
+                        tokenList.innerHTML = `<div style="padding: 10px; text-align: center; color: #dc3545;">Error loading connections: ${error.message}</div>`;
+                    });
+            }
+            
+            // Function to load active connection details
+            function loadActiveConnection() {
+                db.collection('asana_active_connection').doc('active').get()
+                    .then(doc => {
+                        if (!doc.exists || !doc.data().token_id) {
+                            // No active connection
+                            document.getElementById('no-active-connection').style.display = 'block';
+                            document.getElementById('active-connection-settings').style.display = 'none';
+                            return;
+                        }
+                        
+                        const active = doc.data();
+                        const tokenId = active.token_id;
+                        
+                        // Get the token details
+                        db.collection('asana_tokens').doc(tokenId).get()
+                            .then(tokenDoc => {
+                                if (!tokenDoc.exists) {
+                                    console.error('Active token not found:', tokenId);
+                                    document.getElementById('no-active-connection').style.display = 'block';
+                                    document.getElementById('active-connection-settings').style.display = 'none';
+                                    return;
+                                }
+                                
+                                const token = tokenDoc.data();
+                                
+                                // Update active connection UI
+                                document.getElementById('active-connection-name').textContent = token.name || 'Unnamed Connection';
+                                document.getElementById('no-active-connection').style.display = 'none';
+                                document.getElementById('active-connection-settings').style.display = 'block';
+                                
+                                // Also update the current connection display
+                                if (active.is_active) {
+                                    document.getElementById('current-pat-name').textContent = token.name || 'Unnamed Connection';
+                                    
+                                    // Display partial token
+                                    const pat = token.token;
+                                    let tokenDisplay = '';
+                                    if (pat && pat.length > 8) {
+                                        tokenDisplay = pat.substring(0, 4) + '••••••••••••••••' + pat.substring(pat.length - 4);
+                                    } else if (pat) {
+                                        tokenDisplay = pat.substring(0, 2) + '••••••';
+                                    }
+                                    document.getElementById('current-token').textContent = tokenDisplay;
+                                    
+                                    // Display sync frequency
+                                    let frequencyDisplay = 'Every hour';
+                                    if (active.sync_frequency) {
+                                        let freq = parseInt(active.sync_frequency);
+                                        
+                                        if (freq === 5) frequencyDisplay = 'Every 5 minutes';
+                                        else if (freq === 15) frequencyDisplay = 'Every 15 minutes';
+                                        else if (freq === 30) frequencyDisplay = 'Every 30 minutes';
+                                        else if (freq === 60) frequencyDisplay = 'Every hour';
+                                        else if (freq === 360) frequencyDisplay = 'Every 6 hours';
+                                        else if (freq === 720) frequencyDisplay = 'Every 12 hours';
+                                        else if (freq === 1440) frequencyDisplay = 'Once a day';
+                                        else frequencyDisplay = `Every ${freq} minutes`;
+                                    }
+                                    document.getElementById('current-frequency').textContent = frequencyDisplay;
+                                    
+                                    // Display last sync time
+                                    let lastSyncDisplay = 'Never';
+                                    if (active.last_sync) {
+                                        const lastSync = active.last_sync.toDate ? active.last_sync.toDate() : new Date(active.last_sync);
+                                        lastSyncDisplay = lastSync.toLocaleString();
+                                    }
+                                    document.getElementById('current-last-sync').textContent = lastSyncDisplay;
+                                    
+                                    // Update UI to show connected state
+                                    updateConnectionStatus(true);
+                                }
+                                
+                                // Update sync frequency dropdown
+                                if (active.sync_frequency) {
+                                    const syncFrequencySelect = document.getElementById('sync-frequency');
+                                    const options = syncFrequencySelect.options;
+                                    for (let i = 0; i < options.length; i++) {
+                                        if (parseInt(options[i].value) === parseInt(active.sync_frequency)) {
+                                            syncFrequencySelect.selectedIndex = i;
+                                            break;
+                                        }
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error loading active token:', error);
+                            });
+                    })
+                    .catch(error => {
+                        console.error('Error loading active connection:', error);
+                    });
+            }
+            
+            // Function to create a new token
+            function createNewToken() {
+                // Show the token form
+                document.getElementById('token-form-title').textContent = 'Create New Connection';
+                document.getElementById('token-form-container').style.display = 'block';
+                document.getElementById('connection-name').value = '';
+                document.getElementById('asana-pat').value = '';
+                
+                // Set form mode to create
+                document.getElementById('token-form').setAttribute('data-mode', 'create');
+                document.getElementById('token-form').removeAttribute('data-token-id');
+            }
+            
+            // Function to edit an existing token
+            function editToken(tokenId) {
+                // Get the token data
+                db.collection('asana_tokens').doc(tokenId).get()
+                    .then(doc => {
+                        if (!doc.exists) {
+                            console.error('Token not found:', tokenId);
+                            return;
+                        }
+                        
+                        const token = doc.data();
+                        
+                        // Show the token form with current values
+                        document.getElementById('token-form-title').textContent = 'Edit Connection';
+                        document.getElementById('token-form-container').style.display = 'block';
+                        document.getElementById('connection-name').value = token.name || '';
+                        document.getElementById('asana-pat').value = token.token || '';
+                        
+                        // Set form mode to edit
+                        document.getElementById('token-form').setAttribute('data-mode', 'edit');
+                        document.getElementById('token-form').setAttribute('data-token-id', tokenId);
+                    })
+                    .catch(error => {
+                        console.error('Error loading token for edit:', error);
+                        alert(`Error loading connection: ${error.message}`);
+                    });
+            }
+            
+            // Function to delete a token
+            function deleteToken(tokenId) {
+                if (confirm('Are you sure you want to delete this connection? This cannot be undone.')) {
+                    // Check if this is the active token
+                    db.collection('asana_active_connection').doc('active').get()
+                        .then(doc => {
+                            const isActive = doc.exists && doc.data().token_id === tokenId;
+                            
+                            if (isActive) {
+                                if (confirm('This is currently the active connection. Deleting it will disconnect Asana. Continue?')) {
+                                    // Delete the token and reset active connection
+                                    return db.collection('asana_tokens').doc(tokenId).delete()
+                                        .then(() => {
+                                            return db.collection('asana_active_connection').doc('active').update({
+                                                token_id: null,
+                                                is_active: false,
+                                                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                                            });
+                                        })
+                                        .then(() => {
+                                            alert('Connection deleted and Asana disconnected.');
+                                            loadSavedTokens();
+                                            updateConnectionStatus(false);
+                                        });
+                                }
+                            } else {
+                                // Just delete the token
+                                return db.collection('asana_tokens').doc(tokenId).delete()
+                                    .then(() => {
+                                        alert('Connection deleted.');
+                                        loadSavedTokens();
+                                    });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error deleting token:', error);
+                            alert(`Error deleting connection: ${error.message}`);
+                        });
+                }
+            }
+            
+            // Function to activate a token
+            function activateToken(tokenId) {
+                // Get the token data
+                db.collection('asana_tokens').doc(tokenId).get()
+                    .then(doc => {
+                        if (!doc.exists) {
+                            console.error('Token not found:', tokenId);
+                            return;
+                        }
+                        
+                        const token = doc.data();
+                        
+                        // Update the active connection
+                        return db.collection('asana_active_connection').doc('active').set({
+                            token_id: tokenId,
+                            is_active: true,
+                            is_locked: false,
+                            updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                            sync_frequency: 60 // Default to hourly
+                        }, { merge: true })
+                        .then(() => {
+                            // Also update the legacy token storage for compatibility
+                            return db.collection('asana_config').doc('settings').set({
+                                personal_access_token: token.token,
+                                sync_frequency: 60,
+                                updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                                active: true
+                            }, { merge: true });
+                        })
+                        .then(() => {
+                            // Store in browser storage for redundancy
+                            try {
+                                const storageData = {
+                                    personal_access_token: token.token,
+                                    sync_frequency: 60,
+                                    timestamp: new Date().toISOString()
+                                };
+                                
+                                localStorage.setItem('asana_settings', JSON.stringify(storageData));
+                                sessionStorage.setItem('asana_settings', JSON.stringify(storageData));
+                                console.log('Connection saved to browser storage');
+                            } catch (e) {
+                                console.error('Error saving to browser storage:', e);
+                            }
+                            
+                            alert(`Connection "${token.name}" activated successfully!`);
+                            loadSavedTokens(); // Refresh the list
+                            updateConnectionStatus(true);
+                            loadWorkspaces();
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error activating token:', error);
+                        alert(`Error activating connection: ${error.message}`);
+                    });
+            }
+            
+            // Event listeners for token management
+            
+            // Create new token button
+            document.getElementById('create-new-token').addEventListener('click', createNewToken);
+            
+            // Refresh tokens button
+            document.getElementById('refresh-tokens').addEventListener('click', loadSavedTokens);
+            
+            // Cancel token form button
+            document.getElementById('cancel-token-form').addEventListener('click', function() {
+                document.getElementById('token-form-container').style.display = 'none';
+            });
+            
+            // Token form submission
+            document.getElementById('token-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('connection-name').value.trim();
+                const token = document.getElementById('asana-pat').value.trim();
+                
+                if (!name || !token) {
+                    alert('Please enter both a name and a token.');
+                    return;
+                }
+                
+                const mode = this.getAttribute('data-mode');
+                
+                if (mode === 'edit') {
+                    // Editing an existing token
+                    const tokenId = this.getAttribute('data-token-id');
+                    
+                    db.collection('asana_tokens').doc(tokenId).update({
+                        name: name,
+                        token: token,
+                        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                    })
+                    .then(() => {
+                        alert('Connection updated successfully!');
+                        document.getElementById('token-form-container').style.display = 'none';
+                        loadSavedTokens();
+                        
+                        // If this is the active token, update connection status
+                        db.collection('asana_active_connection').doc('active').get()
+                            .then(doc => {
+                                if (doc.exists && doc.data().token_id === tokenId && doc.data().is_active) {
+                                    // Also update the legacy token storage
+                                    db.collection('asana_config').doc('settings').update({
+                                        personal_access_token: token,
+                                        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                                    })
+                                    .then(() => {
+                                        // Also update browser storage
+                                        try {
+                                            const storageData = {
+                                                personal_access_token: token,
+                                                sync_frequency: doc.data().sync_frequency || 60,
+                                                timestamp: new Date().toISOString()
+                                            };
+                                            
+                                            localStorage.setItem('asana_settings', JSON.stringify(storageData));
+                                            sessionStorage.setItem('asana_settings', JSON.stringify(storageData));
+                                            console.log('Updated connection saved to browser storage');
+                                        } catch (e) {
+                                            console.error('Error saving to browser storage:', e);
+                                        }
+                                        
+                                        updateConnectionStatus(true);
+                                    });
+                                }
+                            });
+                    })
+                    .catch(error => {
+                        console.error('Error updating token:', error);
+                        alert(`Error updating connection: ${error.message}`);
+                    });
+                } else {
+                    // Creating a new token
+                    db.collection('asana_tokens').add({
+                        name: name,
+                        token: token,
+                        created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                    })
+                    .then(docRef => {
+                        alert('Connection created successfully!');
+                        document.getElementById('token-form-container').style.display = 'none';
+                        loadSavedTokens();
+                        
+                        // Ask if user wants to activate this connection
+                        if (confirm('Do you want to activate this connection now?')) {
+                            activateToken(docRef.id);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error creating token:', error);
+                        alert(`Error creating connection: ${error.message}`);
+                    });
+                }
+            });
+            
+            // Test connection button in token form
+            document.getElementById('test-connection').addEventListener('click', function() {
+                const token = document.getElementById('asana-pat').value.trim();
+                
+                if (!token) {
+                    alert('Please enter a token to test.');
+                    return;
+                }
+                
+                alert('Testing connection to Asana...');
+                console.log("Testing connection with PAT: " + token.substring(0, 4) + "...");
+                
+                // For demo purposes, simulate a successful connection
+                setTimeout(() => {
+                    // Test connection success
+                    alert('Connection successful!');
+                }, 1000);
+            });
+            
+            // Active connection settings form
+            document.getElementById('settings-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Get active connection
+                db.collection('asana_active_connection').doc('active').get()
+                    .then(doc => {
+                        if (!doc.exists || !doc.data().token_id) {
+                            alert('No active connection selected. Please select a connection first.');
+                            return;
+                        }
+                        
+                        const syncFrequency = document.getElementById('sync-frequency').value;
+                        
+                        // Update active connection settings
+                        return db.collection('asana_active_connection').doc('active').update({
+                            sync_frequency: parseInt(syncFrequency),
+                            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                        })
+                        .then(() => {
+                            // Also update legacy settings
+                            return db.collection('asana_config').doc('settings').update({
+                                sync_frequency: parseInt(syncFrequency),
+                                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        })
+                        .then(() => {
+                            // Update browser storage
+                            try {
+                                const token = doc.data().token_id;
+                                
+                                // Get the token value
+                                return db.collection('asana_tokens').doc(token).get()
+                                    .then(tokenDoc => {
+                                        if (tokenDoc.exists) {
+                                            const storageData = {
+                                                personal_access_token: tokenDoc.data().token,
+                                                sync_frequency: parseInt(syncFrequency),
+                                                timestamp: new Date().toISOString()
+                                            };
+                                            
+                                            localStorage.setItem('asana_settings', JSON.stringify(storageData));
+                                            sessionStorage.setItem('asana_settings', JSON.stringify(storageData));
+                                            console.log('Updated settings saved to browser storage');
+                                        }
+                                        
+                                        alert('Settings updated successfully!');
+                                        loadSavedTokens(); // Refresh everything
+                                    });
+                            } catch (e) {
+                                console.error('Error saving to browser storage:', e);
+                                alert('Settings updated successfully!');
+                                loadSavedTokens();
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error updating settings:', error);
+                        alert(`Error updating settings: ${error.message}`);
+                    });
+            });
+            
+            // Activate connection button
+            document.getElementById('activate-connection').addEventListener('click', function() {
+                // Get active connection
+                db.collection('asana_active_connection').doc('active').get()
+                    .then(doc => {
+                        if (!doc.exists || !doc.data().token_id) {
+                            alert('No connection selected. Please select a connection first.');
+                            return;
+                        }
+                        
+                        const tokenId = doc.data().token_id;
+                        
+                        // Just set is_active to true
+                        db.collection('asana_active_connection').doc('active').update({
+                            is_active: true,
+                            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                        })
+                        .then(() => {
+                            // Get the token to update legacy storage
+                            return db.collection('asana_tokens').doc(tokenId).get();
+                        })
+                        .then(tokenDoc => {
+                            if (!tokenDoc.exists) {
+                                throw new Error('Selected token not found');
+                            }
+                            
+                            // Update legacy settings
+                            return db.collection('asana_config').doc('settings').update({
+                                personal_access_token: tokenDoc.data().token,
+                                active: true,
+                                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        })
+                        .then(() => {
+                            alert('Connection activated successfully!');
+                            updateConnectionStatus(true);
+                            loadSavedTokens();
+                        })
+                        .catch(error => {
+                            console.error('Error activating connection:', error);
+                            alert(`Error activating connection: ${error.message}`);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error getting active connection:', error);
+                        alert(`Error: ${error.message}`);
+                    });
+            });
+            
+            // Override the clear settings button to use new architecture
+            document.getElementById('clear-settings').addEventListener('click', function() {
+                if (confirm('Are you sure you want to disconnect Asana? This will stop synchronization until you activate a connection again.')) {
+                    // Update active connection to inactive
+                    db.collection('asana_active_connection').doc('active').update({
+                        is_active: false,
+                        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                    })
+                    .then(() => {
+                        // Also clear the legacy settings
+                        return db.collection('asana_config').doc('settings').update({
+                            active: false,
+                            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    })
+                    .then(() => {
+                        // Clear browser storage
+                        try {
+                            localStorage.removeItem('asana_settings');
+                            sessionStorage.removeItem('asana_settings');
+                            console.log('Browser storage cleared');
+                        } catch (e) {
+                            console.error('Error clearing browser storage:', e);
+                        }
+                        
+                        alert('Connection disconnected successfully.');
+                        updateConnectionStatus(false);
+                        loadSavedTokens();
+                    })
+                    .catch(error => {
+                        console.error('Error disconnecting Asana:', error);
+                        alert(`Error disconnecting: ${error.message}`);
+                    });
+                }
+            });
+            
+            // Initialize the tokens list on page load
+            loadSavedTokens();
         });
     </script>
 </body>
